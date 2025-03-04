@@ -61,7 +61,7 @@ pub fn run_ga<Ind: Individual, C: Constraint<Ind>>(
         // Selection
         let mut to_remove: Vec<_> = range
             .choose_multiple_weighted(&mut rng, ga_settings.drain_size, |&i| {
-                (max_fit - fitnesses[i]) / (max_fit - min_fit)
+                (max_fit - fitnesses[i]) / (max_fit - min_fit) + 0.0001
             })
             .unwrap()
             .collect();

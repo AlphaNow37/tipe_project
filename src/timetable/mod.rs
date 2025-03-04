@@ -20,16 +20,23 @@ pub struct BasicTimeTable {
 }
 impl Individual for BasicTimeTable {
     type Settings = Settings;
-    fn new_random(settings: &Self::Settings, _: &mut impl Rng) -> BasicTimeTable {
+    fn new_random(settings: &Self::Settings, rng: &mut impl Rng) -> BasicTimeTable {
         Self {
-            classes: vec![Lesson { start: 0, room: 0 }; settings.lengths.len()],
+            classes: settings
+                .lengths
+                .iter()
+                .map(|len| Lesson {
+                    room: rng.random_range(0..settings.nb_rooms),
+                    start: rng.random_range(0..(settings.day_length.max(*len) - *len)),
+                })
+                .collect(),
         }
     }
     fn mutate(&mut self, settings: &Self::Settings, rng: &mut impl Rng) {
         let i = rng.random_range(0..self.classes.len());
         match rng.random_range(0..2) {
-            0 => self.classes[i].start = rng.random_range(0..settings.day_length + 1),
-            1 => self.classes[i].room = rng.random_range(0..settings.nb_rooms + 1),
+            0 => self.classes[i].start = rng.random_range(0..settings.day_length),
+            1 => self.classes[i].room = rng.random_range(0..settings.nb_rooms),
             _ => unreachable!(),
         }
     }
@@ -68,7 +75,12 @@ pub struct CollisionChecker(Vec<(usize, usize, usize)>);
 impl Constraint<BasicTimeTable> for CollisionChecker {
     fn fitness(&mut self, ind: &BasicTimeTable, settings: &Settings) -> f64 {
         self.0.clear();
-        self.0.extend(ind.classes.iter().zip(&settings.lengths).map(|(less, len)| (less.room, less.start, less.start+len)));
+        self.0.extend(
+            ind.classes
+                .iter()
+                .zip(&settings.lengths)
+                .map(|(less, len)| (less.room, less.start, less.start + len)),
+        );
         self.0.sort();
         let mut collision_count = 0;
         for i in 0..self.0.len() {

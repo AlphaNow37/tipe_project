@@ -1,35 +1,36 @@
 use crate::framework::constraint::Constraint;
 use crate::framework::individual::Individual;
 use rand::seq::IndexedRandom;
-use rand::{rng, Rng};
+use rand::Rng;
 
 pub mod constraint;
 pub mod fitness;
 pub mod individual;
+pub mod statistics;
 
 pub struct GaSettings {
-    pub repeats: usize,
+    pub nb_generations: usize,
     pub population_size: usize,
     pub drain_size: usize,
 }
 
 pub fn run_ga<Ind: Individual, C: Constraint<Ind>>(
     settings: &Ind::Settings,
-    ga_settings: GaSettings,
-    mut constraint: C,
-) -> Ind {
-    let mut rng = rng();
+    ga_settings: &GaSettings,
+    constraint: &mut C,
+    rng: &mut impl Rng,
+) -> (Ind, f64) {
     let mut population: Vec<_> = (0..ga_settings.population_size)
-        .map(|_| Ind::new_random(settings, &mut rng))
+        .map(|_| Ind::new_random(settings, rng))
         .collect();
     let mut best = population[0].clone();
     let mut best_fit = constraint.fitness(&best, settings);
     let mut fitnesses = vec![0.; ga_settings.population_size];
     let range = (0..ga_settings.population_size).collect::<Vec<_>>();
-    for _ in 0..ga_settings.repeats {
+    for _ in 0..ga_settings.nb_generations {
         // Mutations
         for ind in population.iter_mut() {
-            ind.mutate(settings, &mut rng);
+            ind.mutate(settings, rng);
         }
         // for i in 0..ga_settings.population_size {
         //     let j = rng.random_range((i + 1)..ga_settings.population_size);
@@ -60,12 +61,12 @@ pub fn run_ga<Ind: Individual, C: Constraint<Ind>>(
         }
         // Selection
         let mut to_remove: Vec<_> = range
-            .choose_multiple_weighted(&mut rng, ga_settings.drain_size, |&i| {
-                (max_fit - fitnesses[i]) / (max_fit - min_fit) + 0.0001
+            .choose_multiple_weighted(rng, ga_settings.drain_size, |&i| {
+                (max_fit - fitnesses[i]) / (max_fit - min_fit).max(0.001) + 0.0001
             })
             .unwrap()
             .collect();
-        to_remove.sort();
+        to_remove.sort_unstable();
         for &i in to_remove.into_iter().rev() {
             population.swap_remove(i);
         }
@@ -75,10 +76,9 @@ pub fn run_ga<Ind: Individual, C: Constraint<Ind>>(
             let i = rng.random_range(0..rest);
             let j = rng.random_range(0..rest);
             let mut new = population[i].clone();
-            new.crossover(settings, &population[j], &mut rng);
+            new.crossover(settings, &population[j], rng);
             population.push(new);
         }
     }
-    dbg!(best_fit);
-    best
+    (best, best_fit)
 }

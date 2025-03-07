@@ -81,7 +81,7 @@ impl Constraint<BasicTimeTable> for CollisionChecker {
                 .zip(&settings.lengths)
                 .map(|(less, len)| (less.room, less.start, less.start + len)),
         );
-        self.0.sort();
+        self.0.sort_unstable();
         let mut collision_count = 0;
         for i in 0..self.0.len() {
             let (r, _, end) = self.0[i];

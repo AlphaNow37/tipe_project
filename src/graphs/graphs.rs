@@ -1,7 +1,6 @@
 use std::collections::{hash_map::Entry, HashMap};
 use std::hash::Hash;
 
-use crate::geometry::VecN;
 use crate::{
     datastructures::{
         priority_queue::PriorityQueue,
@@ -84,6 +83,10 @@ pub trait Graph<Vertex> {
     }
 }
 
+pub trait IterableGraph<V>: Graph<V> {
+    fn iter(&self) -> impl Iterator<Item = V>;
+}
+
 #[derive(Default, Clone, Debug)]
 pub struct LinkGraph {
     nexts: Vec<Vec<usize>>,
@@ -127,9 +130,16 @@ impl Graph<usize> for LinkGraph {
         self.nexts[vertex].iter().cloned()
     }
 }
+impl IterableGraph<usize> for LinkGraph {
+    fn iter(&self) -> impl Iterator<Item = usize> {
+        0..self.nexts.len()
+    }
+}
 
 #[test]
 fn test_dijkstra() {
+    use crate::geometry::VecN;
+
     let mut g = LinkGraph::default();
     for (start, end) in [
         (0, 1),

@@ -27,3 +27,12 @@ impl<const N: usize> Cube<N> {
         self.end - self.start
     }
 }
+
+#[derive(Default, Clone, Debug)]
+pub struct Polygon(pub Vec<VecN<2, f64>>);
+
+#[derive(Default, Clone, Copy, Debug)]
+pub struct Segment<const N: usize> {
+    pub start: VecN<N, f64>,
+    pub end: VecN<N, f64>,
+}

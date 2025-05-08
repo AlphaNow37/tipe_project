@@ -1,22 +1,24 @@
 use std::{io::Write, path::Path};
 
-use object::SvgObject;
+use object::{Style, SvgObject};
 
 use crate::datastructures::traits::NotNanF64;
 
 pub mod object;
 
+
+
 #[derive(Default)]
 pub struct SvgGroup {
-    objects: Vec<(Box<dyn SvgObject>, f64)>,
+    objects: Vec<(Box<dyn SvgObject>, f64, Style)>,
 }
 
 impl SvgGroup {
-    pub fn push(&mut self, object: impl SvgObject + 'static, height: f64) {
-        self.objects.push((Box::new(object), height));
+    pub fn push(&mut self, object: impl SvgObject + 'static, height: f64, style: Style) {
+        self.objects.push((Box::new(object), height, style));
     }
     pub fn write(&mut self, writer: &mut impl Write) -> std::io::Result<()> {
-        self.objects.sort_by_key(|(_, h)| NotNanF64::new(*h));
+        self.objects.sort_by_key(|(_, h, _)| NotNanF64::new(*h));
         let area = self
             .objects
             .iter()
@@ -34,7 +36,7 @@ impl SvgGroup {
             area.size()[1] + 20.,
         )?;
         for obj in &self.objects {
-            obj.0.write(writer)?;
+            obj.0.write(writer, &obj.2)?;
         }
         writeln!(writer, "</svg>")?;
         Ok(())

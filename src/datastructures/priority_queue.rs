@@ -1,9 +1,4 @@
-use crate::macros::make_trait_alias;
-
-use crate::geometry::traits::Zero;
-use std::ops::Add;
-
-make_trait_alias!(Weight = [Sized + Zero + Add<Output=Self> + Ord] {});
+use super::traits::Weight;
 
 fn left_child(i: usize) -> usize {
     i * 2 + 1

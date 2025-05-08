@@ -1,56 +1,162 @@
-use std::collections::HashMap;
+use std::collections::{hash_map::Entry, HashMap};
 use std::hash::Hash;
 
+use crate::geometry::VecN;
 use crate::{
     datastructures::{
         priority_queue::PriorityQueue,
-        traits::{NiceF64, Weight},
+        traits::{NotNanF64, Weight},
     },
     geometry::traits::NormedSpace,
 };
 
-pub trait Graph {
-    type Vertex;
-    fn neighbors(&self, vertex: Self::Vertex) -> impl Iterator<Item = Self::Vertex>;
+pub trait Graph<Vertex> {
+    fn neighbors(&self, vertex: Vertex) -> impl Iterator<Item = Vertex>;
     fn dijkstra_with<W: Weight>(
         &self,
-        start: Self::Vertex,
-        end: Self::Vertex,
-        cost_fn: impl Fn(Self::Vertex, Self::Vertex) -> W,
-    ) -> Option<(Vec<Self::Vertex>, W)>
+        start: Vertex,
+        end: Vertex,
+        cost_fn: impl Fn(Vertex, Vertex) -> W,
+    ) -> Option<(Vec<Vertex>, W)>
     where
-        Self::Vertex: Hash + Eq + Clone,
+        Vertex: Hash + Eq + Copy,
     {
-        let mut ancestor = HashMap::new();
+        let mut parent_weight = HashMap::new();
         let mut queue = PriorityQueue::default();
-        ancestor.insert(start.clone(), start.clone());
+        parent_weight.insert(start, (start, W::ZERO));
         queue.push(W::ZERO, start);
         loop {
-            let Some((weight, vertex)) = queue.pop_min() else {return None;};
+            let Some((weight, vertex)) = queue.pop_min() else {
+                return None;
+            };
+            let (_, best_w) = parent_weight.get(&vertex).unwrap();
+            if *best_w < weight {
+                continue;
+            }
+            if vertex == end {
+                let mut path = vec![end];
+                let mut v = vertex;
+                while v != start {
+                    let (p, _) = parent_weight.get(&v).unwrap();
+                    v = *p;
+                    path.push(v);
+                }
+                path.reverse();
+                return Some((path, weight));
+            }
+            for child in self.neighbors(vertex) {
+                let new_weight = weight + cost_fn(vertex, child);
+                match parent_weight.entry(child) {
+                    Entry::Vacant(e) => {
+                        e.insert((vertex, new_weight));
+                        queue.push(new_weight, child);
+                    }
+                    Entry::Occupied(mut e) => {
+                        if e.get().1 <= weight {
+                            continue;
+                        } else {
+                            e.insert((vertex, new_weight));
+                            queue.push(new_weight, child);
+                        }
+                    }
+                }
+            }
         }
     }
-    fn a_star(&self, start: Self::Vertex, end: Self::Vertex) -> Option<(Vec<Self::Vertex>, f64)>
+    fn a_star_with<S: NormedSpace>(
+        &self,
+        start: Vertex,
+        end: Vertex,
+        pos_fn: impl Fn(Vertex) -> S,
+    ) -> Option<(Vec<Vertex>, f64)>
     where
-        Self::Vertex: NormedSpace + Hash + Eq,
+        Vertex: Hash + Eq + Copy,
     {
+        let pos_end = pos_fn(end);
         self.dijkstra_with(start, end, |a, b| {
-            NiceF64::new(a.distance(b) + b.distance(end) - a.distance(end))
+            let pos_a = pos_fn(a);
+            let pos_b = pos_fn(b);
+            NotNanF64::new(
+                pos_a.distance(pos_b) + pos_b.distance(pos_end) - pos_a.distance(pos_end),
+            )
         })
-        .map(|(path, weight)| (path, *weight))
+        .map(|(path, weight)| (path, *weight + pos_fn(start).distance(pos_end)))
     }
 }
 
-pub trait WeightedGraph: Graph {
-    type Weight: Weight;
-    fn weight_between(&self, a: Self::Vertex, b: Self::Vertex) -> Self::Weight;
-    fn dijkstra(
-        &self,
-        start: Self::Vertex,
-        end: Self::Vertex,
-    ) -> Option<(Vec<Self::Vertex>, Self::Weight)>
-    where
-        Self::Vertex: Hash + Eq + Clone,
-    {
-        self.dijkstra_with(start, end, |a, b| self.weight_between(a, b))
+#[derive(Default, Clone, Debug)]
+pub struct LinkGraph {
+    nexts: Vec<Vec<usize>>,
+}
+impl LinkGraph {
+    pub fn add_new_link(&mut self, start: usize, end: usize) {
+        let m = start.max(end);
+        let n = self.nexts.len();
+        if m >= n {
+            self.nexts.extend((0..m - n + 1).map(|_| Vec::new()));
+        }
+        self.nexts[start].push(end);
     }
+    pub fn add_link(&mut self, start: usize, end: usize) {
+        let m = start.max(end);
+        let n = self.nexts.len();
+        if m >= n {
+            self.nexts.extend((0..m - n + 1).map(|_| Vec::new()));
+        }
+        if !self.nexts[start].contains(&end) {
+            self.nexts[start].push(end);
+        }
+    }
+    pub fn remove_link(&mut self, start: usize, end: usize) {
+        if start >= self.nexts.len() {
+            return;
+        }
+        let row = &mut self.nexts[start];
+        let mut i = 0;
+        while i < row.len() {
+            if row[i] == end {
+                row.swap_remove(i);
+            } else {
+                i += 1
+            }
+        }
+    }
+}
+impl Graph<usize> for LinkGraph {
+    fn neighbors(&self, vertex: usize) -> impl Iterator<Item = usize> {
+        self.nexts[vertex].iter().cloned()
+    }
+}
+
+#[test]
+fn test_dijkstra() {
+    let mut g = LinkGraph::default();
+    for (start, end) in [
+        (0, 1),
+        (0, 2),
+        (2, 4),
+        (3, 7),
+        (4, 5),
+        (4, 0),
+        (4, 1),
+        (4, 2),
+        (5, 3),
+        (7, 0),
+        (7, 5),
+    ] {
+        g.add_link(start, end);
+    }
+
+    let poss = [
+        VecN([0., 0.]),
+        VecN([1., 3.]),
+        VecN([4., 0.]),
+        VecN([6., 2.]),
+        VecN([5., 5.]),
+        VecN([9., 5.]),
+        VecN([1., 1.]),
+        VecN([7., -3.]),
+    ];
+
+    dbg!(g.a_star_with(0, 5, |i| poss[i]));
 }

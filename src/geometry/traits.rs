@@ -1,6 +1,6 @@
 use std::ops::{Add, Div, Sub};
 
-use crate::datastructures::traits::NiceF64;
+use crate::datastructures::traits::NotNanF64;
 
 use super::VecN;
 
@@ -13,7 +13,7 @@ impl Zero for usize {
 impl Zero for f64 {
     const ZERO: Self = 0.;
 }
-impl Zero for NiceF64 {
+impl Zero for NotNanF64 {
     const ZERO: Self = Self::new(0.);
 }
 

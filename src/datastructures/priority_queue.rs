@@ -1,4 +1,4 @@
-use super::traits::Weight;
+use crate::utils::traits::Weight;
 
 fn left_child(i: usize) -> usize {
     i * 2 + 1

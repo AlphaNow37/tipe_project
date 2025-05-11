@@ -2,11 +2,10 @@ use std::{io::Write, path::Path};
 
 use object::{Style, SvgObject};
 
-use crate::datastructures::traits::NotNanF64;
+use crate::utils::numbers::NotNanF64;
 
+pub mod graph;
 pub mod object;
-
-
 
 #[derive(Default)]
 pub struct SvgGroup {
@@ -28,12 +27,12 @@ impl SvgGroup {
         writeln!(
             writer,
             r#"<svg width="{}" height="{}" viewBox="{},{},{},{}" xmlns="http://www.w3.org/2000/svg">"#,
-            area.size()[0] + 20.,
-            area.size()[1] + 20.,
-            area.start[0] - 10.,
-            area.start[1] - 10.,
-            area.size()[0] + 20.,
-            area.size()[1] + 20.,
+            (area.size()[0]) * 20.,
+            (area.size()[1]) * 20.,
+            area.start[0],
+            area.start[1],
+            area.size()[0],
+            area.size()[1],
         )?;
         for obj in &self.objects {
             obj.0.write(writer, &obj.2)?;
@@ -44,6 +43,7 @@ impl SvgGroup {
     pub fn write_to_file(&mut self, path: &Path) {
         let mut file = std::fs::OpenOptions::new()
             .write(true)
+            .truncate(true)
             .create(true)
             .open(path)
             .unwrap();

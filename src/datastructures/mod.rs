@@ -1,2 +1,2 @@
 pub mod priority_queue;
-pub mod traits;
+pub mod union_find;

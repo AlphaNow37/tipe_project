@@ -1,6 +1,9 @@
 use std::{fmt::Display, io::Write};
 
-use crate::geometry::shapes::{Cube, Polygon, Segment};
+use crate::geometry::{
+    shapes::{Cube, Polygon, Segment},
+    VecN,
+};
 
 #[derive(Default, Clone, Debug)]
 pub struct Style {
@@ -8,17 +11,25 @@ pub struct Style {
     fill: Option<String>,
 }
 impl Style {
-    pub fn stroke(col: String, width: f64) -> Self {
+    pub fn stroke(col: impl Into<String>, width: f64) -> Self {
         Self {
-            stroke: Some((col, width)),
+            stroke: Some((col.into(), width)),
             ..Self::default()
         }
     }
-    pub fn fill(col: String) -> Self {
+    pub fn fill(col: impl Into<String>) -> Self {
         Self {
-            fill: Some(col),
+            fill: Some(col.into()),
             ..Self::default()
         }
+    }
+    pub fn with_stroke(mut self, col: impl Into<String>, width: f64) -> Self {
+        self.stroke = Some((col.into(), width));
+        self
+    }
+    pub fn with_fill(mut self, col: impl Into<String>) -> Self {
+        self.fill = Some(col.into());
+        self
     }
 }
 impl Display for Style {
@@ -44,7 +55,7 @@ fn s(obj: &impl Display) -> String {
 
 impl SvgObject for Polygon {
     fn write(&self, writer: &mut dyn Write, style: &Style) -> std::io::Result<()> {
-        write!(writer, "<polygon {} points=\"", style)?;
+        write!(writer, "\t<polygon {} points=\"", style)?;
         for pt in &self.0 {
             write!(writer, "{},{} ", pt[0], pt[1])?;
         }
@@ -64,7 +75,7 @@ impl SvgObject for Segment<2> {
     fn write(&self, writer: &mut dyn Write, style: &Style) -> std::io::Result<()> {
         write!(
             writer,
-            "<line {} x1={} y1={} x2={} y2={}",
+            "\t<line {} x1={} y1={} x2={} y2={}",
             style,
             s(&self.start[0]),
             s(&self.start[1]),
@@ -83,7 +94,7 @@ impl SvgObject for Cube<2> {
     fn write(&self, writer: &mut dyn Write, style: &Style) -> std::io::Result<()> {
         write!(
             writer,
-            "<rectangle {} x={} y={} width={} height={}",
+            "\t<rectangle {} x={} y={} width={} height={}",
             style,
             s(&self.start[0]),
             s(&self.start[1]),
@@ -95,5 +106,22 @@ impl SvgObject for Cube<2> {
     }
     fn collide_box(&self) -> Cube<2> {
         *self
+    }
+}
+
+impl SvgObject for Vec<VecN<2, f64>> {
+    fn write(&self, writer: &mut dyn Write, style: &Style) -> std::io::Result<()> {
+        write!(writer, "\t<polyline {} points=\"", style)?;
+        for pt in self {
+            write!(writer, "{},{} ", pt[0], pt[1])?;
+        }
+        writeln!(writer, "\"/>")?;
+        Ok(())
+    }
+    fn collide_box(&self) -> Cube<2> {
+        self.iter()
+            .map(|pt| Cube::from_point(*pt))
+            .reduce(Cube::join)
+            .unwrap_or_default()
     }
 }

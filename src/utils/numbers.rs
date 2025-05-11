@@ -1,12 +1,5 @@
-use crate::macros::make_trait_alias;
-
-use crate::geometry::traits::Zero;
-use std::{
-    hash::Hash,
-    ops::{Add, Deref, Mul, Sub},
-};
-
-make_trait_alias!(Weight = [Sized + Zero + Add<Output=Self> + Ord + Copy] {});
+use std::hash::Hash;
+use std::ops::{Add, Deref, Mul, Sub};
 
 /// A Non-NaN, hashable float
 #[derive(Default, Debug, PartialEq, PartialOrd, Clone, Copy)]
@@ -54,5 +47,32 @@ impl Mul for NotNanF64 {
     type Output = Self;
     fn mul(self, rhs: Self) -> Self::Output {
         Self(*self * *rhs)
+    }
+}
+
+pub const F64_EPSILON: f64 = 0.0000001;
+pub fn f64_approx_zero(f: f64) -> bool {
+    f.abs() < F64_EPSILON
+}
+
+pub trait Zero {
+    const ZERO: Self;
+}
+impl Zero for usize {
+    const ZERO: Self = 0;
+}
+impl Zero for f64 {
+    const ZERO: Self = 0.;
+}
+impl Zero for NotNanF64 {
+    const ZERO: Self = Self::new(0.);
+}
+
+pub trait UsizeExt {
+    fn add_rem(self, other: isize, rem: usize) -> usize;
+}
+impl UsizeExt for usize {
+    fn add_rem(self, other: isize, rem: usize) -> usize {
+        (self as isize + other).rem_euclid(rem as isize) as usize
     }
 }

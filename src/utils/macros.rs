@@ -1,3 +1,4 @@
+
 macro_rules! make_trait_alias {
     (
         $new: ident = [$($old: tt)*] { $($content: tt)* }

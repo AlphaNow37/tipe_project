@@ -1,21 +1,10 @@
 use std::ops::{Add, Div, Sub};
 
-use crate::datastructures::traits::NotNanF64;
+use crate::{geometry::VecN, utils::numbers::Zero};
 
-use super::VecN;
+use super::macros::make_trait_alias;
 
-pub trait Zero {
-    const ZERO: Self;
-}
-impl Zero for usize {
-    const ZERO: Self = 0;
-}
-impl Zero for f64 {
-    const ZERO: Self = 0.;
-}
-impl Zero for NotNanF64 {
-    const ZERO: Self = Self::new(0.);
-}
+make_trait_alias!(Weight = [Sized + Zero + Add<Output=Self> + Ord + Copy] {});
 
 pub trait NormedSpace: Sized + Add<Output = Self> + Sub<Output = Self> + Copy {
     fn length(self) -> f64;

@@ -1,13 +1,10 @@
 use std::collections::{hash_map::Entry, HashMap};
+use std::fmt::Debug;
 use std::hash::Hash;
 
-use crate::{
-    datastructures::{
-        priority_queue::PriorityQueue,
-        traits::{NotNanF64, Weight},
-    },
-    geometry::traits::NormedSpace,
-};
+use crate::utils::numbers::NotNanF64;
+use crate::utils::traits::Weight;
+use crate::{datastructures::priority_queue::PriorityQueue, utils::traits::NormedSpace};
 
 pub trait Graph<Vertex> {
     fn neighbors(&self, vertex: Vertex) -> impl Iterator<Item = Vertex>;
@@ -45,13 +42,14 @@ pub trait Graph<Vertex> {
             }
             for child in self.neighbors(vertex) {
                 let new_weight = weight + cost_fn(vertex, child);
+                assert!(new_weight >= weight);
                 match parent_weight.entry(child) {
                     Entry::Vacant(e) => {
                         e.insert((vertex, new_weight));
                         queue.push(new_weight, child);
                     }
                     Entry::Occupied(mut e) => {
-                        if e.get().1 <= weight {
+                        if e.get().1 <= new_weight {
                             continue;
                         } else {
                             e.insert((vertex, new_weight));
@@ -133,6 +131,50 @@ impl Graph<usize> for LinkGraph {
 impl IterableGraph<usize> for LinkGraph {
     fn iter(&self) -> impl Iterator<Item = usize> {
         0..self.nexts.len()
+    }
+}
+
+#[derive(Default, Clone, Debug)]
+pub struct MapGraph<V> {
+    nexts: HashMap<V, Vec<V>>,
+}
+impl<V: Hash + Eq + Copy> MapGraph<V> {
+    pub fn add_new_link(&mut self, start: V, end: V) {
+        self.nexts.entry(start).or_default().push(end);
+    }
+    pub fn add_link(&mut self, start: V, end: V) {
+        if !self.nexts[&start].contains(&end) {
+            self.nexts.entry(start).or_default().push(end);
+        }
+    }
+    pub fn remove_link(&mut self, start: V, end: V) {
+        let row = &mut self.nexts.entry(start).or_default();
+        let mut i = 0;
+        while i < row.len() {
+            if row[i] == end {
+                row.swap_remove(i);
+            } else {
+                i += 1
+            }
+        }
+    }
+    pub fn set_neighbors(&mut self, start: V, ends: Vec<V>) {
+        self.nexts.insert(start, ends);
+    }
+    pub fn from_fn(verteces: impl Iterator<Item = V>, mut f: impl FnMut(V) -> Vec<V>) -> Self {
+        Self {
+            nexts: HashMap::from_iter(verteces.map(move |k| (k, f(k)))),
+        }
+    }
+}
+impl<V: Clone + Eq + Hash> Graph<V> for MapGraph<V> {
+    fn neighbors(&self, vertex: V) -> impl Iterator<Item = V> {
+        self.nexts[&vertex].iter().cloned()
+    }
+}
+impl<V: Clone + Eq + Hash> IterableGraph<V> for MapGraph<V> {
+    fn iter(&self) -> impl Iterator<Item = V> {
+        self.nexts.keys().cloned()
     }
 }
 

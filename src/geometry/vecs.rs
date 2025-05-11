@@ -1,9 +1,11 @@
 use std::{
     fmt::Debug,
-    ops::{Add, Deref, Sub},
+    ops::{Add, Deref, Div, Mul, Sub},
 };
 
-#[derive(Clone, Copy)]
+use crate::utils::numbers::Zero;
+
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub struct VecN<const N: usize, T>(pub [T; N]);
 
 impl<const N: usize, T: Copy> VecN<N, T> {
@@ -12,6 +14,14 @@ impl<const N: usize, T: Copy> VecN<N, T> {
     }
     pub fn zip<U: Copy>(self, other: VecN<N, U>) -> VecN<N, (T, U)> {
         VecN(std::array::from_fn(|i| (self[i], other[i])))
+    }
+    pub fn dot(self, other: Self) -> T
+    where
+        T: Mul<Output = T> + Add<Output = T> + Zero,
+    {
+        self.zip(other)
+            .iter()
+            .fold(T::ZERO, |acc, (a, b)| acc + *a * *b)
     }
 }
 
@@ -45,8 +55,23 @@ impl<const N: usize, T: Sub<Output = T> + Clone> Sub for VecN<N, T> {
         Self(std::array::from_fn(|i| self[i].clone() - rhs[i].clone()))
     }
 }
+impl<const N: usize, T: Div<f64, Output = T> + Clone> Div<f64> for VecN<N, T> {
+    type Output = Self;
+    fn div(self, rhs: f64) -> Self::Output {
+        Self(std::array::from_fn(|i| self[i].clone() / rhs))
+    }
+}
+impl<const N: usize, T: Mul<f64, Output = T> + Clone> Mul<f64> for VecN<N, T> {
+    type Output = Self;
+    fn mul(self, rhs: f64) -> Self::Output {
+        Self(std::array::from_fn(|i| self[i].clone() * rhs))
+    }
+}
 impl<const N: usize, T: Default> Default for VecN<N, T> {
     fn default() -> Self {
         Self(std::array::from_fn(|_| T::default()))
     }
+}
+impl<const N: usize, T: Zero> Zero for VecN<N, T> {
+    const ZERO: Self = Self([T::ZERO; N]);
 }

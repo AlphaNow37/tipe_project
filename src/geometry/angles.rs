@@ -1,6 +1,6 @@
 use std::{
-    f64::consts::TAU,
-    ops::{Add, Deref, Sub},
+    f64::consts::{PI, TAU},
+    ops::{Add, Deref, Neg, Sub},
 };
 
 use crate::utils::numbers::{NotNanF64, Zero};
@@ -12,6 +12,7 @@ use super::VecN;
 pub struct Angle(pub NotNanF64);
 
 impl Angle {
+    pub const HALF: Self = Self(NotNanF64::new(PI));
     pub fn new(radians: f64) -> Self {
         Self(NotNanF64::new(radians.rem_euclid(TAU)))
     }
@@ -26,6 +27,13 @@ impl Angle {
     /// Dans l'arc (a b)
     pub fn is_between(self, a: Self, b: Self) -> bool {
         self - a <= b - a
+    }
+    pub fn abs(self) -> Self {
+        if self.is_between(Self::ZERO, Self::HALF) {
+            self
+        } else {
+            -self
+        }
     }
 }
 
@@ -46,6 +54,12 @@ impl Sub for Angle {
     type Output = Self;
     fn sub(self, rhs: Self) -> Self::Output {
         Self::new(*self.0 - *rhs.0)
+    }
+}
+impl Neg for Angle {
+    type Output = Self;
+    fn neg(self) -> Self::Output {
+        Self::ZERO - self
     }
 }
 impl Zero for Angle {

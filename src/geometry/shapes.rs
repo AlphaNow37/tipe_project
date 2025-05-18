@@ -101,6 +101,9 @@ impl<const N: usize> Segment<N> {
             end: self.end,
         }
     }
+    pub fn has_extremum(self, extr: VecN<N, f64>) -> bool {
+        self.start == extr || self.end == extr
+    }
 }
 impl Segment<2> {
     pub fn intersect_line(self, line: InfiniteLine<2>) -> bool {
@@ -114,6 +117,18 @@ impl Segment<2> {
             .intersection_time(segment.to_line())
             .map(|(t1, t2)| 0. <= t1 && t1 <= 1. && 0. <= t2 && t2 <= 1.)
             .unwrap_or(false)
+    }
+    pub fn reverse(self) -> Self {
+        Self {
+            start: self.end,
+            end: self.start,
+        }
+    }
+    pub fn to_ray(self) -> Ray<2> {
+        Ray {
+            start: self.start,
+            end: self.end,
+        }
     }
 }
 
@@ -142,6 +157,18 @@ impl Ray<2> {
             .intersection_time(segment.to_line())
             .map(|(t1, t2)| 0. <= t1 && 0. <= t2 && t2 <= 1.)
             .unwrap_or(false)
+    }
+    pub fn rotate_left(self) -> Self {
+        Self {
+            start: self.start,
+            end: (self.end - self.start).rotate_left() + self.start,
+        }
+    }
+    pub fn dot(self, pt: VecN<2, f64>) -> f64 {
+        (self.end - self.start).dot(pt - self.start)
+    }
+    pub fn is_on_left_side(self, pt: VecN<2, f64>) -> bool {
+        self.rotate_left().dot(pt) >= 0.
     }
 }
 

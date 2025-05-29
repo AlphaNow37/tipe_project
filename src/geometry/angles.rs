@@ -1,6 +1,6 @@
 use std::{
     f64::consts::{PI, TAU},
-    ops::{Add, Deref, Neg, Sub},
+    ops::{Add, Deref, Mul, Neg, Sub},
 };
 
 use crate::utils::numbers::{NotNanF64, Zero};
@@ -13,8 +13,13 @@ pub struct Angle(pub NotNanF64);
 
 impl Angle {
     pub const HALF: Self = Self(NotNanF64::new(PI));
+    pub const QUARTER: Self = Self(NotNanF64::new(PI / 2.));
+
     pub fn new(radians: f64) -> Self {
         Self(NotNanF64::new(radians.rem_euclid(TAU)))
+    }
+    pub fn from_degrees(degs: f64) -> Self {
+        Self::new(degs.to_radians())
     }
     /// Angle avec la demi-droite (Ox)
     pub fn from_point(p: VecN<2, f64>) -> Self {
@@ -34,6 +39,19 @@ impl Angle {
         } else {
             -self
         }
+    }
+    /// iter_to(10°, 90°, 50°) = (10°, 50°, 90°)
+    /// Returns an iterator from self to dest included,
+    pub fn iter_to(self, dest: Self, max_resolution: Self) -> impl Iterator<Item = Self> {
+        let delta = dest - self;
+        let n = (*delta.0 / *max_resolution.0).ceil();
+        return (0..=(n as usize))
+            .map(|i| i as f64)
+            .map(move |i| self + delta * (i / n));
+    }
+    pub fn to_vec(self) -> VecN<2, f64> {
+        let (s, c) = self.0.sin_cos();
+        VecN([c, s])
     }
 }
 
@@ -64,4 +82,10 @@ impl Neg for Angle {
 }
 impl Zero for Angle {
     const ZERO: Self = Self(NotNanF64::ZERO);
+}
+impl Mul<f64> for Angle {
+    type Output = Self;
+    fn mul(self, rhs: f64) -> Self::Output {
+        Self::new(*self.0 * rhs)
+    }
 }

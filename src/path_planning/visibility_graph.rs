@@ -94,16 +94,13 @@ fn to_vertice_vec(obstacles: &[Polygon]) -> Vec<PolyVertex> {
         .iter()
         .enumerate()
         .flat_map(|(poly_i, poly)| {
-            let (off1, off2) = if poly.is_counter_clockwise() {
-                (1, -1)
-            } else {
-                (-1, 1)
-            };
-
-            let n = poly.0.len();
-            (0..poly.0.len()).map(move |i| PolyVertex {
-                pos: poly.0[i],
-                nexts: [poly.0[i.add_rem(off1, n)], poly.0[i.add_rem(off2, n)]],
+            let n = poly.len();
+            (0..n).map(move |i| PolyVertex {
+                pos: poly.points()[i],
+                nexts: [
+                    poly.points()[i.add_rem(1, n)],
+                    poly.points()[i.add_rem(-1, n)],
+                ],
                 coords: (poly_i, i),
             })
         })
@@ -113,7 +110,7 @@ fn coords_iterator<'a>(obstacles: &'a [Polygon]) -> impl Iterator<Item = (usize,
     obstacles
         .iter()
         .enumerate()
-        .flat_map(|(i, poly)| (0..poly.0.len()).map(move |j| (i, j)))
+        .flat_map(|(i, poly)| (0..poly.len()).map(move |j| (i, j)))
 }
 
 pub fn compute_vis_graph_naive(obstacles: &[Polygon]) -> MapGraph<(usize, usize)> {
@@ -126,7 +123,7 @@ pub fn compute_vis_graph_naive(obstacles: &[Polygon]) -> MapGraph<(usize, usize)
             .expect("Invalid coords");
         let vertex = verteces.swap_remove(vertex_i);
 
-        let invisible_part = if obstacles[coords.0].0.len() == 0 {
+        let invisible_part = if obstacles[coords.0].len() == 0 {
             None
         } else {
             Some((
@@ -178,7 +175,7 @@ const DBG: bool = false;
 pub fn compute_vis_graph(obstacles: &[Polygon]) -> MapGraph<(usize, usize)> {
     let mut verteces = to_vertice_vec(obstacles);
     let visibles_from = move |coords: (usize, usize)| {
-        let pos = obstacles[coords.0].0[coords.1];
+        let pos = obstacles[coords.0].points()[coords.1];
         verteces.sort_by_key(|v| Angle::from_point(v.pos - pos));
 
         if DBG {
@@ -197,7 +194,7 @@ pub fn compute_vis_graph(obstacles: &[Polygon]) -> MapGraph<(usize, usize)> {
             end: vertex.pos + VecN([1., 0.]),
         });
 
-        let invisible_part = if obstacles[coords.0].0.len() == 0 {
+        let invisible_part = if obstacles[coords.0].len() == 0 {
             None
         } else {
             Some((

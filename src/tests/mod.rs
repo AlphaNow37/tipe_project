@@ -4,8 +4,8 @@ use crate::geometry::shapes::Polygon;
 
 mod test_complex;
 mod test_graph;
-mod test_simple;
 mod test_perfs;
+mod test_simple;
 
 pub const OUT: &str = "/home/alpha_now/Desktop/progs/tipe_project/out";
 
@@ -22,6 +22,6 @@ pub fn giggle_coords(polys: &mut [Polygon]) {
 }
 
 pub fn tests() {
-    // test_complex::test_square_map();
-    test_perfs::test_perf();
+    test_complex::test_square_map();
+    // test_perfs::test_perf();
 }

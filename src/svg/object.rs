@@ -56,14 +56,14 @@ fn s(obj: &impl Display) -> String {
 impl SvgObject for Polygon {
     fn write(&self, writer: &mut dyn Write, style: &Style) -> std::io::Result<()> {
         write!(writer, "\t<polygon {} points=\"", style)?;
-        for pt in &self.0 {
+        for pt in self.points() {
             write!(writer, "{},{} ", pt[0], pt[1])?;
         }
         writeln!(writer, "\"/>")?;
         Ok(())
     }
     fn collide_box(&self) -> Cube<2> {
-        self.0
+        self.points()
             .iter()
             .map(|pt| Cube::from_point(*pt))
             .reduce(Cube::join)

@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use crate::{
-    geometry::polygon_map_generator::gen_pol_map_square,
+    geometry::{angles::Angle, polygon_map_generator::gen_pol_map_square},
     graphs::Graph,
     path_planning::visibility_graph::compute_vis_graph,
     svg::{self, graph::put_graph, object::Style},
@@ -15,23 +15,30 @@ pub fn test_square_map() {
     let mut rng = rng();
 
     println!("Computing the map..");
-    let mut obstacles = gen_pol_map_square(40, 500.0, 2000);
+    let obstacles = gen_pol_map_square(15, 500.0, 250);
+
+    println!("Computing margins");
+    let mut obstacles2 = obstacles
+        .iter()
+        .map(|p| p.add_margin(Angle::from_degrees(45.), 1.0))
+        .collect::<Vec<_>>();
 
     println!("Giggling");
-    giggle_coords(&mut obstacles);
+    giggle_coords(&mut obstacles2);
 
     dbg!(obstacles.len());
+    dbg!(obstacles2.len());
 
     let mut svg = svg::SvgGroup::default();
 
     println!("Computing the visibility graph");
-    let vis = compute_vis_graph(&obstacles);
+    let vis = compute_vis_graph(&obstacles2);
 
     println!("Writing the visibility graph");
     put_graph(
         &mut svg,
         &vis,
-        |(i, j)| obstacles[i].0[j],
+        |(i, j)| obstacles2[i].0[j],
         1.,
         Style::stroke("white", 0.01),
     );
@@ -45,21 +52,26 @@ pub fn test_square_map() {
         );
     }
 
+    println!("Writing obstacles with margin");
+    for p in &obstacles2 {
+        svg.push(p.clone(), -1., Style::fill("#00440077"));
+    }
+
     println!("Finding path");
     let distr =
-        rand::distr::weighted::WeightedIndex::new(obstacles.iter().map(|p| p.0.len().pow(2)))
+        rand::distr::weighted::WeightedIndex::new(obstacles2.iter().map(|p| p.0.len().pow(2)))
             .unwrap();
     let start_i = distr.sample(&mut rng);
-    let start_j = rng.random_range(0..obstacles[start_i].0.len());
+    let start_j = rng.random_range(0..obstacles2[start_i].0.len());
     let end_i = distr.sample(&mut rng);
-    let end_j = rng.random_range(0..obstacles[end_i].0.len());
+    let end_j = rng.random_range(0..obstacles2[end_i].0.len());
     if let Some((path, _)) = vis.a_star_with((start_i, start_j), (end_i, end_j), |(i, j)| {
-        obstacles[i].0[j]
+        obstacles2[i].0[j]
     }) {
         println!("Writing path");
         svg.push(
             path.iter()
-                .map(|(i, j)| obstacles[*i].0[*j])
+                .map(|(i, j)| obstacles2[*i].0[*j])
                 .collect::<Vec<_>>(),
             2.,
             Style::stroke("red", 1.).with_fill("none"),

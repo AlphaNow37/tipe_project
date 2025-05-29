@@ -58,7 +58,7 @@ pub fn gen_pol_map_luck(n: usize, map_size: f64) -> Vec<Polygon> {
             j = next[j];
         }
         if pts.len() > 2 {
-            polygons.push(Polygon(pts));
+            polygons.push(Polygon::new(pts));
         }
     }
 
@@ -172,7 +172,7 @@ pub fn gen_pol_map_square(width: usize, map_size: f64, nmerges: usize) -> Vec<Po
                 }
             }
 
-            polygons.push(Polygon(pts));
+            polygons.push(Polygon::new(pts));
         }
     }
     polygons

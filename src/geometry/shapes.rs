@@ -33,31 +33,56 @@ impl<const N: usize> Cube<N> {
     }
 }
 
-#[derive(Default, Clone, Debug, PartialEq)]
+/// Invariant: Garanteed to be counter-clockwize and not self-crossing
+#[derive(Default, Clone, Debug)]
 pub struct Polygon(pub Vec<VecN<2, f64>>);
 impl Polygon {
-    pub fn is_counter_clockwise(&self) -> bool {
-        if self.0.len() <= 2 {
-            true
-        } else {
-            let n = self.0.len();
-            let mut min_i = (0..n)
-                .min_by_key(|i| NotNanF64::new(self.0[*i][1]))
-                .unwrap();
-            loop {
-                let p = self.0[min_i.add_rem(0, n)];
-                let next_p = self.0[min_i.add_rem(1, n)];
-                let last_p = self.0[min_i.add_rem(-1, n)];
-                let angle = Angle::from_points(last_p, p, next_p);
-                if *angle < PI {
-                    return false;
-                } else if *angle > PI {
-                    return true;
-                } else {
-                    min_i += 1;
+    // Suppose qu'aucun point n'est aligné sur l'axe y, et qu'il ne se croise pas
+    pub fn new(mut pts: Vec<VecN<2, f64>>) -> Self {
+        let n = pts.len();
+        if n > 2 {
+            let min_i = (0..n).min_by_key(|i| NotNanF64::new(pts[*i][1])).unwrap();
+
+            let p = pts[min_i.add_rem(0, n)];
+            let next_p = pts[min_i.add_rem(1, n)];
+            let last_p = pts[min_i.add_rem(-1, n)];
+            let angle = Angle::from_points(last_p, p, next_p);
+
+            if *angle < PI {
+                pts.reverse();
+            }
+        }
+        Self(pts)
+    }
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+    pub fn points(&self) -> &[VecN<2, f64>] {
+        &self.0
+    }
+    /// Add a round margin to the polygon, special case of minkowski sum
+    pub fn add_margin(&self, angle_resolution: Angle, radius: f64) -> Self {
+        let mut new_pts = Vec::new();
+
+        for i in 0..self.0.len() {
+            let bef = self.0[i.add_rem(-1, self.0.len())];
+            let curr = self.0[i];
+            let next = self.0[i.add_rem(1, self.0.len())];
+
+            let a1 = Angle::from_point(bef - curr);
+            let a2 = Angle::from_point(next - curr);
+            let delta = a2 - a1;
+            if delta < Angle::HALF {
+                new_pts.push(curr + (a1 + delta * 0.5).to_vec() / (delta * 0.5).sin() * radius)
+            } else {
+                for a in (a1 + Angle::QUARTER).iter_to(a2 - Angle::QUARTER, angle_resolution) {
+                    new_pts.push(curr + a.to_vec() * radius);
                 }
             }
         }
+
+        // Counterclockwize like the arguments.. but may be self-crossing !
+        Self(new_pts)
     }
 }
 
@@ -112,6 +137,7 @@ impl Segment<2> {
             .map(|(t1, _)| 0. <= t1 && t1 <= 1.)
             .unwrap_or(false)
     }
+    // TODO optimize this
     pub fn intersect_segment(self, segment: Segment<2>) -> bool {
         self.to_line()
             .intersection_time(segment.to_line())
@@ -198,15 +224,15 @@ fn test_collisions() {
 
 #[test]
 fn test_polygon() {
-    assert!(Polygon(vec![VecN([0., 1.]), VecN([1., 0.]), VecN([1., 1.]),]).is_counter_clockwise());
+    // assert!(Polygon(vec![VecN([0., 1.]), VecN([1., 0.]), VecN([1., 1.]),]).is_counter_clockwise());
 
-    assert!(!Polygon(vec![VecN([1., 0.]), VecN([0., 1.]), VecN([1., 1.]),]).is_counter_clockwise());
+    // assert!(!Polygon(vec![VecN([1., 0.]), VecN([0., 1.]), VecN([1., 1.]),]).is_counter_clockwise());
 
-    assert!(!Polygon(vec![
-        VecN([1., 0.]),
-        VecN([0., 1.]),
-        VecN([1., 1.]),
-        VecN([2., 1.]),
-    ])
-    .is_counter_clockwise());
+    // assert!(!Polygon(vec![
+    //     VecN([1., 0.]),
+    //     VecN([0., 1.]),
+    //     VecN([1., 1.]),
+    //     VecN([2., 1.]),
+    // ])
+    // .is_counter_clockwise());
 }

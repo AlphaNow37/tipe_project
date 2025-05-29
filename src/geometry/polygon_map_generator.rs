@@ -1,4 +1,3 @@
-use std::array::from_fn;
 
 use crate::{datastructures::union_find::UnionFind, geometry::shapes::Segment, utils::numbers::UsizeExt};
 

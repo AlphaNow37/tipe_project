@@ -29,10 +29,10 @@ impl SvgGroup {
             r#"<svg width="{}" height="{}" viewBox="{},{},{},{}" xmlns="http://www.w3.org/2000/svg">"#,
             (area.size()[0]) * 20.,
             (area.size()[1]) * 20.,
-            area.start[0],
-            area.start[1],
-            area.size()[0],
-            area.size()[1],
+            area.start[0] * 1.2,
+            area.start[1] * 1.2,
+            area.size()[0] * 1.2,
+            area.size()[1] * 1.2,
         )?;
         for obj in &self.objects {
             obj.0.write(writer, &obj.2)?;

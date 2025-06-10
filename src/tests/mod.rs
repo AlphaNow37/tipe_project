@@ -23,8 +23,8 @@ pub fn giggle_coords(polys: &mut [Polygon]) {
 }
 
 pub fn tests() {
-    // test_complex::test_square_map();
+    test_complex::test_square_map();
     // test_perfs::test_perf();
     // test_simple::test_pretty_simple();
-    background::generate_backgrounds();
+    // background::generate_backgrounds();
 }

@@ -15,12 +15,18 @@ pub fn test_square_map() {
     let mut rng = rng();
 
     println!("Computing the map..");
-    let obstacles = gen_pol_map_square(15, 500.0, 250);
+    let obstacles = gen_pol_map_square(10, 500.0, 250);
+
+    // println!("Computing margins");
+    // let mut obstacles2 = obstacles
+    //     .iter()
+    //     .map(|p| p.add_margin(Angle::from_degrees(45.), 1.0))
+    //     .collect::<Vec<_>>();
 
     println!("Computing margins");
     let mut obstacles2 = obstacles
         .iter()
-        .map(|p| p.add_margin(Angle::from_degrees(45.), 1.0))
+        .map(|p| p.add_rough_margin(1.0))
         .collect::<Vec<_>>();
 
     println!("Giggling");

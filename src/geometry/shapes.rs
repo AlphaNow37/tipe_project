@@ -33,10 +33,6 @@ impl<const N: usize> Cube<N> {
     }
 }
 
-/// Invariant: Garanteed to be counter-clockwize and not self-crossing
-#[derive(Default, Clone, Debug)]
-pub struct Polygon(pub Vec<VecN<2, f64>>);
-
 pub fn are_counter_clockwise(pts: &[VecN<2, f64>]) -> bool {
     let n = pts.len();
     if n > 2 {
@@ -47,12 +43,15 @@ pub fn are_counter_clockwise(pts: &[VecN<2, f64>]) -> bool {
         let last_p = pts[min_i.add_rem(-1, n)];
         let angle = Angle::from_points(last_p, p, next_p);
 
-        *angle < PI
+        *angle > PI
     } else {
         false
     }
 }
 
+/// Invariant: Garanteed to be counter-clockwize and not self-crossing
+#[derive(Default, Clone, Debug)]
+pub struct Polygon(pub Vec<VecN<2, f64>>);
 impl Polygon {
     // Suppose qu'aucun point n'est aligné sur l'axe y, et qu'il ne se croise pas
     pub fn new(mut pts: Vec<VecN<2, f64>>) -> Self {
@@ -90,6 +89,23 @@ impl Polygon {
                     new_pts.push(curr + a.to_vec() * radius);
                 }
             }
+        }
+
+        // Counterclockwize like the arguments.. but may be self-crossing !
+        Self(new_pts)
+    }
+    pub fn add_rough_margin(&self, radius: f64) -> Self {
+        let mut new_pts = Vec::new();
+
+        for i in 0..self.0.len() {
+            let bef = self.0[i.add_rem(-1, self.0.len())];
+            let curr = self.0[i];
+            let next = self.0[i.add_rem(1, self.0.len())];
+
+            let a1 = Angle::from_point(bef - curr);
+            let a2 = Angle::from_point(next - curr);
+            let delta = a2 - a1;
+            new_pts.push(curr + (a1 + delta * 0.5).to_vec() / (delta * 0.5).sin() * radius)
         }
 
         // Counterclockwize like the arguments.. but may be self-crossing !

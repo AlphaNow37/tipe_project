@@ -1,6 +1,7 @@
 use crate::graphs::{Graph, IterableGraph};
 use std::collections::HashMap;
 use std::hash::Hash;
+use std::sync::Mutex;
 
 #[derive(Default, Clone, Debug)]
 pub struct LinkGraph {
@@ -51,7 +52,7 @@ impl IterableGraph<usize> for LinkGraph {
     }
 }
 
-#[derive(Default, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct MapGraph<V> {
     nexts: HashMap<V, Vec<V>>,
 }
@@ -94,5 +95,50 @@ impl<V: Clone + Eq + Hash> IterableGraph<V> for MapGraph<V> {
         self.nexts.keys().cloned()
     }
 }
+impl<V> Default for MapGraph<V> {
+    fn default() -> Self {
+        Self {
+            nexts: HashMap::default(),
+        }
+    }
+}
 
+#[derive(Default, Clone, Debug)]
+pub struct FuncGraph<F> {
+    nexts: F,
+}
+impl<F> FuncGraph<F> {
+    pub fn new(f: F) -> Self {
+        Self { nexts: f }
+    }
+}
+impl<V: Hash + Eq + Copy, F: Fn(V) -> I, I: IntoIterator<Item = V>> Graph<V> for FuncGraph<F> {
+    fn neighbors(&self, vertex: V) -> impl Iterator<Item = V> {
+        (self.nexts)(vertex).into_iter()
+    }
+}
 
+#[derive(Default, Debug)]
+pub struct CachedFuncGraph<F, V> {
+    cache_nexts: Mutex<(HashMap<V, Vec<V>>, F)>,
+}
+impl<V: Hash + Eq + Copy, F: FnMut(V) -> Vec<V>> CachedFuncGraph<F, V> {
+    pub fn new(f: F) -> Self {
+        Self {
+            cache_nexts: Mutex::new((HashMap::default(), f)),
+        }
+    }
+}
+impl<V: Hash + Eq + Copy, F: FnMut(V) -> Vec<V>> Graph<V> for CachedFuncGraph<F, V> {
+    fn neighbors(&self, vertex: V) -> impl Iterator<Item = V> {
+        let mut lock = self.cache_nexts.lock().expect("Err while taking the lock");
+        if lock.0.contains_key(&vertex) {
+            lock.0.get(&vertex).unwrap().clone().into_iter()
+        } else {
+            let res = (lock.1)(vertex);
+            lock.0.insert(vertex, res.clone());
+            res.into_iter()
+        }
+        // (self.nexts)(vertex).into_iter()
+    }
+}

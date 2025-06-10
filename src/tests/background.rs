@@ -3,11 +3,11 @@ use std::path::Path;
 use crate::{
     geometry::{shapes::Polygon, VecN},
     graphs::Graph,
-    path_planning::visibility_graph::compute_vis_graph,
+    path_planning::visibility_graph::{compute_vis_graph_fullmap, vis_graph_opt1},
     svg::{self, graph::put_graph, object::Style},
 };
 
-use super::{giggle_coords, OUT};
+use super::giggle_coords;
 
 pub fn generate_backgrounds() {
     let p1 = Polygon::new(vec![
@@ -38,7 +38,7 @@ pub fn generate_backgrounds() {
     let mut obstacles = vec![p1, p2, p3];
     giggle_coords(&mut obstacles);
 
-    let vis = compute_vis_graph(&obstacles);
+    let vis = compute_vis_graph_fullmap(&obstacles, vis_graph_opt1);
 
     let mut idx = 0;
     for (i1, i2) in [(0, 1), (1, 2), (2, 1)] {

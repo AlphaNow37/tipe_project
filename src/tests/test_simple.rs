@@ -3,7 +3,7 @@ use std::path::Path;
 use crate::{
     geometry::{shapes::Polygon, VecN},
     graphs::Graph,
-    path_planning::visibility_graph::{compute_vis_graph, compute_vis_graph_naive},
+    path_planning::visibility_graph::{compute_vis_graph_fullmap, vis_graph_opt1},
     svg::{self, graph::put_graph, object::Style},
 };
 
@@ -37,7 +37,7 @@ pub fn test_pretty_simple() {
     let mut obstacles = vec![p1, p2, p3];
     giggle_coords(&mut obstacles);
 
-    let vis = compute_vis_graph_naive(&obstacles);
+    let vis = compute_vis_graph_fullmap(&obstacles, vis_graph_opt1);
     put_graph(
         &mut svg,
         &vis,
@@ -70,7 +70,7 @@ pub fn test_very_simple() {
     let mut svg = svg::SvgGroup::default();
     let obstacles = vec![p1.clone(), p2.clone()];
 
-    let vis = compute_vis_graph(&obstacles);
+    let vis = compute_vis_graph_fullmap(&obstacles, vis_graph_opt1);
     put_graph(
         &mut svg,
         &vis,

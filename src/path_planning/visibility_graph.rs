@@ -4,13 +4,13 @@ use std::collections::BTreeSet;
 
 use crate::geometry::angles::Angle;
 use crate::geometry::shapes::{Ray, Segment};
-use crate::graphs::MapGraph;
+use crate::graphs::{CachedFuncGraph, MapGraph};
 
 use crate::geometry::{shapes::Polygon, VecN};
 use crate::utils::numbers::UsizeExt;
 
 #[derive(Clone, Copy, Debug)]
-struct PolyVertex {
+pub struct PolyVertex {
     pos: VecN<2, f64>,
     // L'interieur du polygone est entre les deux voisins
     nexts: [VecN<2, f64>; 2],
@@ -113,210 +113,227 @@ fn coords_iterator<'a>(obstacles: &'a [Polygon]) -> impl Iterator<Item = (usize,
         .flat_map(|(i, poly)| (0..poly.len()).map(move |j| (i, j)))
 }
 
-pub fn compute_vis_graph_naive(obstacles: &[Polygon]) -> MapGraph<(usize, usize)> {
-    let mut verteces = to_vertice_vec(obstacles);
+pub fn vis_graph_naive(
+    verteces: &mut Vec<PolyVertex>,
+    coords: (usize, usize),
+    _obstacles: &[Polygon],
+) -> Vec<(usize, usize)> {
+    let vertex_i = verteces
+        .iter()
+        .position(|v| v.coords == coords)
+        .expect("Invalid coords");
+    let vertex = verteces.swap_remove(vertex_i);
 
-    let visibles_from_naives = move |coords: (usize, usize)| {
-        let vertex_i = verteces
-            .iter()
-            .position(|v| v.coords == coords)
-            .expect("Invalid coords");
-        let vertex = verteces.swap_remove(vertex_i);
+    let invisible_part = if vertex.nexts[0] == vertex.pos {
+        None
+    } else {
+        Some((
+            Angle::from_point(vertex.nexts[0] - vertex.pos),
+            Angle::from_point(vertex.nexts[1] - vertex.pos),
+        ))
+    };
 
-        let invisible_part = if obstacles[coords.0].len() == 0 {
-            None
-        } else {
-            Some((
-                Angle::from_point(vertex.nexts[0] - vertex.pos),
-                Angle::from_point(vertex.nexts[1] - vertex.pos),
-            ))
+    let mut visibles = Vec::new();
+    'a: for &v in verteces.iter() {
+        if let Some((a1, a2)) = invisible_part {
+            if Angle::from_point(v.pos - vertex.pos).is_between(a1, a2)
+                && !vertex.nexts.contains(&v.pos)
+            {
+                continue 'a;
+            }
+        }
+        let segment = Segment {
+            start: vertex.pos,
+            end: v.pos,
         };
-
-        let mut visibles = Vec::new();
-        'a: for &v in &verteces {
-            if let Some((a1, a2)) = invisible_part {
-                if Angle::from_point(v.pos - vertex.pos).is_between(a1, a2)
-                    && !vertex.nexts.contains(&v.pos)
+        for &v2 in verteces.iter() {
+            if v2.coords == v.coords {
+                continue;
+            }
+            for next in v2.nexts {
+                if next != vertex.pos
+                    && next != v.pos
+                    && segment.intersect_segment(Segment {
+                        start: v2.pos,
+                        end: next,
+                    })
                 {
                     continue 'a;
                 }
             }
-            let segment = Segment {
-                start: vertex.pos,
-                end: v.pos,
-            };
-            for &v2 in &verteces {
-                if v2.coords == v.coords {
-                    continue;
-                }
-                for next in v2.nexts {
-                    if next != vertex.pos
-                        && next != v.pos
-                        && segment.intersect_segment(Segment {
-                            start: v2.pos,
-                            end: next,
-                        })
-                    {
-                        continue 'a;
-                    }
-                }
-            }
-            visibles.push(v.coords);
         }
+        visibles.push(v.coords);
+    }
 
-        verteces.push(vertex);
-        visibles
-    };
-    MapGraph::from_fn(coords_iterator(obstacles), visibles_from_naives)
+    verteces.push(vertex);
+    visibles
 }
 
 const DBG: bool = false;
 
-pub fn compute_vis_graph(obstacles: &[Polygon]) -> MapGraph<(usize, usize)> {
-    let mut verteces = to_vertice_vec(obstacles);
-    let visibles_from = move |coords: (usize, usize)| {
-        let pos = obstacles[coords.0].points()[coords.1];
-        verteces.sort_by_key(|v| Angle::from_point(v.pos - pos));
+pub fn vis_graph_opt1(
+    verteces: &mut Vec<PolyVertex>,
+    coords: (usize, usize),
+    obstacles: &[Polygon],
+) -> Vec<(usize, usize)> {
+    let pos = obstacles[coords.0].points()[coords.1];
+    verteces.sort_by_key(|v| Angle::from_point(v.pos - pos));
 
+    if DBG {
+        dbg!(pos);
+    }
+
+    let vertex_i = verteces
+        .iter()
+        .position(|v| v.coords == coords)
+        .expect("Invalid coords");
+    let vertex = verteces.remove(vertex_i);
+
+    let mut visibles = Vec::new();
+    let ray = Cell::new(Ray {
+        start: vertex.pos,
+        end: vertex.pos + VecN([1., 0.]),
+    });
+
+    let invisible_part = if obstacles[coords.0].len() == 0 {
+        None
+    } else {
+        Some((
+            Angle::from_point(vertex.nexts[0] - vertex.pos),
+            Angle::from_point(vertex.nexts[1] - vertex.pos),
+        ))
+    };
+
+    let mut tree = BTreeSet::new();
+    for &v in verteces.iter() {
+        for npos in v.nexts {
+            if npos == vertex.pos {
+                continue;
+            }
+            let s = Segment {
+                start: v.pos,
+                end: npos,
+            };
+            if ray.get().intersect_segment(s) {
+                tree.insert(SweepingTreeSegment {
+                    ray: &ray,
+                    segment: s,
+                });
+            }
+        }
+    }
+
+    for v in verteces.iter() {
         if DBG {
-            dbg!(pos);
+            println!("Checking: {:?}", v.pos);
+            println!(
+                "Tree: {:?}",
+                &tree
+                    .iter()
+                    .map(|s| s.segment)
+                    .map(|s| format!(" {:?}-{:?} ", s.start, s.end))
+                    .collect::<String>()
+            );
         }
 
-        let vertex_i = verteces
-            .iter()
-            .position(|v| v.coords == coords)
-            .expect("Invalid coords");
-        let vertex = verteces.remove(vertex_i);
+        let mut visible = false;
 
-        let mut visibles = Vec::new();
-        let ray = Cell::new(Ray {
+        // Check if its an extremum of the nearest segment
+        if tree
+            .first()
+            .map_or(false, |s| s.segment.has_extremum(v.pos))
+        {
+            visible = true;
+        }
+
+        // Removes segments going to v from tree
+        let new_ray = Ray {
             start: vertex.pos,
-            end: vertex.pos + VecN([1., 0.]),
-        });
-
-        let invisible_part = if obstacles[coords.0].len() == 0 {
-            None
-        } else {
-            Some((
-                Angle::from_point(vertex.nexts[0] - vertex.pos),
-                Angle::from_point(vertex.nexts[1] - vertex.pos),
-            ))
+            end: v.pos,
         };
-
-        let mut tree = BTreeSet::new();
-        for &v in &verteces {
-            for npos in v.nexts {
-                if npos == vertex.pos {
-                    continue;
+        for npos in v.nexts {
+            if npos != vertex.pos && !new_ray.is_on_left_side(npos) {
+                if DBG {
+                    println!("Removed: {:?}-{:?}", v.pos, npos);
                 }
-                let s = Segment {
-                    start: v.pos,
-                    end: npos,
-                };
-                if ray.get().intersect_segment(s) {
-                    tree.insert(SweepingTreeSegment {
-                        ray: &ray,
-                        segment: s,
-                    });
-                }
+                let was_present = tree.remove(&SweepingTreeSegment {
+                    segment: Segment {
+                        start: v.pos,
+                        end: npos,
+                    },
+                    ray: &ray,
+                });
+                debug_assert!(was_present);
             }
         }
 
-        for v in &verteces {
-            if DBG {
-                println!("Checking: {:?}", v.pos);
-                println!(
-                    "Tree: {:?}",
-                    &tree
-                        .iter()
-                        .map(|s| s.segment)
-                        .map(|s| format!(" {:?}-{:?} ", s.start, s.end))
-                        .collect::<String>()
+        // Sweep
+        ray.set(new_ray);
+
+        // Adds new segments coming from v
+        for npos in v.nexts {
+            // Don't add segments going to vertex
+            if npos == vertex.pos {
+                visible = true;
+            } else if new_ray.is_on_left_side(npos) {
+                if DBG {
+                    println!("Added: {:?}-{:?}", v.pos, npos);
+                }
+                let was_inserted = tree.insert(SweepingTreeSegment {
+                    segment: Segment {
+                        start: v.pos,
+                        end: npos,
+                    },
+                    ray: &ray,
+                });
+                debug_assert!(
+                    Angle::from_point(v.pos - vertex.pos).abs() < Angle::new(0.05) || was_inserted
                 );
             }
-
-            let mut visible = false;
-
-            // Check if its an extremum of the nearest segment
-            if tree
-                .first()
-                .map_or(false, |s| s.segment.has_extremum(v.pos))
-            {
-                visible = true;
-            }
-
-            // Removes segments going to v from tree
-            let new_ray = Ray {
-                start: vertex.pos,
-                end: v.pos,
-            };
-            for npos in v.nexts {
-                if npos != vertex.pos && !new_ray.is_on_left_side(npos) {
-                    if DBG {
-                        println!("Removed: {:?}-{:?}", v.pos, npos);
-                    }
-                    let was_present = tree.remove(&SweepingTreeSegment {
-                        segment: Segment {
-                            start: v.pos,
-                            end: npos,
-                        },
-                        ray: &ray,
-                    });
-                    debug_assert!(was_present);
-                }
-            }
-
-            // Sweep
-            ray.set(new_ray);
-
-            // Adds new segments coming from v
-            for npos in v.nexts {
-                // Don't add segments going to vertex
-                if npos == vertex.pos {
-                    visible = true;
-                } else if new_ray.is_on_left_side(npos) {
-                    if DBG {
-                        println!("Added: {:?}-{:?}", v.pos, npos);
-                    }
-                    let was_inserted = tree.insert(SweepingTreeSegment {
-                        segment: Segment {
-                            start: v.pos,
-                            end: npos,
-                        },
-                        ray: &ray,
-                    });
-                    debug_assert!(
-                        Angle::from_point(v.pos - vertex.pos).abs() < Angle::new(0.05)
-                            || was_inserted
-                    );
-                }
-            }
-
-            // Check if its an extremum of the nearest segment
-            if tree
-                .first()
-                .map_or(false, |s| s.segment.has_extremum(v.pos))
-            {
-                visible = true;
-            }
-
-            if visible {
-                if let Some((a1, a2)) = invisible_part {
-                    if Angle::from_point(v.pos - vertex.pos).is_between(a1, a2)
-                        && !vertex.nexts.contains(&v.pos)
-                    {
-                        continue;
-                    }
-                }
-                visibles.push(v.coords);
-            }
-            // tree.remove(&SweepingTreeSegment { segment: todo!(), ray: () });
         }
 
-        verteces.push(vertex);
-        visibles
-    };
+        // Check if its an extremum of the nearest segment
+        if tree
+            .first()
+            .map_or(false, |s| s.segment.has_extremum(v.pos))
+        {
+            visible = true;
+        }
+
+        if visible {
+            if let Some((a1, a2)) = invisible_part {
+                if Angle::from_point(v.pos - vertex.pos).is_between(a1, a2)
+                    && !vertex.nexts.contains(&v.pos)
+                {
+                    continue;
+                }
+            }
+            visibles.push(v.coords);
+        }
+        // tree.remove(&SweepingTreeSegment { segment: todo!(), ray: () });
+    }
+
+    verteces.push(vertex);
+    visibles
+}
+
+pub fn compute_vis_graph_fullmap(
+    obstacles: &[Polygon],
+    method: fn(&mut Vec<PolyVertex>, (usize, usize), &[Polygon]) -> Vec<(usize, usize)>,
+) -> MapGraph<(usize, usize)> {
+    let mut verteces = to_vertice_vec(obstacles);
+
+    let visibles_from = move |coords: (usize, usize)| (method)(&mut verteces, coords, obstacles);
     MapGraph::from_fn(coords_iterator(obstacles), visibles_from)
+}
+pub fn compute_vis_graph_cachemap<'a>(
+    obstacles: &'a [Polygon],
+    method: fn(&mut Vec<PolyVertex>, (usize, usize), &[Polygon]) -> Vec<(usize, usize)>,
+) -> CachedFuncGraph<impl FnMut((usize, usize)) -> Vec<(usize, usize)> + 'a, (usize, usize)> {
+    let mut verteces = to_vertice_vec(obstacles);
+
+    let visibles_from = move |coords: (usize, usize)| (method)(&mut verteces, coords, obstacles);
+    CachedFuncGraph::new(visibles_from)
 }
 
 #[test]

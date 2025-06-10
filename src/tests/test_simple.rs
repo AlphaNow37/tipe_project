@@ -1,7 +1,11 @@
 use crate::{
     geometry::{shapes::Polygon, VecN},
     graphs::Graph,
+<<<<<<< HEAD
     path_planning::visibility_graph::compute_vis_graph,
+=======
+    path_planning::visibility_graph::{compute_vis_graph_fullmap, vis_graph_opt1},
+>>>>>>> aed8dcc (Changed the interface of visibility graphs for more modularity. Added a cached function graph)
     svg::{self, graph::put_graph, object::Style},
 };
 
@@ -35,7 +39,7 @@ pub fn test_pretty_simple() {
     let mut obstacles = vec![p1, p2, p3];
     giggle_coords(&mut obstacles);
 
-    let vis = compute_vis_graph_naive(&obstacles);
+    let vis = compute_vis_graph_fullmap(&obstacles, vis_graph_opt1);
     put_graph(
         &mut svg,
         &vis,
@@ -68,7 +72,7 @@ pub fn test_very_simple() {
     let mut svg = svg::SvgGroup::default();
     let obstacles = vec![p1.clone(), p2.clone()];
 
-    let vis = compute_vis_graph(&obstacles);
+    let vis = compute_vis_graph_fullmap(&obstacles, vis_graph_opt1);
     put_graph(
         &mut svg,
         &vis,

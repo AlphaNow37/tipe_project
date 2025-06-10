@@ -3,7 +3,7 @@ use std::path::Path;
 use crate::{
     geometry::{angles::Angle, polygon_map_generator::gen_pol_map_square},
     graphs::Graph,
-    path_planning::visibility_graph::compute_vis_graph,
+    path_planning::visibility_graph::{compute_vis_graph_fullmap, vis_graph_opt1},
     svg::{self, graph::put_graph, object::Style},
     tests::giggle_coords,
 };
@@ -37,7 +37,7 @@ pub fn test_square_map() {
     let mut svg = svg::SvgGroup::default();
 
     println!("Computing the visibility graph");
-    let vis = compute_vis_graph(&obstacles2);
+    let vis = compute_vis_graph_fullmap(&obstacles2, vis_graph_opt1);
 
     println!("Writing the visibility graph");
     put_graph(

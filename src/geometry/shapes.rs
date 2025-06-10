@@ -36,22 +36,33 @@ impl<const N: usize> Cube<N> {
 /// Invariant: Garanteed to be counter-clockwize and not self-crossing
 #[derive(Default, Clone, Debug)]
 pub struct Polygon(pub Vec<VecN<2, f64>>);
+
+pub fn are_counter_clockwise(pts: &[VecN<2, f64>]) -> bool {
+    let n = pts.len();
+    if n > 2 {
+        let min_i = (0..n).min_by_key(|i| NotNanF64::new(pts[*i][1])).unwrap();
+
+        let p = pts[min_i.add_rem(0, n)];
+        let next_p = pts[min_i.add_rem(1, n)];
+        let last_p = pts[min_i.add_rem(-1, n)];
+        let angle = Angle::from_points(last_p, p, next_p);
+
+        *angle < PI
+    } else {
+        false
+    }
+}
+
 impl Polygon {
     // Suppose qu'aucun point n'est aligné sur l'axe y, et qu'il ne se croise pas
     pub fn new(mut pts: Vec<VecN<2, f64>>) -> Self {
-        let n = pts.len();
-        if n > 2 {
-            let min_i = (0..n).min_by_key(|i| NotNanF64::new(pts[*i][1])).unwrap();
-
-            let p = pts[min_i.add_rem(0, n)];
-            let next_p = pts[min_i.add_rem(1, n)];
-            let last_p = pts[min_i.add_rem(-1, n)];
-            let angle = Angle::from_points(last_p, p, next_p);
-
-            if *angle < PI {
-                pts.reverse();
-            }
+        if !are_counter_clockwise(&pts) {
+            pts.reverse();
         }
+        Self(pts)
+    }
+    pub unsafe fn new_unchecked(pts: Vec<VecN<2, f64>>) -> Self {
+        debug_assert!(are_counter_clockwise(&pts));
         Self(pts)
     }
     pub fn len(&self) -> usize {

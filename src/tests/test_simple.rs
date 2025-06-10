@@ -10,34 +10,34 @@ use crate::{
 use super::{giggle_coords, OUT};
 
 pub fn test_pretty_simple() {
-    let p1 = Polygon(vec![
+    let p1 = Polygon::new(vec![
         VecN([0., 0.]),
         VecN([1., 1.]),
         VecN([3., -1.5]),
-        VecN([4., -2.]),
+        VecN([5.9, -4.]),
         VecN([-0.75, -1.9]),
         VecN([-0.5, 0.7]),
     ]);
-    let p2 = Polygon(vec![
+    let p2 = Polygon::new(vec![
         VecN([0., 0.3]),
-        VecN([1., 2.]),
-        VecN([4., 0.]),
-        VecN([3.5, 2.]),
-        VecN([0.2, 2.5]),
+        VecN([1., 1.3]),
+        VecN([8., 0.]),
+        VecN([6.5, 2.]),
+        VecN([-2.2, 2.5]),
     ]);
-    let p3 = Polygon(vec![
+    let p3 = Polygon::new(vec![
         VecN([-1., 0.]),
         VecN([-1.5, -2.]),
         VecN([0.5, -3.]),
-        VecN([0.7, -5.]),
-        VecN([-4., -2.]),
+        VecN([-4.2, -5.]),
+        VecN([-7., -2.]),
     ]);
 
     let mut svg = svg::SvgGroup::default();
     let mut obstacles = vec![p1, p2, p3];
     giggle_coords(&mut obstacles);
 
-    let vis = compute_vis_graph(&obstacles);
+    let vis = compute_vis_graph_naive(&obstacles);
     put_graph(
         &mut svg,
         &vis,
@@ -46,11 +46,11 @@ pub fn test_pretty_simple() {
         Style::stroke("white", 0.01),
     );
 
-    for (p, col) in obstacles.iter().zip(["#550000", "#005500", "#000055"]) {
+    for (p, col) in obstacles.iter().zip(["#FF4444", "#44FF44", "#4444FF"]) {
         svg.push(p.clone(), 0., Style::fill(col));
     }
 
-    if let Some((path, _)) = vis.a_star_with((1, 1), (2, 3), |(i, j)| obstacles[i].0[j]) {
+    if let Some((path, _)) = vis.a_star_with((1, 2), (2, 3), |(i, j)| obstacles[i].0[j]) {
         svg.push(
             path.iter()
                 .map(|(i, j)| obstacles[*i].0[*j])
@@ -64,8 +64,8 @@ pub fn test_pretty_simple() {
 }
 
 pub fn test_very_simple() {
-    let p1 = Polygon(vec![VecN([0., 0.]), VecN([1., 0.2]), VecN([0.5, 1.])]);
-    let p2 = Polygon(vec![VecN([2., 3.]), VecN([3.1, 1.1]), VecN([2.5, 5.9])]);
+    let p1 = Polygon::new(vec![VecN([0., 0.]), VecN([1., 0.2]), VecN([0.5, 1.])]);
+    let p2 = Polygon::new(vec![VecN([2., 3.]), VecN([3.1, 1.1]), VecN([2.5, 5.9])]);
 
     let mut svg = svg::SvgGroup::default();
     let obstacles = vec![p1.clone(), p2.clone()];

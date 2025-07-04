@@ -1,4 +1,6 @@
 use rand::{rng, Rng};
+use std::env::current_dir;
+use std::path::PathBuf;
 
 use crate::geometry::shapes::Polygon;
 
@@ -7,7 +9,12 @@ mod test_graph;
 mod test_perfs;
 mod test_simple;
 
-pub const OUT: &str = "/home/alpha_now/Desktop/progs/tipe_project/out";
+pub fn out_dir() -> PathBuf {
+    let here = current_dir()
+        .expect("Expected a working directory")
+        .join("out");
+    here
+}
 
 const GIGGLE_INTENSITY: f64 = 0.001;
 

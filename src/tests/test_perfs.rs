@@ -6,7 +6,7 @@ use crate::{
     utils::benchmark::{time_bench, Benchmark},
 };
 
-use super::{giggle_coords, OUT};
+use super::{giggle_coords, out_dir};
 
 struct Param {
     polys: Vec<Polygon>,
@@ -38,6 +38,6 @@ pub fn test_perf() {
     }
 
     benchmark
-        .write_to_file(&(Path::new(OUT)).join("perf_benchmark.json"))
+        .write_to_file(&out_dir().join("perf_benchmark.json"))
         .unwrap();
 }

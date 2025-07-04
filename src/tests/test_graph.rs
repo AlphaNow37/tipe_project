@@ -1,12 +1,10 @@
-use std::path::Path;
-
 use crate::{
     geometry::VecN,
     graphs::LinkGraph,
     svg::{self, graph::put_graph, object::Style},
 };
 
-use super::OUT;
+use super::out_dir;
 
 pub fn test_graph() {
     let mut g = LinkGraph::default();
@@ -39,5 +37,5 @@ pub fn test_graph() {
 
     let mut svg = svg::SvgGroup::default();
     put_graph(&mut svg, &g, |i| poss[i], 0., Style::stroke("red", 0.1));
-    svg.write_to_file(&(Path::new(OUT)).join("test_graph.svg"));
+    svg.write_to_file(&out_dir().join("test_graph.svg"));
 }

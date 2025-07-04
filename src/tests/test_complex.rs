@@ -8,8 +8,7 @@ use crate::{
     tests::giggle_coords,
 };
 use rand::{distr::Distribution, rng, Rng};
-
-use super::OUT;
+use crate::tests::out_dir;
 
 pub fn test_square_map() {
     let mut rng = rng();
@@ -79,5 +78,5 @@ pub fn test_square_map() {
     }
 
     println!("Saving file");
-    svg.write_to_file(&(Path::new(OUT)).join("test_square_map.svg"));
+    svg.write_to_file(&out_dir().join("test_square_map.svg"));
 }

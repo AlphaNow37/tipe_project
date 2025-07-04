@@ -1,13 +1,11 @@
-use std::path::Path;
-
 use crate::{
     geometry::{shapes::Polygon, VecN},
     graphs::Graph,
-    path_planning::visibility_graph::{compute_vis_graph, compute_vis_graph_naive},
+    path_planning::visibility_graph::compute_vis_graph,
     svg::{self, graph::put_graph, object::Style},
 };
 
-use super::{giggle_coords, OUT};
+use super::{giggle_coords, out_dir};
 
 pub fn test_pretty_simple() {
     let p1 = Polygon(vec![
@@ -60,7 +58,7 @@ pub fn test_pretty_simple() {
         );
     }
 
-    svg.write_to_file(&(Path::new(OUT)).join("test_p_simple.svg"));
+    svg.write_to_file(&out_dir().join("test_p_simple.svg"));
 }
 
 pub fn test_very_simple() {
@@ -81,5 +79,5 @@ pub fn test_very_simple() {
     svg.push(p1, 0., Style::fill("#550000"));
     svg.push(p2, 0., Style::fill("#005500"));
 
-    svg.write_to_file(&(Path::new(OUT)).join("test_v_simple.svg"));
+    svg.write_to_file(&out_dir().join("test_v_simple.svg"));
 }

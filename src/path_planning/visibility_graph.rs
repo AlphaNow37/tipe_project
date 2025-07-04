@@ -12,16 +12,8 @@ use crate::utils::numbers::UsizeExt;
 
 /// An intermediate representation of a vertex
 #[derive(Clone, Copy, Debug)]
-<<<<<<< HEAD
-struct PolyVertex {
-    // Position on the place
-=======
 pub struct PolyVertex {
-<<<<<<< HEAD
->>>>>>> aed8dcc (Changed the interface of visibility graphs for more modularity. Added a cached function graph)
-=======
     // Position on the place
->>>>>>> cdf7a4c (Adding documentation)
     pos: VecN<2, f64>,
     // Neighbors
     // L'interieur du polygone est entre les deux voisins
@@ -133,14 +125,10 @@ fn coords_iterator<'a>(obstacles: &'a [Polygon]) -> impl Iterator<Item = (usize,
         .flat_map(|(i, poly)| (0..poly.len()).map(move |j| (i, j)))
 }
 
-<<<<<<< HEAD
 /// Computes the neighbors of a vertex using the naive method
 /// For each other vertex:
 ///     If no segment crosses the line:
 ///         Add it to the neighbors list
-pub fn compute_vis_graph_naive(obstacles: &[Polygon]) -> MapGraph<(usize, usize)> {
-    let mut verteces = to_vertice_vec(obstacles);
-=======
 pub fn vis_graph_naive(
     verteces: &mut Vec<PolyVertex>,
     coords: (usize, usize),
@@ -151,7 +139,6 @@ pub fn vis_graph_naive(
         .position(|v| v.coords == coords)
         .expect("Invalid coords");
     let vertex = verteces.swap_remove(vertex_i);
->>>>>>> aed8dcc (Changed the interface of visibility graphs for more modularity. Added a cached function graph)
 
     let invisible_part = if vertex.nexts[0] == vertex.pos {
         None

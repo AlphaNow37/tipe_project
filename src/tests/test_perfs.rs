@@ -84,14 +84,11 @@ pub fn test_perf() {
             end: (end_i, end_j),
         });
         benchmark
-            .write_to_file(&(Path::new(OUT)).join("perf_benchmark.json"))
+            .write_to_file(&out_dir().join("perf_benchmark.json"))
             .unwrap();
     }
-<<<<<<< HEAD
 
     benchmark
         .write_to_file(&out_dir().join("perf_benchmark.json"))
         .unwrap();
-=======
->>>>>>> aed8dcc (Changed the interface of visibility graphs for more modularity. Added a cached function graph)
 }

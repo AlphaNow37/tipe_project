@@ -1,11 +1,7 @@
 use crate::{
     geometry::{shapes::Polygon, VecN},
     graphs::Graph,
-<<<<<<< HEAD
-    path_planning::visibility_graph::compute_vis_graph,
-=======
     path_planning::visibility_graph::{compute_vis_graph_fullmap, vis_graph_opt1},
->>>>>>> aed8dcc (Changed the interface of visibility graphs for more modularity. Added a cached function graph)
     svg::{self, graph::put_graph, object::Style},
 };
 

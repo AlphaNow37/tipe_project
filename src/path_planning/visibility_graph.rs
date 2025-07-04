@@ -1,5 +1,4 @@
 /// This one file uses visibility graphs
-/// This one file uses visibility graphs
 use std::cell::Cell;
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
@@ -12,21 +11,17 @@ use crate::geometry::{shapes::Polygon, VecN};
 use crate::utils::numbers::UsizeExt;
 
 /// An intermediate representation of a vertex
-/// An intermediate representation of a vertex
 #[derive(Clone, Copy, Debug)]
 pub struct PolyVertex {
     // Position on the place
     pos: VecN<2, f64>,
     // Neighbors
-    // Neighbors
     // L'interieur du polygone est entre les deux voisins
     nexts: [VecN<2, f64>; 2],
-    // Index of the polygon/Index inside the polygon
     // Index of the polygon/Index inside the polygon
     coords: (usize, usize),
 }
 
-/// A segment inside the balanced tree used by the sweeping line algorithm
 /// A segment inside the balanced tree used by the sweeping line algorithm
 #[derive(Clone, Copy)]
 struct SweepingTreeSegment<'a> {
@@ -34,13 +29,10 @@ struct SweepingTreeSegment<'a> {
     ray: &'a Cell<Ray<2>>,
 }
 // Compute which one of self and other is closer to the origin of the ray
-// Compute which one of self and other is closer to the origin of the ray
 impl<'a> Ord for SweepingTreeSegment<'a> {
-    fn cmp(&self, other: &Self) -> Ordering {
     fn cmp(&self, other: &Self) -> Ordering {
         let mut other_seg = other.segment;
         let mut self_seg = self.segment;
-        // Normalise the inputs
         // Normalise the inputs
         if self_seg.start == other_seg.end {
             other_seg = other_seg.reverse();
@@ -52,9 +44,7 @@ impl<'a> Ord for SweepingTreeSegment<'a> {
         }
         let ray = self.ray.get();
         // Special case: the ray and the two segments intersects at a single point
-        // Special case: the ray and the two segments intersects at a single point
         if self_seg.start == other_seg.start && other_seg.start == ray.end {
-            // We can suppose they are both on the same side
             // We can suppose they are both on the same side
             if ray.is_on_left_side(self_seg.end) {
                 debug_assert!(
@@ -63,9 +53,7 @@ impl<'a> Ord for SweepingTreeSegment<'a> {
                 );
                 if self_seg.to_ray().is_on_left_side(other_seg.end) {
                     Ordering::Greater
-                    Ordering::Greater
                 } else {
-                    Ordering::Less
                     Ordering::Less
                 }
             } else {
@@ -75,14 +63,11 @@ impl<'a> Ord for SweepingTreeSegment<'a> {
                 );
                 if self_seg.to_ray().is_on_left_side(other_seg.end) {
                     Ordering::Less
-                    Ordering::Less
                 } else {
-                    Ordering::Greater
                     Ordering::Greater
                 }
             }
         } else {
-            // Find the closest one
             // Find the closest one
             let t1 = self_seg
                 .to_line()
@@ -114,7 +99,6 @@ impl<'a> PartialEq for SweepingTreeSegment<'a> {
 impl<'a> Eq for SweepingTreeSegment<'a> {}
 
 /// Computes the intermediate representation
-/// Computes the intermediate representation
 fn to_vertice_vec(obstacles: &[Polygon]) -> Vec<PolyVertex> {
     obstacles
         .iter()
@@ -132,8 +116,6 @@ fn to_vertice_vec(obstacles: &[Polygon]) -> Vec<PolyVertex> {
         })
         .collect()
 }
-
-/// Returns an iterator of all coords
 
 /// Returns an iterator of all coords
 fn coords_iterator<'a>(obstacles: &'a [Polygon]) -> impl Iterator<Item = (usize, usize)> + 'a {

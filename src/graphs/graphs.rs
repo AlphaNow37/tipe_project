@@ -6,6 +6,7 @@ use crate::utils::numbers::NotNanF64;
 use crate::utils::traits::Weight;
 use crate::{datastructures::priority_queue::PriorityQueue, utils::traits::NormedSpace};
 
+/// A graph interface
 pub trait Graph<Vertex> {
     fn neighbors(&self, vertex: Vertex) -> impl Iterator<Item = Vertex>;
     fn dijkstra_with<W: Weight>(
@@ -81,10 +82,12 @@ pub trait Graph<Vertex> {
     }
 }
 
+/// A graph where the collection of vertex is known
 pub trait IterableGraph<V>: Graph<V> {
     fn iter(&self) -> impl Iterator<Item = V>;
 }
 
+/// A graph represented using adjacency lists, and vertices are integers
 #[derive(Default, Clone, Debug)]
 pub struct LinkGraph {
     nexts: Vec<Vec<usize>>,
@@ -134,6 +137,7 @@ impl IterableGraph<usize> for LinkGraph {
     }
 }
 
+/// A graph represented using adjacency lists, stored in a hashmap
 #[derive(Default, Clone, Debug)]
 pub struct MapGraph<V> {
     nexts: HashMap<V, Vec<V>>,
@@ -176,39 +180,4 @@ impl<V: Clone + Eq + Hash> IterableGraph<V> for MapGraph<V> {
     fn iter(&self) -> impl Iterator<Item = V> {
         self.nexts.keys().cloned()
     }
-}
-
-#[test]
-fn test_dijkstra() {
-    use crate::geometry::VecN;
-
-    let mut g = LinkGraph::default();
-    for (start, end) in [
-        (0, 1),
-        (0, 2),
-        (2, 4),
-        (3, 7),
-        (4, 5),
-        (4, 0),
-        (4, 1),
-        (4, 2),
-        (5, 3),
-        (7, 0),
-        (7, 5),
-    ] {
-        g.add_link(start, end);
-    }
-
-    let poss = [
-        VecN([0., 0.]),
-        VecN([1., 3.]),
-        VecN([4., 0.]),
-        VecN([6., 2.]),
-        VecN([5., 5.]),
-        VecN([9., 5.]),
-        VecN([1., 1.]),
-        VecN([7., -3.]),
-    ];
-
-    dbg!(g.a_star_with(0, 5, |i| poss[i]));
 }

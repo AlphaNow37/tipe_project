@@ -10,6 +10,7 @@ fn parent(i: usize) -> usize {
     (i - 1) / 2
 }
 
+/// Min-heap
 /// Low priority come first
 pub struct PriorityQueue<W: Weight, T> {
     heap: Vec<(W, T)>,

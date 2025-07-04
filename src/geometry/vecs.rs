@@ -6,6 +6,7 @@ use std::{
 
 use crate::utils::numbers::{Zero, F64_EPSILON};
 
+/// N-dimensions point/vector
 #[derive(Clone, Copy, Eq, PartialEq, PartialOrd)]
 pub struct VecN<const N: usize, T>(pub [T; N]);
 

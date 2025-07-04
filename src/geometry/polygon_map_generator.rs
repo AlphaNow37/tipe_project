@@ -1,9 +1,13 @@
-
+/// Generate random, valid maps
 use crate::{datastructures::union_find::UnionFind, geometry::shapes::Segment, utils::numbers::UsizeExt};
 
 use super::{shapes::Polygon, VecN};
 use rand::{rng, seq::SliceRandom, Rng};
 
+/// Algorithm:
+/// - Generate a lot of verteces
+/// - Randomly changes their connections until the map is valid
+/// Don't really works :( (and is really slow)
 pub fn gen_pol_map_luck(n: usize, map_size: f64) -> Vec<Polygon> {
     assert!(n >= 3);
 
@@ -65,15 +69,22 @@ pub fn gen_pol_map_luck(n: usize, map_size: f64) -> Vec<Polygon> {
     polygons
 }
 
+
 #[derive(Default)]
 struct GridVertex {
-    has_neigh: [bool; 4],  // T, R, B, L
+    has_neigh: [bool; 4],  // Top, Right, Bottom, Left
     verteces: [VecN<2, f64>; 4],  // TL, TR, BR, BL
-    seen_times: usize,
+    seen_times: usize,  // How many times this vertex has been seen on the final step (debugging)
 }
 
 const OFFSETS: [(isize, isize); 4] = [(0, -1), (1, 0), (0, 1), (-1, 0)];
 
+/// Algorithm:
+/// - Generate a square grid of Gridvertex, of size map_size
+///   Each vertex consists of four points (one in each corner) and may have connections to his neighbors
+/// - Generate random classes, by trying to merge nmerge times
+/// - Builds a polygon for each class, and generate the map
+/// This is the currently used algorithm, but it looks unnatural (too many squares)
 pub fn gen_pol_map_square(width: usize, map_size: f64, nmerges: usize) -> Vec<Polygon> {
     let mut rng = rng();
 
@@ -135,10 +146,10 @@ pub fn gen_pol_map_square(width: usize, map_size: f64, nmerges: usize) -> Vec<Po
         let new_x = (x as isize + offx) as usize;
         let new_y = (y as isize + offy) as usize;
         let new_i = new_y * width + new_x;
-        if groups.connexe(i, new_i) {
+        if groups.are_in_same_class(i, new_i) {
             continue;
         }
-        groups.merge(i, new_i);
+        groups.union(i, new_i);
         grid[y][x].has_neigh[ni] = true;
         assert!(!grid[new_y][new_x].has_neigh[(ni+2)%4]);
         grid[new_y][new_x].has_neigh[(ni+2)%4] = true;
@@ -148,7 +159,7 @@ pub fn gen_pol_map_square(width: usize, map_size: f64, nmerges: usize) -> Vec<Po
     for y in 0..width {
         for x in 0..width {
             if grid[y][x].seen_times != 0 {
-                assert!(grid[y][x].seen_times == 4);
+                assert_eq!(grid[y][x].seen_times, 4);
                 continue;
             }
             let mut pts = Vec::new();

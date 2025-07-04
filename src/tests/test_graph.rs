@@ -1,3 +1,5 @@
+/// A very simple test for svg
+
 use crate::{
     geometry::VecN,
     graphs::LinkGraph,

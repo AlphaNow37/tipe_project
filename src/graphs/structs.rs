@@ -3,6 +3,8 @@ use std::collections::HashMap;
 use std::hash::Hash;
 use std::sync::Mutex;
 
+
+/// A graph using integers as vertices and an adjacency list
 #[derive(Default, Clone, Debug)]
 pub struct LinkGraph {
     nexts: Vec<Vec<usize>>,
@@ -52,6 +54,7 @@ impl IterableGraph<usize> for LinkGraph {
     }
 }
 
+/// A graph using an adjacency list stored in a hashmap
 #[derive(Clone, Debug)]
 pub struct MapGraph<V> {
     nexts: HashMap<V, Vec<V>>,
@@ -103,6 +106,7 @@ impl<V> Default for MapGraph<V> {
     }
 }
 
+/// A graph based on a function vertex->neighbors
 #[derive(Default, Clone, Debug)]
 pub struct FuncGraph<F> {
     nexts: F,
@@ -118,6 +122,8 @@ impl<V: Hash + Eq + Copy, F: Fn(V) -> I, I: IntoIterator<Item = V>> Graph<V> for
     }
 }
 
+
+/// A graph based on a function, but with a cache
 #[derive(Default, Debug)]
 pub struct CachedFuncGraph<F, V> {
     cache_nexts: Mutex<(HashMap<V, Vec<V>>, F)>,

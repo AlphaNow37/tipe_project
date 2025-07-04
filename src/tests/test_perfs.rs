@@ -1,5 +1,4 @@
-use std::path::Path;
-
+/// A benchmark for performances
 use rand::{distr::Distribution, Rng};
 
 use crate::{

@@ -1,7 +1,7 @@
-use std::path::Path;
+/// Generates a large map and test the algorithms
 
 use crate::{
-    geometry::{angles::Angle, polygon_map_generator::gen_pol_map_square},
+    geometry::{ polygon_map_generator::gen_pol_map_square},
     graphs::Graph,
     path_planning::visibility_graph::{compute_vis_graph_fullmap, vis_graph_opt1},
     svg::{self, graph::put_graph, object::Style},

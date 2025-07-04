@@ -1,3 +1,6 @@
+/// A benchmarking tool
+/// I export everything into a json and open it in python
+
 use std::{collections::HashMap, io::Write, path::Path, time::Instant};
 
 pub trait ToJson {

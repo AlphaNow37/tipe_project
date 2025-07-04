@@ -1,3 +1,5 @@
+/// This directory focuses on writing on svg files to visualize things
+
 use std::{io::Write, path::Path};
 
 use object::{Style, SvgObject};

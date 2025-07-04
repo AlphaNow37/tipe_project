@@ -6,6 +6,8 @@ use super::macros::make_trait_alias;
 
 make_trait_alias!(Weight = [Sized + Zero + Add<Output=Self> + Ord + Copy] {});
 
+/// TODO change for just distance
+/// Used by heuristics such as A star
 pub trait NormedSpace: Sized + Add<Output = Self> + Sub<Output = Self> + Copy {
     fn length(self) -> f64;
     fn distance(self, other: Self) -> f64 {

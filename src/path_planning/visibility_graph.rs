@@ -134,12 +134,15 @@ pub fn vis_graph_naive(
     coords: (usize, usize),
     _obstacles: &[Polygon],
 ) -> Vec<(usize, usize)> {
+
+    // Finds the vertex, removes it quickly
     let vertex_i = verteces
         .iter()
         .position(|v| v.coords == coords)
         .expect("Invalid coords");
     let vertex = verteces.swap_remove(vertex_i);
 
+    // This arc is not visible
     let invisible_part = if vertex.nexts[0] == vertex.pos {
         None
     } else {
@@ -149,6 +152,7 @@ pub fn vis_graph_naive(
         ))
     };
 
+    // Finds the visible vertices
     let mut visibles = Vec::new();
     'a: for &v in verteces.iter() {
         if let Some((a1, a2)) = invisible_part {
@@ -187,6 +191,10 @@ pub fn vis_graph_naive(
 
 const DBG: bool = false;
 
+/// Optimised method
+/// Uses a ray sweep algorithm: a ray based on the current vertex rotates
+/// We create a balanced tree containing all segments crossed by the ray
+/// (See: computational geometry book)
 pub fn vis_graph_opt1(
     verteces: &mut Vec<PolyVertex>,
     coords: (usize, usize),
@@ -254,7 +262,7 @@ pub fn vis_graph_opt1(
 
         let mut visible = false;
 
-        // Check if its an extremum of the nearest segment
+        // Check if it's an extremum of the nearest segment
         if tree
             .first()
             .map_or(false, |s| s.segment.has_extremum(v.pos))
@@ -333,6 +341,7 @@ pub fn vis_graph_opt1(
     visibles
 }
 
+/// Compute the whole graph using the specified method (one of the functions above)
 pub fn compute_vis_graph_fullmap(
     obstacles: &[Polygon],
     method: fn(&mut Vec<PolyVertex>, (usize, usize), &[Polygon]) -> Vec<(usize, usize)>,
@@ -342,6 +351,8 @@ pub fn compute_vis_graph_fullmap(
     let visibles_from = move |coords: (usize, usize)| (method)(&mut verteces, coords, obstacles);
     MapGraph::from_fn(coords_iterator(obstacles), visibles_from)
 }
+
+/// Compute the graph into a cached graph, to reduce the overhead, using the specified method (one of the functions above)
 pub fn compute_vis_graph_cachemap<'a>(
     obstacles: &'a [Polygon],
     method: fn(&mut Vec<PolyVertex>, (usize, usize), &[Polygon]) -> Vec<(usize, usize)>,

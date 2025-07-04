@@ -1,3 +1,4 @@
+/// hardcoded, simple tests for debugging purposes
 use crate::{
     geometry::{shapes::Polygon, VecN},
     graphs::Graph,

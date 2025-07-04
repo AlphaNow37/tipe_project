@@ -4,6 +4,7 @@ use crate::{
     geometry::{shapes::Segment, VecN}, graphs::IterableGraph, svg::{object::Style, SvgGroup}
 };
 
+/// Draw a graph on the file
 pub fn put_graph<V: Hash + Eq + Copy, G: IterableGraph<V>>(
     svg: &mut SvgGroup,
     graph: &G,

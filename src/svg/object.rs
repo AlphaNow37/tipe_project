@@ -1,3 +1,5 @@
+/// Implement the protocol for drawing various objects
+
 use std::{fmt::Display, io::Write};
 
 use crate::geometry::{

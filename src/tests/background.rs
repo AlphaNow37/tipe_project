@@ -1,3 +1,6 @@
+/// Used to generate dynamic backgrounds on my computer
+///
+
 use std::path::Path;
 
 use crate::{

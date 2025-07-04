@@ -1,7 +1,8 @@
 use std::hash::Hash;
 use std::ops::{Add, Deref, Mul, Sub};
 
-/// A Non-NaN, hashable float
+/// A Non-NaN float (64 bits)
+/// Can be hashed (there is no NaN)
 #[derive(Default, Debug, PartialEq, PartialOrd, Clone, Copy)]
 pub struct NotNanF64(f64);
 impl NotNanF64 {
@@ -50,11 +51,13 @@ impl Mul for NotNanF64 {
     }
 }
 
+/// small enough
 pub const F64_EPSILON: f64 = 0.0000001;
 pub fn f64_approx_zero(f: f64) -> bool {
     f.abs() < F64_EPSILON
 }
 
+/// To get the zero of a generic number
 pub trait Zero {
     const ZERO: Self;
 }
@@ -68,6 +71,7 @@ impl Zero for NotNanF64 {
     const ZERO: Self = Self::new(0.);
 }
 
+/// Utility for modular arithmetic
 pub trait UsizeExt {
     fn add_rem(self, other: isize, rem: usize) -> usize;
 }

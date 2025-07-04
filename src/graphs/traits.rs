@@ -85,6 +85,7 @@ pub trait Graph<Vertex> {
 pub trait IterableGraph<V>: Graph<V> {
     fn iter(&self) -> impl Iterator<Item = V>;
 }
+<<<<<<< HEAD
 
 <<<<<<< HEAD
 <<<<<<< HEAD:src/graphs/graphs.rs
@@ -227,3 +228,5 @@ fn test_dijkstra() {
     dbg!(g.a_star_with(0, 5, |i| poss[i]));
 >>>>>>> c9b1c2c (updated graph folder structure):src/graphs/traits.rs
 }
+=======
+>>>>>>> a59a8b2 (resolving conflicts)

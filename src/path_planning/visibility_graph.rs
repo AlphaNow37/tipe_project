@@ -17,7 +17,11 @@ struct PolyVertex {
     // Position on the place
 =======
 pub struct PolyVertex {
+<<<<<<< HEAD
 >>>>>>> aed8dcc (Changed the interface of visibility graphs for more modularity. Added a cached function graph)
+=======
+    // Position on the place
+>>>>>>> cdf7a4c (Adding documentation)
     pos: VecN<2, f64>,
     // Neighbors
     // L'interieur du polygone est entre les deux voisins

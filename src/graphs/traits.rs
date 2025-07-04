@@ -86,8 +86,11 @@ pub trait IterableGraph<V>: Graph<V> {
     fn iter(&self) -> impl Iterator<Item = V>;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD:src/graphs/graphs.rs
 /// A graph represented using adjacency lists, and vertices are integers
+=======
+>>>>>>> cdf7a4c (Adding documentation)
 #[derive(Default, Clone, Debug)]
 pub struct LinkGraph {
     nexts: Vec<Vec<usize>>,
@@ -137,7 +140,10 @@ impl IterableGraph<usize> for LinkGraph {
     }
 }
 
+<<<<<<< HEAD
 /// A graph represented using adjacency lists, stored in a hashmap
+=======
+>>>>>>> cdf7a4c (Adding documentation)
 #[derive(Default, Clone, Debug)]
 pub struct MapGraph<V> {
     nexts: HashMap<V, Vec<V>>,
@@ -180,10 +186,14 @@ impl<V: Clone + Eq + Hash> IterableGraph<V> for MapGraph<V> {
     fn iter(&self) -> impl Iterator<Item = V> {
         self.nexts.keys().cloned()
     }
+<<<<<<< HEAD
 =======
+=======
+}
+
+>>>>>>> cdf7a4c (Adding documentation)
 #[test]
 fn test_dijkstra() {
-    use crate::graphs::LinkGraph;
     use crate::geometry::VecN;
 
     let mut g = LinkGraph::default();

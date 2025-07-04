@@ -1,3 +1,4 @@
+/// Un union-find impératif
 pub struct UnionFind {
     parent_height: Vec<(usize, usize)>,
 }
@@ -7,18 +8,18 @@ impl UnionFind {
             parent_height: (0..size).map(|i| (i, 0)).collect(),
         }
     }
-    pub fn find_parent(&mut self, i: usize) -> usize {
+    pub fn find(&mut self, i: usize) -> usize {
         let j = self.parent_height[i].0;
         if i == j {
             return i;
         }
-        let parent = self.find_parent(j);
+        let parent = self.find(j);
         self.parent_height[i].0 = parent;
         parent
     }
-    pub fn merge(&mut self, a: usize, b: usize) {
-        let p = self.find_parent(a);
-        let q = self.find_parent(b);
+    pub fn union(&mut self, a: usize, b: usize) {
+        let p = self.find(a);
+        let q = self.find(b);
         if self.parent_height[p].1 > self.parent_height[q].1 {
             self.parent_height[q].0 = p;
         } else {
@@ -26,7 +27,7 @@ impl UnionFind {
             self.parent_height[q].1 = self.parent_height[q].1.max(self.parent_height[p].1 + 1);
         }
     }
-    pub fn connexe(&mut self, a: usize, b: usize) -> bool {
-        self.find_parent(a) == self.find_parent(b)
+    pub fn are_in_same_class(&mut self, a: usize, b: usize) -> bool {
+        self.find(a) == self.find(b)
     }
 }

@@ -7,7 +7,8 @@ use crate::utils::numbers::{NotNanF64, Zero};
 
 use super::VecN;
 
-/// Angle dans le sens trigo, dans [0; 2pi[
+/// Angle dans le sens trigo
+/// Invariant: est dans [0; 2pi[
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Angle(pub NotNanF64);
 
@@ -41,7 +42,7 @@ impl Angle {
         }
     }
     /// iter_to(10°, 90°, 50°) = (10°, 50°, 90°)
-    /// Returns an iterator from self to dest included,
+    /// Returns an iterator from self to dest included
     pub fn iter_to(self, dest: Self, max_resolution: Self) -> impl Iterator<Item = Self> {
         let delta = dest - self;
         let n = (*delta.0 / *max_resolution.0).ceil();

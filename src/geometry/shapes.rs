@@ -1,3 +1,4 @@
+/// A bunch of geometrical shapes
 use crate::utils::numbers::{NotNanF64, UsizeExt, F64_EPSILON};
 use std::f64::consts::PI;
 
@@ -5,6 +6,7 @@ use crate::geometry::angles::Angle;
 
 use super::VecN;
 
+/// N-dimensions cube
 #[derive(Default, Clone, Copy, Debug, PartialEq)]
 pub struct Cube<const N: usize> {
     pub start: VecN<N, f64>,
@@ -113,6 +115,7 @@ impl Polygon {
     }
 }
 
+/// An N-dimensions infinite line
 #[derive(Default, Clone, Copy, Debug, PartialEq)]
 pub struct InfiniteLine<const N: usize> {
     pub start: VecN<N, f64>,
@@ -141,6 +144,7 @@ impl InfiniteLine<2> {
     }
 }
 
+/// A N-dimensions segment
 #[derive(Default, Clone, Copy, Debug, PartialEq)]
 pub struct Segment<const N: usize> {
     pub start: VecN<N, f64>,
@@ -185,6 +189,7 @@ impl Segment<2> {
     }
 }
 
+/// A N-dimensions ray (infinite only in one direction)
 #[derive(Default, Clone, Copy, Debug, PartialEq)]
 pub struct Ray<const N: usize> {
     pub start: VecN<N, f64>,

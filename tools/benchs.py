@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import json
 from math import log
 
-with open("out/perf_benchmark.json") as f:
+with open("out/perf_benchmark copy.json") as f:
     datas = json.load(f)
 
 entries = datas["entries"]

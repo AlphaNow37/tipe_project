@@ -2,6 +2,7 @@
 use std::cell::Cell;
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
+use std::hint::black_box;
 
 use crate::geometry::angles::Angle;
 use crate::geometry::shapes::{Ray, Segment};
@@ -33,7 +34,6 @@ impl<'a> Ord for SweepingTreeSegment<'a> {
     fn cmp(&self, other: &Self) -> Ordering {
         let mut other_seg = other.segment;
         let mut self_seg = self.segment;
-        // Normalise the inputs
         if self_seg.start == other_seg.end {
             other_seg = other_seg.reverse();
         } else if other_seg.start == self_seg.end {
@@ -189,7 +189,7 @@ pub fn vis_graph_naive(
     visibles
 }
 
-const DBG: bool = false;
+const DBG: bool = black_box(false);
 
 /// Optimised method
 /// Uses a ray sweep algorithm: a ray based on the current vertex rotates
@@ -316,7 +316,7 @@ pub fn vis_graph_opt1(
             }
         }
 
-        // Check if its an extremum of the nearest segment
+        // Check if it's an extremum of the nearest segment
         if tree
             .first()
             .map_or(false, |s| s.segment.has_extremum(v.pos))

@@ -3,6 +3,7 @@ use crate::{datastructures::union_find::UnionFind, geometry::shapes::Segment, ut
 
 use super::{shapes::Polygon, VecN};
 use rand::{rng, seq::SliceRandom, Rng};
+use crate::geometry::shapes::are_counter_clockwise;
 
 /// Algorithm:
 /// - Generate a lot of verteces
@@ -186,5 +187,11 @@ pub fn gen_pol_map_square(width: usize, map_size: f64, nmerges: usize) -> Vec<Po
             polygons.push(Polygon::new(pts));
         }
     }
+
+    debug_assert!(
+        polygons.iter()
+            .all(|p| are_counter_clockwise(&p.0))
+    );
+
     polygons
 }

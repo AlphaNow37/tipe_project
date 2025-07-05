@@ -25,7 +25,8 @@ pub fn test_square_map() {
     println!("Computing margins");
     let mut obstacles2 = obstacles
         .iter()
-        .map(|p| p.add_rough_margin(1.0))
+        .cloned()
+        // .map(|p| p.add_rough_margin(0.5))
         .collect::<Vec<_>>();
 
     println!("Giggling");

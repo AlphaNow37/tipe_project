@@ -19,6 +19,7 @@ pub fn out_dir() -> PathBuf {
 
 const GIGGLE_INTENSITY: f64 = 0.001;
 
+/// Modifies each coordinate by a tiny factor not to have aligned vertices (to ensure the map is valid)
 pub fn giggle_coords(polys: &mut [Polygon]) {
     let mut rng = rng();
     for p in polys.iter_mut() {

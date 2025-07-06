@@ -6,7 +6,9 @@ Ce TIPE explore la thématique du path planning: trouver le chemin le plus court
 
 ## En 2D
 On se donne une liste de polygones, ainsi que deux points
+
 On renvoie une liste de positions, le chemin le plus court
+
 On supposeras que:
 - Les obstacles sont strictement disjoints
 - Il n'y a pas trois points alignés
@@ -14,12 +16,26 @@ On supposeras que:
 
 ## En 3D
 Le problème devient alors NP-difficile
-On utilise alors des heuristiques
+On utilise alors des heuristiques intéressantes
+
+## Questions divers
+Que se passe il:
+- Si l'objet à une taille non nulle ? On utilise des sommes de Minkovski pour modifier la map
+- Sur une une sphère ? Je pense qu'on peut adapter l'algo 2D
+- En partant/arrivant sur une ligne ou autre forme ? A voir
+- Si les obstacles forment un seul polygone ? O(n) avec un algo plus optimisé mais frenchement compliqué
+- Avec la distance de Manathan ? A voir
+- Si les obstacles bougent ? NP-diff je crois
+- En N dimensions ? Comme en 3D, utile pour des bras de robots, ..
+- Si le rayon de courbure est non nul (voiture, ..) ? A voir
+- En prenant en compte l'acceleration ? A voir
 
 # Organisation pour les concours
 ## Tetraconcours
 On considère un circuit de course de drone
+
 On cherche alors à terminer la course le plus rapidement possible
+
 On resterait probablement en 2D
 
 ## ENS

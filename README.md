@@ -54,8 +54,9 @@ En O(n^2 log n), améliorable en O(n^2)
 ## 2D optimisé
 En O(n log n), c'est un des buts du TIPE
 
-## 3D
-TODO
+## 3D PRM (Probabilistic RoadMaps)
+On ajoute des points au hasard, on détermine les sommets proches, on relie ceux qui sont visibles
+Demande de pouvoir trouver les points proches rapidement
 
 # Lancer le code:
 - Installer rust, via les instructions du site web

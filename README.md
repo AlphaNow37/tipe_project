@@ -18,10 +18,10 @@ On supposeras que:
 Le problème devient alors NP-difficile
 On utilise alors des heuristiques intéressantes
 
-## Questions divers
+## Questions diverses
 Que se passe il:
 - Si l'objet à une taille non nulle ? On utilise des sommes de Minkovski pour modifier la map
-- Sur une une sphère ? Je pense qu'on peut adapter l'algo 2D
+- Sur une sphère ? Je pense qu'on peut adapter l'algo 2D avec les graphes de visibilités
 - En partant/arrivant sur une ligne ou autre forme ? A voir
 - Si les obstacles forment un seul polygone ? O(n) avec un algo plus optimisé mais frenchement compliqué
 - Avec la distance de Manathan ? A voir

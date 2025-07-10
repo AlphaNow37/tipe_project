@@ -11,6 +11,9 @@ use crate::utils::numbers::{Zero, F64_EPSILON};
 pub struct VecN<const N: usize, T>(pub [T; N]);
 
 impl<const N: usize, T: Copy> VecN<N, T> {
+    pub fn from_fn(f: impl FnMut(usize) -> T) -> Self {
+        Self(std::array::from_fn(f))
+    }
     pub fn map_component<U>(self, f: impl FnMut(T) -> U) -> VecN<N, U> {
         VecN(self.0.map(f))
     }

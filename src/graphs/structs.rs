@@ -1,8 +1,7 @@
 use crate::graphs::{Graph, IterableGraph};
 use std::collections::HashMap;
 use std::hash::Hash;
-use std::sync::Mutex;
-
+use std::sync::{Arc, Mutex};
 
 /// A graph using integers as vertices and an adjacency list
 #[derive(Default, Clone, Debug)]
@@ -122,7 +121,6 @@ impl<V: Hash + Eq + Copy, F: Fn(V) -> I, I: IntoIterator<Item = V>> Graph<V> for
     }
 }
 
-
 /// A graph based on a function, but with a cache
 #[derive(Default, Debug)]
 pub struct CachedFuncGraph<F, V> {
@@ -146,5 +144,22 @@ impl<V: Hash + Eq + Copy, F: FnMut(V) -> Vec<V>> Graph<V> for CachedFuncGraph<F,
             res.into_iter()
         }
         // (self.nexts)(vertex).into_iter()
+    }
+}
+
+/// Filtre les arêtes selon la fonction filter
+#[derive(Clone)]
+pub struct SubGraph<V, G> {
+    pub graph: G,
+    pub filter: Arc<dyn Fn(&V, &V)->bool>,
+}
+impl<V: Copy, G: Graph<V>> Graph<V> for SubGraph<V, G> {
+    fn neighbors(&self, vertex: V) -> impl Iterator<Item = V> {
+        self.graph.neighbors(vertex).filter(move |v| (self.filter)(&vertex, v))
+    }
+}
+impl<V: Copy, G: IterableGraph<V>> IterableGraph<V> for SubGraph<V, G> {
+    fn iter(&self) -> impl Iterator<Item = V> {
+        self.graph.iter()
     }
 }

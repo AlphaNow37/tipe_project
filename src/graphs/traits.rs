@@ -1,6 +1,8 @@
 use std::collections::{hash_map::Entry, HashMap};
 use std::hash::Hash;
+use std::sync::Arc;
 
+use crate::graphs::SubGraph;
 use crate::utils::numbers::NotNanF64;
 use crate::utils::traits::Weight;
 use crate::{datastructures::priority_queue::PriorityQueue, utils::traits::NormedSpace};
@@ -78,6 +80,16 @@ pub trait Graph<Vertex> {
             )
         })
         .map(|(path, weight)| (path, *weight + pos_fn(start).distance(pos_end)))
+    }
+
+    fn subgraph<F: Fn(&Vertex, &Vertex) -> bool + 'static>(self, filter: F) -> SubGraph<Vertex, Self>
+    where
+        Self: Sized,
+    {
+        SubGraph {
+            graph: self,
+            filter: Arc::new(filter),
+        }
     }
 }
 

@@ -123,3 +123,10 @@ impl<const N: usize, T: Default> Default for VecN<N, T> {
 impl<const N: usize, T: Zero> Zero for VecN<N, T> {
     const ZERO: Self = Self([T::ZERO; N]);
 }
+
+
+impl Into<lib_space_animation::math::Vec3> for VecN<3, f64> {
+    fn into(self) -> lib_space_animation::math::Vec3 {
+        lib_space_animation::math::Vec3::from_array(self.0.map(|c| c as f32))
+    }
+}

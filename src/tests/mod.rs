@@ -9,6 +9,7 @@ mod test_graph;
 mod test_perfs;
 mod test_simple;
 mod background;
+mod test_3d;
 
 pub fn out_dir() -> PathBuf {
     let here = current_dir()
@@ -31,8 +32,9 @@ pub fn giggle_coords(polys: &mut [Polygon]) {
 }
 
 pub fn tests() {
-    test_complex::test_square_map();
+    // test_complex::test_square_map();
     // test_perfs::test_perf();
     // test_simple::test_pretty_simple();
     // background::generate_backgrounds();
+    test_3d::test_3d()
 }

@@ -8,4 +8,7 @@ debug = true
 
 [dependencies]
 rand = "0.9.0"
-blue_engine = "0.9.1"
+
+[dependencies.space_animation]
+path = "../space_animation"
+version = "0.1"

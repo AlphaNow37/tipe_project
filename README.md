@@ -59,6 +59,10 @@ On ajoute des points au hasard, on détermine les sommets proches, on relie ceux
 Demande de pouvoir trouver les points proches rapidement
 
 # Lancer le code:
+Pour les algos 2d, que je ne change pour le moment pas, voir la branche pre_3d
+Actuellement, j'ajoute un moteur 3d venant d'un autre projet
+
+Def façon générale:
 - Installer rust, via les instructions du site web
 - Aller dans tests/mod.rs, décommenter le test voulu
 - Lancer `cargo run`, ou `cargo run --release` pour optimiser le binaire

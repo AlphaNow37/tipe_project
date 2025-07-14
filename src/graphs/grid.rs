@@ -14,9 +14,9 @@ fn calculate_offsets<const N: usize>(sizes: [usize; N]) -> ([usize; N], usize) {
 /// A N-dimensions grid graph
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Grid<const N: usize> {
-    sizes: [usize; N],
+    pub sizes: [usize; N],
     offsets: [usize; N],
-    size: usize,
+    pub size: usize,
 }
 impl<const N: usize> Grid<N> {
     pub fn new(sizes: [usize; N]) -> Self {
@@ -35,6 +35,29 @@ impl<const N: usize> Grid<N> {
     }
     pub fn index(&self, coords: VecN<N, usize>) -> usize {
         coords.dot(VecN(self.offsets))
+    }
+    pub fn iter_cube(&self, start: VecN<N, usize>, end: VecN<N, usize>) -> impl Iterator<Item=usize> {
+        let mut curr = start;
+        let mut finished = false;
+        let grid = *self;
+        std::iter::from_fn(move || {
+            if finished {
+                return None;
+            }
+            let v = curr;
+            let mut i = 0;
+            while i < N && curr[i] == end[i] {
+                curr[i] = start[i];
+                i += 1;
+            }
+            if i == N {
+                finished = true;
+                None
+            } else {
+                curr[i] += 1;
+                Some(grid.index(v))
+            }
+        })
     }
 }
 impl<const N: usize> Graph<usize> for Grid<N> {

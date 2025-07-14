@@ -1,8 +1,93 @@
+use crate::datastructures::r_tree::RTree;
 use crate::geometry::shapes::Cube;
-use crate::graphs::{Grid, SubGraph};
+use crate::geometry::VecN;
+use crate::graphs::Grid;
+use crate::utils::numbers::F64_EPSILON;
 
-type SpaceGrid<const N: usize> = SubGraph<usize, Grid<N>>;
+pub struct AccesibilityGrid<const N: usize> {
+    pub grid: Grid<N>,
+    pub accessible: Vec<bool>,
+    pub bounding_box: Cube<N>,
+    pub resolution: f64,
+}
+impl<const N: usize> AccesibilityGrid<N> {
+    fn get_grid(bbox: Cube<N>, resolution: f64) -> Grid<N> {
+        let sizes = bbox.size().map(|w| (w / resolution).ceil() as usize);
+        Grid::new(sizes)
+    }
+    pub fn new_with_rtree(cubes: &mut [Cube<N>], resolution: f64) -> Self {
+        let tree = RTree::bulk_load(cubes);
+        let bounding_box = tree.bounding_box();
+        let grid = Self::get_grid(bounding_box, resolution);
+        let accessible = vec![true; grid.size];
 
-pub fn make_grid_graph_cubes<const N: usize>(obstacles: Vec<Cube<N>>) -> SpaceGrid<N> {
-    todo!()
+        let mut res = Self {
+            accessible,
+            grid,
+            bounding_box,
+            resolution,
+        };
+
+        for i in 0..res.grid.size {
+            let start_int = res.grid.coords(i);
+            let end_int = start_int + VecN::from_fn(|_| 1);
+            let cube = Cube {
+                start: res.position_flaot_from_int(start_int),
+                end: res.position_flaot_from_int(end_int),
+            };
+            if tree.intersect_cube(cube) {
+                res.accessible[i] = false;
+            }
+        }
+
+        res
+    }
+    pub fn new_with_painting(cubes: &[Cube<N>], resolution: f64) -> Self {
+        let mut bounding_box = cubes
+            .iter()
+            .copied()
+            .reduce(Cube::join)
+            .expect("There should be some cubes");
+        bounding_box.end = bounding_box.end + VecN::from_fn(|_| F64_EPSILON);
+        let grid = Self::get_grid(bounding_box, resolution);
+        let accessible = vec![true; grid.size];
+
+        let mut res = Self {
+            accessible,
+            grid,
+            bounding_box,
+            resolution,
+        };
+
+        dbg!(res.bounding_box);
+        dbg!(res.grid);
+
+        for &cube in cubes {
+            for i in res.grid.iter_cube(
+                dbg!(res.position_int_from_float(cube.start)),
+                dbg!(res.position_int_from_float(cube.end)),
+            ) {
+                res.accessible[i] = false;
+            }
+        }
+
+        res
+    }
+
+    pub fn position_int_from_float(&self, pos: VecN<N, f64>) -> VecN<N, usize> {
+        VecN::from_fn(|i| {
+            let delta = pos[i] - self.bounding_box.start[i];
+            let i_float = delta / (self.bounding_box.end[i] - self.bounding_box.start[i])
+                * (self.grid.sizes[i] as f64);
+            i_float.floor() as usize
+        })
+    }
+    pub fn position_flaot_from_int(&self, pos: VecN<N, usize>) -> VecN<N, f64> {
+        VecN::from_fn(|i| {
+            let i_float = pos[i] as f64;
+            let delta = i_float * (self.bounding_box.end[i] - self.bounding_box.start[i])
+                / (self.grid.sizes[i] as f64);
+            self.bounding_box.start[i] + delta
+        })
+    }
 }

@@ -79,4 +79,16 @@ impl<const N: usize, T: RTreeleaf<N>> RTree<N, T> {
             } => bounding_box.contains_point(pt) && children.iter().any(|child| child.contains(pt)),
         }
     }
+    pub fn intersect_cube(&self, cube: Cube<N>) -> bool {
+        match self {
+            Self::Leaf(t) => t.bounding_box().intersect_cube(cube),
+            Self::Node {
+                bounding_box,
+                children,
+            } => {
+                bounding_box.intersect_cube(cube)
+                    && children.iter().any(|child| child.intersect_cube(cube))
+            }
+        }
+    }
 }

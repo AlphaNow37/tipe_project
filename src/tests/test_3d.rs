@@ -4,6 +4,8 @@ use crate::render_3d::cubes::place_cubes;
 use lib_space_animation::math::trans;
 use lib_space_animation::world::primitives::color::Color;
 use lib_space_animation::world::world_builder::WorldsBuilder;
+use crate::path_planning::grid::AccesibilityGrid;
+use crate::render_3d::grid::place_grid;
 
 pub fn test_3d() {
     let cubes = vec![
@@ -25,6 +27,10 @@ pub fn test_3d() {
 
         place_cubes(&mut world, &cubes[..5], Color::BLUE, obstacles_tr, true);
         place_cubes(&mut world, &cubes[5..], Color::RED, obstacles_tr, true);
+
+        let mut cubes2 = cubes.clone();
+        let grid = AccesibilityGrid::new_with_rtree(&mut cubes2, 0.05);
+        place_grid(&mut world, grid, obstacles_tr);
 
         let tr_axis = world.push(trans(0., 0., 2.));
         lib_space_animation::models::put_axis(&mut world, tr_axis);

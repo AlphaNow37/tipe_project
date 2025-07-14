@@ -7,9 +7,11 @@ use std::ops::{Add, Deref, Mul, Sub};
 pub struct NotNanF64(f64);
 impl NotNanF64 {
     pub const fn new(v: f64) -> Self {
-        if v.is_nan() {
-            panic!("Got a NaN float");
-        }
+        assert!(!v.is_nan());
+        Self(v)
+    }
+    pub const fn new_debug_checked(v: f64) -> Self {
+        debug_assert!(!v.is_nan());
         Self(v)
     }
 }

@@ -33,6 +33,20 @@ impl<const N: usize> Cube<N> {
     pub fn size(self) -> VecN<N, f64> {
         self.end - self.start
     }
+    pub fn middle(self) -> VecN<N, f64> {
+        (self.start + self.end) / 2.
+    }
+    pub fn contains_point(self, pt: VecN<N, f64>) -> bool {
+        for i in 0..N {
+            if pt[i] < self.start[i] || pt[i] > self.end[i] {
+                return false;
+            }
+        }
+        return true;
+    }
+    pub fn contains_cube(self, c: Self) -> bool {
+        self.contains_point(c.start) && self.contains_point(c.end)
+    }
 }
 
 pub fn are_counter_clockwise(pts: &[VecN<2, f64>]) -> bool {

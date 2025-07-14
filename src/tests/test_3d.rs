@@ -23,8 +23,8 @@ pub fn test_3d() {
         let mut world = worlds.add_world(0);
         let obstacles_tr = trans(-2., 0., -2.);
 
-        place_cubes(&mut world, &cubes[..5], Color::BLUE, obstacles_tr);
-        place_cubes(&mut world, &cubes[5..], Color::RED, obstacles_tr);
+        place_cubes(&mut world, &cubes[..5], Color::BLUE, obstacles_tr, true);
+        place_cubes(&mut world, &cubes[5..], Color::RED, obstacles_tr, true);
 
         let tr_axis = world.push(trans(0., 0., 2.));
         lib_space_animation::models::put_axis(&mut world, tr_axis);

@@ -8,10 +8,10 @@ use lib_space_animation::world::world_builder::{WorldBuilder, WorldsBuilder};
 use rand::{rng, Rng};
 use std::array::from_fn;
 
-const NCUBES: usize = 64;
-const TOTAL_WIDTH: f64 = 25.0;
+const NCUBES: usize = 20;
+const TOTAL_WIDTH: f64 = 20.0;
 const MIN_WIDTH: f64 = 0.01;
-const MAX_WIDTH: f64 = 0.03;
+const MAX_WIDTH: f64 = 3.;
 
 pub fn test_rtree() {
     let mut rng = rng();
@@ -19,7 +19,7 @@ pub fn test_rtree() {
     let mut cubes = (0..NCUBES)
         .map(|_| {
             let p1: VecN<3, f64> = VecN(from_fn(|_| {
-                rng.random_range(0.0..(TOTAL_WIDTH - MAX_WIDTH)).log2()
+                rng.random_range(0.0..(TOTAL_WIDTH - MAX_WIDTH).powi(2)).sqrt()
             }));
             let p2: VecN<3, f64> = p1 + VecN(from_fn(|_| rng.random_range(MIN_WIDTH..MAX_WIDTH)));
             Cube::from_point(p1).with_point(p2)
@@ -30,7 +30,7 @@ pub fn test_rtree() {
     lib_space_animation::run(move || {
         let mut ws = WorldsBuilder::default();
         let mut w = ws.add_world(0);
-        place_cubes(&mut w, &cubes, Color::RED, Transform::ID);
+        place_cubes(&mut w, &cubes, Color::RED, Transform::ID, true);
 
         fn place_rtree(rtree: &RTree<3, Cube<3>>, w: &mut WorldBuilder, d: usize) {
             match rtree {
@@ -42,8 +42,9 @@ pub fn test_rtree() {
                     place_cubes(
                         w,
                         &[*bounding_box],
-                        [Color::BLUE, Color::GREEN][d % 2],
+                        [Color::BLUE, Color::GREEN, Color::YELLOW][d % 3],
                         Transform::ID,
+                        false,
                     );
                     for c in children {
                         place_rtree(c, w, d + 1);

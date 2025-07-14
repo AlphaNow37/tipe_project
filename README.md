@@ -14,9 +14,11 @@ On supposeras que:
 - Il n'y a pas trois points alignés
 - Il n'y a pas deux points alignés avec les axes X et Y
 
-## En 3D
+## En 3D (et N-D de façon générale)
 Le problème devient alors NP-difficile
 On utilise alors des heuristiques intéressantes
+
+On se donne une liste de boites alignées avec les axes (AABB) avec potentiellement des intersections
 
 ## Questions diverses
 Que se passe il:

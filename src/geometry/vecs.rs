@@ -14,6 +14,9 @@ impl<const N: usize, T: Copy> VecN<N, T> {
     pub fn from_fn(f: impl FnMut(usize) -> T) -> Self {
         Self(std::array::from_fn(f))
     }
+    pub fn splat(value: T) -> Self {
+        Self::from_fn(|_| value)
+    }
     pub fn map_component<U>(self, f: impl FnMut(T) -> U) -> VecN<N, U> {
         VecN(self.0.map(f))
     }
@@ -123,7 +126,6 @@ impl<const N: usize, T: Default> Default for VecN<N, T> {
 impl<const N: usize, T: Zero> Zero for VecN<N, T> {
     const ZERO: Self = Self([T::ZERO; N]);
 }
-
 
 impl Into<lib_space_animation::math::Vec3> for VecN<3, f64> {
     fn into(self) -> lib_space_animation::math::Vec3 {

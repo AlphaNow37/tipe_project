@@ -8,6 +8,8 @@ use crate::utils::numbers::NotNanF64;
 
 pub mod graph;
 pub mod object;
+pub mod grid;
+mod rtree;
 
 #[derive(Default)]
 pub struct SvgGroup {

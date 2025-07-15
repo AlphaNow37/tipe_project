@@ -11,6 +11,7 @@ mod test_simple;
 mod background;
 mod test_3d;
 mod test_rtree;
+mod test_rtree_2d;
 
 pub fn out_dir() -> PathBuf {
     let here = current_dir()

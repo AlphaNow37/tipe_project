@@ -34,7 +34,7 @@ pub fn test_rtree() {
 
         fn place_rtree(rtree: &RTree<3, Cube<3>>, w: &mut WorldBuilder, d: usize) {
             match rtree {
-                RTree::Leaf(c) => (),
+                RTree::Leaf(_) => (),
                 RTree::Node {
                     bounding_box,
                     children,

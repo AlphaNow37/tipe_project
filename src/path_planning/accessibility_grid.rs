@@ -1,7 +1,7 @@
 use crate::datastructures::r_tree::RTree;
 use crate::geometry::shapes::Cube;
 use crate::geometry::VecN;
-use crate::graphs::Grid;
+use crate::graphs::{Graph, Grid};
 use crate::utils::numbers::F64_EPSILON;
 
 pub struct AccesibilityGrid<const N: usize> {
@@ -84,10 +84,33 @@ impl<const N: usize> AccesibilityGrid<N> {
     }
     pub fn position_flaot_from_int(&self, pos: VecN<N, usize>) -> VecN<N, f64> {
         VecN::from_fn(|i| {
-            let i_float = pos[i] as f64;
+            let i_float = pos[i] as f64 + 0.5;
             let delta = i_float * (self.bounding_box.end[i] - self.bounding_box.start[i])
                 / (self.grid.sizes[i] as f64);
             self.bounding_box.start[i] + delta
         })
+    }
+
+    pub fn shortest_path(
+        &self,
+        start: VecN<N, f64>,
+        end: VecN<N, f64>,
+    ) -> Option<(Vec<VecN<N, f64>>, f64)> {
+        let start_idx = self.grid.index(self.position_int_from_float(start));
+        let end_idx = self.grid.index(self.position_int_from_float(end));
+
+        self.grid
+            .subgraph(|_, b| self.accessible[*b])
+            .a_star_with(start_idx, end_idx, |i| {
+                self.position_flaot_from_int(self.grid.coords(i))
+            })
+            .map(|(path, length)| {
+                (
+                    path.into_iter()
+                        .map(|i| self.position_flaot_from_int(self.grid.coords(i)))
+                        .collect(),
+                    length,
+                )
+            })
     }
 }

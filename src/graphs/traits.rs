@@ -76,13 +76,13 @@ pub trait Graph<Vertex> {
             let pos_a = pos_fn(a);
             let pos_b = pos_fn(b);
             NotNanF64::new(
-                pos_a.distance(pos_b) + pos_b.distance(pos_end) - pos_a.distance(pos_end),
+                pos_a.distance(pos_b) + (pos_b.distance(pos_end) - pos_a.distance(pos_end)) * 0.99,
             )
         })
         .map(|(path, weight)| (path, *weight + pos_fn(start).distance(pos_end)))
     }
 
-    fn subgraph<F: Fn(&Vertex, &Vertex) -> bool + 'static>(self, filter: F) -> SubGraph<Vertex, Self>
+    fn subgraph<'a, F: Fn(&Vertex, &Vertex) -> bool + 'a>(self, filter: F) -> SubGraph<'a, Vertex, Self>
     where
         Self: Sized,
     {

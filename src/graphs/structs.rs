@@ -149,16 +149,16 @@ impl<V: Hash + Eq + Copy, F: FnMut(V) -> Vec<V>> Graph<V> for CachedFuncGraph<F,
 
 /// Filtre les arêtes selon la fonction filter
 #[derive(Clone)]
-pub struct SubGraph<V, G> {
+pub struct SubGraph<'a, V, G> {
     pub graph: G,
-    pub filter: Arc<dyn Fn(&V, &V)->bool>,
+    pub filter: Arc<dyn Fn(&V, &V)->bool + 'a>,
 }
-impl<V: Copy, G: Graph<V>> Graph<V> for SubGraph<V, G> {
+impl<'a, V: Copy, G: Graph<V>> Graph<V> for SubGraph<'a, V, G> {
     fn neighbors(&self, vertex: V) -> impl Iterator<Item = V> {
         self.graph.neighbors(vertex).filter(move |v| (self.filter)(&vertex, v))
     }
 }
-impl<V: Copy, G: IterableGraph<V>> IterableGraph<V> for SubGraph<V, G> {
+impl<'a, V: Copy, G: IterableGraph<V>> IterableGraph<V> for SubGraph<'a, V, G> {
     fn iter(&self) -> impl Iterator<Item = V> {
         self.graph.iter()
     }

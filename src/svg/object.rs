@@ -1,6 +1,7 @@
 /// Implement the protocol for drawing various objects
 
 use std::{fmt::Display, io::Write};
+use std::sync::Arc;
 
 use crate::geometry::{
     shapes::{Cube, Polygon, Segment},
@@ -9,28 +10,28 @@ use crate::geometry::{
 
 #[derive(Default, Clone, Debug)]
 pub struct Style {
-    stroke: Option<(String, f64)>,
-    fill: Option<String>,
+    stroke: Option<(Arc<String>, f64)>,
+    fill: Option<Arc<String>>,
 }
 impl Style {
     pub fn stroke(col: impl Into<String>, width: f64) -> Self {
         Self {
-            stroke: Some((col.into(), width)),
+            stroke: Some((Arc::new(col.into()), width)),
             ..Self::default()
         }
     }
     pub fn fill(col: impl Into<String>) -> Self {
         Self {
-            fill: Some(col.into()),
+            fill: Some(Arc::new(col.into())),
             ..Self::default()
         }
     }
     pub fn with_stroke(mut self, col: impl Into<String>, width: f64) -> Self {
-        self.stroke = Some((col.into(), width));
+        self.stroke = Some((Arc::new(col.into()), width));
         self
     }
     pub fn with_fill(mut self, col: impl Into<String>) -> Self {
-        self.fill = Some(col.into());
+        self.fill = Some(Arc::new(col.into()));
         self
     }
 }

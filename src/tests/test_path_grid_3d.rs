@@ -1,3 +1,4 @@
+use crate::datastructures::r_tree::RTree;
 use crate::geometry::shapes::Cube;
 use crate::geometry::VecN;
 use crate::path_planning::accessibility_grid::AccesibilityGrid;
@@ -30,7 +31,8 @@ pub fn test_3d() {
         place_cubes(&mut world, &cubes[5..], Color::RED, obstacles_tr, true);
 
         let mut cubes2 = cubes.clone();
-        let grid = AccesibilityGrid::new_with_rtree(&mut cubes2, 0.04);
+        let tree = RTree::bulk_load(&mut cubes2);
+        let grid = AccesibilityGrid::new_with_rtree(&tree, 0.04);
         place_grid(&mut world, &grid, obstacles_tr);
 
         match grid.shortest_path(VecN([0.2, 0.4, 0.4]), VecN([3.8, 0.4, 0.4])) {

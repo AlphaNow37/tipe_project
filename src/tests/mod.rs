@@ -4,13 +4,13 @@ use std::path::PathBuf;
 
 use crate::geometry::shapes::Polygon;
 
-mod test_complex;
-mod test_graph;
-mod test_perfs;
-mod test_simple;
+mod test_path_complex_2d;
+mod test_graph_2d;
+mod test_perf_path_2d;
+mod test_path_simple_2d;
 mod background;
-mod test_3d;
-mod test_rtree;
+mod test_path_grid_3d;
+mod test_rtree_3d;
 mod test_rtree_2d;
 
 pub fn out_dir() -> PathBuf {
@@ -38,6 +38,6 @@ pub fn tests() {
     // test_perfs::test_perf();
     // test_simple::test_pretty_simple();
     // background::generate_backgrounds();
-    test_3d::test_3d()
+    test_path_grid_3d::test_3d()
     // test_rtree::test_rtree()
 }

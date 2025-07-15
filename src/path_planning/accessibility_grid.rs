@@ -15,8 +15,7 @@ impl<const N: usize> AccesibilityGrid<N> {
         let sizes = bbox.size().map(|w| (w / resolution).ceil() as usize);
         Grid::new(sizes)
     }
-    pub fn new_with_rtree(cubes: &mut [Cube<N>], resolution: f64) -> Self {
-        let tree = RTree::bulk_load(cubes);
+    pub fn new_with_rtree(tree: &RTree<N, Cube<N>>, resolution: f64) -> Self {
         let bounding_box = tree.bounding_box();
         let grid = Self::get_grid(bounding_box, resolution);
         let accessible = vec![true; grid.size];

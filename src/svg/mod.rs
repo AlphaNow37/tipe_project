@@ -3,13 +3,14 @@
 use std::{io::Write, path::Path};
 
 use object::{Style, SvgObject};
+use crate::geometry::VecN;
 
 use crate::utils::numbers::NotNanF64;
 
 pub mod graph;
 pub mod object;
 pub mod grid;
-mod rtree;
+pub mod rtree;
 
 #[derive(Default)]
 pub struct SvgGroup {
@@ -28,15 +29,16 @@ impl SvgGroup {
             .map(|obj| obj.0.collide_box())
             .reduce(|a, b| a.join(b))
             .unwrap_or_default();
+        let VecN([w, h]) = area.size();
         writeln!(
             writer,
             r#"<svg width="{}" height="{}" viewBox="{},{},{},{}" xmlns="http://www.w3.org/2000/svg">"#,
-            (area.size()[0]) * 20.,
-            (area.size()[1]) * 20.,
-            area.start[0] * 1.2,
-            area.start[1] * 1.2,
-            area.size()[0] * 1.2,
-            area.size()[1] * 1.2,
+            w * 20.,
+            h * 20.,
+            area.start[0] - w * 0.1,
+            area.start[1] - h * 0.1,
+            w * 1.2,
+            h * 1.2,
         )?;
         for obj in &self.objects {
             obj.0.write(writer, &obj.2)?;

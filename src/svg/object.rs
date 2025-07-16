@@ -97,7 +97,7 @@ impl SvgObject for Cube<2> {
     fn write(&self, writer: &mut dyn Write, style: &Style) -> std::io::Result<()> {
         write!(
             writer,
-            "\t<rectangle {} x={} y={} width={} height={}",
+            "\t<rect {} x={} y={} width={} height={}",
             style,
             s(&self.start[0]),
             s(&self.start[1]),

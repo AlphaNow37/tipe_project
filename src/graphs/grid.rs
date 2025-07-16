@@ -52,11 +52,10 @@ impl<const N: usize> Grid<N> {
             }
             if i == N {
                 finished = true;
-                None
             } else {
                 curr[i] += 1;
-                Some(grid.index(v))
             }
+            Some(grid.index(v))
         })
     }
 }

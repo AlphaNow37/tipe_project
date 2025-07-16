@@ -32,12 +32,19 @@ pub fn test_3d() {
 
         let mut cubes2 = cubes.clone();
         let tree = RTree::bulk_load(&mut cubes2);
-        let grid = AccesibilityGrid::new_with_rtree(&tree, 0.04);
+        let grid = AccesibilityGrid::new_with_rtree(
+            &tree,
+            0.04,
+            Cube {
+                start: VecN::splat(0.),
+                end: VecN([4., 1., 1.2]),
+            },
+        );
         place_grid(&mut world, &grid, obstacles_tr);
 
         match grid.shortest_path(VecN([0.2, 0.4, 0.4]), VecN([3.8, 0.4, 0.4])) {
             None => println!("No path found !"),
-            Some((path, length)) => {
+            Some((path, _)) => {
                 place_path(&mut world, &path, Color::YELLOW, 0.05, obstacles_tr);
             }
         }

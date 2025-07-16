@@ -15,8 +15,7 @@ impl<const N: usize> AccesibilityGrid<N> {
         let sizes = bbox.size().map(|w| (w / resolution).ceil() as usize);
         Grid::new(sizes)
     }
-    pub fn new_with_rtree(tree: &RTree<N, Cube<N>>, resolution: f64) -> Self {
-        let bounding_box = tree.bounding_box();
+    pub fn new_with_rtree(tree: &RTree<N, Cube<N>>, resolution: f64, bounding_box: Cube<N>) -> Self {
         let grid = Self::get_grid(bounding_box, resolution);
         let accessible = vec![true; grid.size];
 
@@ -41,12 +40,7 @@ impl<const N: usize> AccesibilityGrid<N> {
 
         res
     }
-    pub fn new_with_painting(cubes: &[Cube<N>], resolution: f64) -> Self {
-        let mut bounding_box = cubes
-            .iter()
-            .copied()
-            .reduce(Cube::join)
-            .expect("There should be some cubes");
+    pub fn new_with_painting(cubes: &[Cube<N>], resolution: f64, mut bounding_box: Cube<N>) -> Self {
         bounding_box.end = bounding_box.end + VecN::from_fn(|_| F64_EPSILON);
         let grid = Self::get_grid(bounding_box, resolution);
         let accessible = vec![true; grid.size];
@@ -58,13 +52,10 @@ impl<const N: usize> AccesibilityGrid<N> {
             resolution,
         };
 
-        dbg!(res.bounding_box);
-        dbg!(res.grid);
-
         for &cube in cubes {
             for i in res.grid.iter_cube(
-                dbg!(res.position_int_from_float(cube.start)),
-                dbg!(res.position_int_from_float(cube.end)),
+                res.position_int_from_float(cube.start),
+                res.position_int_from_float(cube.end),
             ) {
                 res.accessible[i] = false;
             }
@@ -87,6 +78,11 @@ impl<const N: usize> AccesibilityGrid<N> {
             let delta = i_float * (self.bounding_box.end[i] - self.bounding_box.start[i])
                 / (self.grid.sizes[i] as f64);
             self.bounding_box.start[i] + delta
+        })
+    }
+    pub fn grid_size(&self) -> VecN<N, f64> {
+        VecN::from_fn(|i| {
+            (self.bounding_box.end[i] - self.bounding_box.start[i]) / (self.grid.sizes[i] as f64)
         })
     }
 

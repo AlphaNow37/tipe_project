@@ -1,5 +1,4 @@
 use crate::geometry::shapes::Cube;
-use crate::geometry::VecN;
 use crate::path_planning::accessibility_grid::AccesibilityGrid;
 use crate::svg::object::Style;
 use crate::svg::SvgGroup;
@@ -11,8 +10,7 @@ pub fn put_grid(
     acc_style: Style,
     unacc_style: Style,
 ) {
-    let size =
-        grid.position_flaot_from_int(VecN::splat(1)) - grid.position_flaot_from_int(VecN::splat(0));
+    let size = grid.grid_size();
     for i in 0..grid.grid.size {
         let coords = grid.grid.coords(i);
         let pos = grid.position_flaot_from_int(coords);

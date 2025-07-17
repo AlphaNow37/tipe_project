@@ -12,13 +12,13 @@ use lib_space_animation::world::world_builder::WorldsBuilder;
 pub fn test_3d() {
     let cubes = vec![
         Cube::from_point(VecN([-0.1, -0.1, -0.1])).with_point(VecN([4.1, 1.1, 0.1])),
-        Cube::from_point(VecN([-0.1, -0.1, -0.1])).with_point(VecN([4.1, 0.1, 1.6])),
-        Cube::from_point(VecN([-0.1, -0.1, -0.1])).with_point(VecN([0.1, 1.1, 1.6])),
-        Cube::from_point(VecN([-0.1, 1.1, -0.1])).with_point(VecN([4.1, 0.9, 1.6])),
-        Cube::from_point(VecN([4.1, -0.1, -0.1])).with_point(VecN([3.9, 1.1, 1.6])),
-        Cube::from_point(VecN([0.95, 0., 0.])).with_point(VecN([1.05, 0.75, 1.5])),
-        Cube::from_point(VecN([1.95, 0.25, 0.])).with_point(VecN([2.05, 1., 1.5])),
-        Cube::from_point(VecN([2.95, 0., 0.35])).with_point(VecN([3.05, 1., 1.5])),
+        Cube::from_point(VecN([-0.1, -0.1, -0.1])).with_point(VecN([4.1, 0.1, 1.1])),
+        Cube::from_point(VecN([-0.1, -0.1, -0.1])).with_point(VecN([0.1, 1.1, 1.1])),
+        Cube::from_point(VecN([-0.1, 1.1, -0.1])).with_point(VecN([4.1, 0.9, 1.1])),
+        Cube::from_point(VecN([4.1, -0.1, -0.1])).with_point(VecN([3.9, 1.1, 1.1])),
+        Cube::from_point(VecN([0.95, 0., 0.])).with_point(VecN([1.05, 0.75, 1.0])),
+        Cube::from_point(VecN([1.95, 0.25, 0.])).with_point(VecN([2.05, 1., 1.0])),
+        Cube::from_point(VecN([2.95, 0., 0.35])).with_point(VecN([3.05, 1., 1.0])),
     ];
 
     lib_space_animation::run(move || {
@@ -37,7 +37,7 @@ pub fn test_3d() {
             0.04,
             Cube {
                 start: VecN::splat(0.),
-                end: VecN([4., 1., 1.2]),
+                end: VecN([4., 1., 1.]),
             },
         );
         place_grid(&mut world, &grid, obstacles_tr);

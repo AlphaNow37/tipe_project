@@ -2,3 +2,4 @@
 pub mod priority_queue;
 pub mod union_find;
 pub mod r_tree;
+mod kd_tree;

@@ -60,6 +60,20 @@ En O(n log n), c'est un des buts du TIPE
 On ajoute des points au hasard, on détermine les sommets proches, on relie ceux qui sont visibles
 Demande de pouvoir trouver les points proches rapidement
 
+## 3D RRT*
+Algorithme:
+On génère un arbre partant du point de départ
+On tente pendant un certain temps:
+- On prend un point au hasard
+- On tente d'étendre l'arbre vers ce point (note: pourrait on projeter sur les obstacles s'il y en a pour raccourcir le chemin ?)
+- Si on a réussit, on prend des points voisins et on change leur parent en ce nouveau point si possible
+Puis on voit si on a trouvé un chemin
+
+Cela demande:
+- Une structure pour trouver les 
+
+## Grille de taille dynamique ?
+
 # Lancer le code:
 Def façon générale, les étapes sont:
 - Installer rust, via les instructions du site web

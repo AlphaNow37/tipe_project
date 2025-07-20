@@ -2,10 +2,11 @@ use std::collections::{hash_map::Entry, HashMap};
 use std::hash::Hash;
 use std::sync::Arc;
 
+use crate::datastructures::priority_queue::PriorityQueue;
+use crate::geometry::space::Space;
 use crate::graphs::SubGraph;
 use crate::utils::numbers::NotNanF64;
 use crate::utils::traits::Weight;
-use crate::{datastructures::priority_queue::PriorityQueue, utils::traits::NormedSpace};
 
 /// A graph interface
 pub trait Graph<Vertex> {
@@ -62,7 +63,7 @@ pub trait Graph<Vertex> {
             }
         }
     }
-    fn a_star_with<S: NormedSpace>(
+    fn a_star_with<S: Space>(
         &self,
         start: Vertex,
         end: Vertex,
@@ -82,7 +83,10 @@ pub trait Graph<Vertex> {
         .map(|(path, weight)| (path, *weight + pos_fn(start).distance(pos_end)))
     }
 
-    fn subgraph<'a, F: Fn(&Vertex, &Vertex) -> bool + 'a>(self, filter: F) -> SubGraph<'a, Vertex, Self>
+    fn subgraph<'a, F: Fn(&Vertex, &Vertex) -> bool + 'a>(
+        self,
+        filter: F,
+    ) -> SubGraph<'a, Vertex, Self>
     where
         Self: Sized,
     {

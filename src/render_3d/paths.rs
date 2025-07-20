@@ -1,5 +1,5 @@
+use crate::geometry::space::Space;
 use crate::geometry::VecN;
-use crate::utils::traits::NormedSpace;
 use lib_space_animation::math::{Transform, Vec3};
 use lib_space_animation::world::primitives::color::Color;
 use lib_space_animation::world::visuals::Pipe;

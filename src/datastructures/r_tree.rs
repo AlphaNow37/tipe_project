@@ -1,4 +1,4 @@
-use crate::geometry::shapes::Cube;
+use crate::geometry::shapes::{Cube, Segment};
 use crate::geometry::VecN;
 use crate::utils::numbers::NotNanF64;
 
@@ -70,13 +70,13 @@ impl<const N: usize, T: RTreeleaf<N>> RTree<N, T> {
             Self::Node { bounding_box, .. } => *bounding_box,
         }
     }
-    pub fn contains(&self, pt: VecN<N, f64>) -> bool {
+    pub fn contains_point(&self, pt: VecN<N, f64>) -> bool {
         match self {
             Self::Leaf(t) => t.bounding_box().contains_point(pt),
             Self::Node {
                 bounding_box,
                 children,
-            } => bounding_box.contains_point(pt) && children.iter().any(|child| child.contains(pt)),
+            } => bounding_box.contains_point(pt) && children.iter().any(|child| child.contains_point(pt)),
         }
     }
     pub fn intersect_cube(&self, cube: Cube<N>) -> bool {
@@ -88,6 +88,18 @@ impl<const N: usize, T: RTreeleaf<N>> RTree<N, T> {
             } => {
                 bounding_box.intersect_cube(cube)
                     && children.iter().any(|child| child.intersect_cube(cube))
+            }
+        }
+    }
+    pub fn intersect_segment(&self, segment: Segment<N>) -> bool {
+        match self {
+            Self::Leaf(t) => t.bounding_box().intersect_segment(segment),
+            Self::Node {
+                bounding_box,
+                children,
+            } => {
+                bounding_box.intersect_segment(segment)
+                    && children.iter().any(|child| child.intersect_segment(segment))
             }
         }
     }

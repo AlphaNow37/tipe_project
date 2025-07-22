@@ -7,6 +7,7 @@ use crate::geometry::angles::Angle;
 use super::VecN;
 
 /// N-dimensions cube
+/// Invariant: start[i] <= end[i] forall i
 #[derive(Default, Clone, Copy, Debug, PartialEq)]
 pub struct Cube<const N: usize> {
     pub start: VecN<N, f64>,
@@ -42,7 +43,7 @@ impl<const N: usize> Cube<N> {
                 return false;
             }
         }
-        return true;
+        true
     }
     pub fn contains_cube(self, c: Self) -> bool {
         self.contains_point(c.start) && self.contains_point(c.end)
@@ -53,7 +54,27 @@ impl<const N: usize> Cube<N> {
                 return false;
             }
         }
-        return true;
+        true
+    }
+    pub fn intersect_segment(self, s: Segment<N>) -> bool {
+        // we search if some there is some parameter t such as start + (end - start)*t is in the cube
+        let seg_size = s.end - s.start;
+        let delta_pos_1 = self.start - s.start;
+        let delta_pos_2 = self.end - s.start;
+
+        let mut min_bound = 0.0f64;
+        let mut max_bound = 1.0f64;
+        for i in 0..N {
+            // self.start[i] <= s.start[i] + (s.end[i]-s.start[i])*t <= self.end[i]
+            let (min, max) = if seg_size[i] >= 0. {
+                (delta_pos_1[i] / seg_size[i], delta_pos_2[i] / seg_size[i])
+            } else {
+                (-delta_pos_2[i] / seg_size[i], -delta_pos_1[i] / seg_size[i])
+            };
+            min_bound = min_bound.min(min);
+            max_bound = max_bound.max(max);
+        }
+        min_bound <= max_bound
     }
 }
 

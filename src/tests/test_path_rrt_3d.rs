@@ -5,7 +5,7 @@ use crate::geometry::obstacles::ObstaclesApprox;
 use crate::geometry::shapes::Cube;
 use crate::geometry::workspace::{EuclidianDistance, UniformTopology, WorkspaceTopology};
 use crate::geometry::VecN;
-use crate::path_planning::graphs_heuristics::{rrt, GraphHeuristicParameters};
+use crate::path_planning::graphs_heuristics::{prm, rrt, GraphHeuristicParameters};
 use crate::render_3d::cubes::place_cubes;
 use crate::render_3d::graphs::place_graph;
 use lib_space_animation::math::trans;
@@ -59,11 +59,11 @@ pub fn test_rrt_3d() {
             vertices: PhantomData::<(Vec<<W as WorkspaceTopology>::Vertex>, W)>,
         };
 
-        let (path, graph) = rrt(params);
+        let (path, graph) = prm(params);
 
         match path {
             None => println!("No path found !"),
-            Some(path) => {
+            Some((path, _)) => {
                 place_graph(
                     &mut world,
                     &(0..path.len()),

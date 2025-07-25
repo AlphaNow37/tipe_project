@@ -5,7 +5,7 @@ use rand::rng;
 use crate::{
     datastructures::geometrical_queries::GeometricalQueryDataStore,
     geometry::{obstacles::ObstaclesEnv, workspace::WorkspaceTopology},
-    graphs::{MapGraph, ParentTree},
+    graphs::{Graph, MapGraph, ParentTree},
 };
 
 pub struct GraphHeuristicParameters<
@@ -24,7 +24,7 @@ pub struct GraphHeuristicParameters<
 
 pub fn rrt<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
     param: GraphHeuristicParameters<W, impl ObstaclesEnv<W::Vertex>, Q>,
-) -> (Option<Vec<W::Vertex>>, ParentTree<W::Vertex>) {
+) -> (Option<(Vec<W::Vertex>, f64)>, ParentTree<W::Vertex>) {
     // Initialisation des structures de données
     let mut rng = rng();
     let mut tree = ParentTree::new();
@@ -52,9 +52,47 @@ pub fn rrt<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
         {
             vertices.insert_vertex(param.goal);
             tree.set_parent(param.goal, xnew);
-
-            return (Some(tree.path_to(param.goal)), tree);
+            let path = tree.path_to(param.goal);
+            let length = (0..(path.len() - 1))
+                .map(|i| param.workspace.distance(path[i], path[i + 1]))
+                .sum::<f64>();
+            return (Some((path, length)), tree);
         }
     }
     (None, tree)
+}
+
+pub fn prm<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
+    param: GraphHeuristicParameters<W, impl ObstaclesEnv<W::Vertex>, Q>,
+) -> (Option<(Vec<W::Vertex>, f64)>, MapGraph<W::Vertex>) {
+    // Initialisation des structures de données
+    let mut rng = rng();
+    let mut graph = MapGraph::default();
+    let mut vertices = Q::new_store(param.workspace.clone());
+
+    vertices.insert_vertex(param.start);
+    vertices.insert_vertex(param.goal);
+
+    // Boucle principale
+    for _ in 0..10000 {
+        let xrand = param.workspace.sample_random(&mut rng);
+
+        if param.obstacles.contains(xrand) {
+            continue;
+        }
+
+        vertices.map_r_neighbors(xrand, param.moving_radius, &mut |xnear| {
+            if !param.obstacles.visible(xrand, xnear) {
+                return;
+            }
+            graph.add_new_link(xrand, xnear);
+            graph.add_new_link(xnear, xrand);
+        });
+
+        vertices.insert_vertex(xrand);
+    }
+    (
+        graph.a_star_with(param.start, param.goal, |v| v, &param.workspace),
+        graph,
+    )
 }

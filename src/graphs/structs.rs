@@ -1,6 +1,7 @@
 use crate::graphs::{Graph, IterableGraph};
 use std::collections::HashMap;
 use std::hash::Hash;
+use std::ops::Deref;
 use std::sync::{Arc, Mutex};
 
 /// A graph using integers as vertices and an adjacency list
@@ -88,8 +89,11 @@ impl<V: Hash + Eq + Copy> MapGraph<V> {
     }
 }
 impl<V: Clone + Eq + Hash> Graph<V> for MapGraph<V> {
-    fn neighbors(&self, vertex: V) -> impl Iterator<Item = V> {
-        self.nexts[&vertex].iter().cloned()
+    fn neighbors<'s>(&'s self, vertex: V) -> impl Iterator<Item = V> {
+        let empty: &'s [V] = &[];
+        self.nexts
+            .get(&vertex)
+            .map_or(empty.iter().cloned(), |row| row.iter().cloned())
     }
 }
 impl<V: Clone + Eq + Hash> IterableGraph<V> for MapGraph<V> {
@@ -151,11 +155,13 @@ impl<V: Hash + Eq + Copy, F: FnMut(V) -> Vec<V>> Graph<V> for CachedFuncGraph<F,
 #[derive(Clone)]
 pub struct SubGraph<'a, V, G> {
     pub graph: G,
-    pub filter: Arc<dyn Fn(&V, &V)->bool + 'a>,
+    pub filter: Arc<dyn Fn(&V, &V) -> bool + 'a>,
 }
 impl<'a, V: Copy, G: Graph<V>> Graph<V> for SubGraph<'a, V, G> {
     fn neighbors(&self, vertex: V) -> impl Iterator<Item = V> {
-        self.graph.neighbors(vertex).filter(move |v| (self.filter)(&vertex, v))
+        self.graph
+            .neighbors(vertex)
+            .filter(move |v| (self.filter)(&vertex, v))
     }
 }
 impl<'a, V: Copy, G: IterableGraph<V>> IterableGraph<V> for SubGraph<'a, V, G> {

@@ -1,21 +1,22 @@
 use core::f64;
 use std::{
     fmt::Debug,
+    hash::Hash,
     ops::{Add, Deref, DerefMut, Div, Mul, Neg, Sub},
 };
 
 use crate::utils::numbers::{Zero, F64_EPSILON};
 
 /// N-dimensions point/vector
-#[derive(Clone, Copy, Eq, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, PartialEq, PartialOrd)]
 pub struct VecN<const N: usize, T>(pub [T; N]);
 
 impl<const N: usize, T: Copy> VecN<N, T> {
     pub fn from_fn(f: impl FnMut(usize) -> T) -> Self {
         Self(std::array::from_fn(f))
     }
-    pub fn splat(value: T) -> Self {
-        Self::from_fn(|_| value)
+    pub const fn splat(value: T) -> Self {
+        Self([value; N])
     }
     pub fn map_component<U>(self, f: impl FnMut(T) -> U) -> VecN<N, U> {
         VecN(self.0.map(f))
@@ -126,6 +127,17 @@ impl<const N: usize, T: Default> Default for VecN<N, T> {
 impl<const N: usize, T: Zero> Zero for VecN<N, T> {
     const ZERO: Self = Self([T::ZERO; N]);
 }
+
+// Necessary in order to store them in hashmaps.. but not really sound on NaN, but i don't want to use NotNanF64 everywhere
+impl<const N: usize> Hash for VecN<N, f64> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        // Faster than individual writes
+        let len_u8 = 4 * N;
+        let ptr = self.0.as_ptr() as *const u8;
+        state.write(unsafe { std::slice::from_raw_parts(ptr, len_u8) })
+    }
+}
+impl<const N: usize> Eq for VecN<N, f64> {}
 
 impl Into<lib_space_animation::math::Vec3> for VecN<3, f64> {
     fn into(self) -> lib_space_animation::math::Vec3 {

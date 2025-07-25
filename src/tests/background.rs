@@ -1,10 +1,13 @@
 /// Used to generate dynamic backgrounds on my computer
 ///
-
 use std::path::Path;
 
 use crate::{
-    geometry::{shapes::Polygon, VecN},
+    geometry::{
+        shapes::Polygon,
+        workspace::{EuclidianDistance, UniformTopology},
+        VecN,
+    },
     graphs::Graph,
     path_planning::visibility_graph::{compute_vis_graph_fullmap, vis_graph_opt1},
     svg::{self, graph::put_graph, object::Style},
@@ -13,6 +16,8 @@ use crate::{
 use super::giggle_coords;
 
 pub fn generate_backgrounds() {
+    let workspace = UniformTopology::new_borderless(EuclidianDistance);
+
     let p1 = Polygon::new(vec![
         VecN([0., 0.]),
         VecN([1., 1.]),
@@ -61,7 +66,7 @@ pub fn generate_backgrounds() {
                 }
 
                 if let Some((path, _)) =
-                    vis.a_star_with((i1, j1), (i2, j2), |(i, j)| obstacles[i].0[j])
+                    vis.a_star_with((i1, j1), (i2, j2), |(i, j)| obstacles[i].0[j], &workspace)
                 {
                     svg.push(
                         path.iter()

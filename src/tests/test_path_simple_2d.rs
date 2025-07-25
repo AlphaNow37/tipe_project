@@ -1,6 +1,10 @@
 /// hardcoded, simple tests for debugging purposes
 use crate::{
-    geometry::{shapes::Polygon, VecN},
+    geometry::{
+        shapes::Polygon,
+        workspace::{EuclidianDistance, UniformTopology},
+        VecN,
+    },
     graphs::Graph,
     path_planning::visibility_graph::{compute_vis_graph_fullmap, vis_graph_opt1},
     svg::{self, graph::put_graph, object::Style},
@@ -9,6 +13,8 @@ use crate::{
 use super::{giggle_coords, out_dir};
 
 pub fn test_pretty_simple() {
+    let workspace = UniformTopology::new_borderless(EuclidianDistance);
+
     let p1 = Polygon::new(vec![
         VecN([0., 0.]),
         VecN([1., 1.]),
@@ -49,7 +55,8 @@ pub fn test_pretty_simple() {
         svg.push(p.clone(), 0., Style::fill(col));
     }
 
-    if let Some((path, _)) = vis.a_star_with((1, 2), (2, 3), |(i, j)| obstacles[i].0[j]) {
+    if let Some((path, _)) = vis.a_star_with((1, 2), (2, 3), |(i, j)| obstacles[i].0[j], &workspace)
+    {
         svg.push(
             path.iter()
                 .map(|(i, j)| obstacles[*i].0[*j])

@@ -12,6 +12,7 @@ mod background;
 mod test_path_grid_3d;
 mod test_rtree_3d;
 mod test_datastructures_2d;
+mod test_path_rrt_3d;
 
 pub fn out_dir() -> PathBuf {
     let here = current_dir()
@@ -38,8 +39,9 @@ pub fn tests() {
     // test_perfs::test_perf();
     // test_simple::test_pretty_simple();
     // background::generate_backgrounds();
-    test_path_grid_3d::test_3d()
+    // test_path_grid_3d::test_3d()
     // test_rtree_3d::test_rtree()
     // test_datastructures_2d::test_rtree_2d()
     // test_datastructures_2d::test_grid_2d()
+    test_path_rrt_3d::test_rrt_3d();
 }

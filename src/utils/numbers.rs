@@ -1,5 +1,5 @@
 use std::hash::Hash;
-use std::ops::{Add, Deref, Mul, Sub};
+use std::ops::{Add, Deref, Mul, Neg, Sub};
 
 /// A Non-NaN float (64 bits)
 /// Can be hashed (there is no NaN)
@@ -50,6 +50,12 @@ impl Mul for NotNanF64 {
     type Output = Self;
     fn mul(self, rhs: Self) -> Self::Output {
         Self(*self * *rhs)
+    }
+}
+impl Neg for NotNanF64 {
+    type Output = Self;
+    fn neg(self) -> Self::Output {
+        Self(-*self)
     }
 }
 

@@ -2,7 +2,11 @@
 use rand::{distr::Distribution, Rng};
 
 use crate::{
-    geometry::{polygon_map_generator::gen_pol_map_square, shapes::Polygon},
+    geometry::{
+        polygon_map_generator::gen_pol_map_square,
+        shapes::Polygon,
+        workspace::{EuclidianDistance, UniformTopology},
+    },
     graphs::Graph,
     path_planning::visibility_graph::{
         compute_vis_graph_cachemap, compute_vis_graph_fullmap, vis_graph_naive, vis_graph_opt1,
@@ -11,6 +15,8 @@ use crate::{
 };
 
 use super::{giggle_coords, out_dir};
+
+const WORKSPACE: UniformTopology<2, EuclidianDistance> = UniformTopology::new_borderless(EuclidianDistance);
 
 struct Param {
     polys: Vec<Polygon>,
@@ -28,6 +34,7 @@ pub fn test_perf() {
                 param.start,
                 param.end,
                 |(i, j)| param.polys[i].0[j],
+                &WORKSPACE,
             );
         }),
         "naive_full",
@@ -39,6 +46,7 @@ pub fn test_perf() {
                 param.start,
                 param.end,
                 |(i, j)| param.polys[i].0[j],
+                &WORKSPACE,
             );
         }),
         "opt1_full",
@@ -50,6 +58,7 @@ pub fn test_perf() {
                 param.start,
                 param.end,
                 |(i, j)| param.polys[i].0[j],
+                &WORKSPACE,
             );
         }),
         "naive_cache",
@@ -61,6 +70,7 @@ pub fn test_perf() {
                 param.start,
                 param.end,
                 |(i, j)| param.polys[i].0[j],
+                &WORKSPACE,
             );
         }),
         "opt1_cache",

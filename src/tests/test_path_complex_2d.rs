@@ -1,16 +1,18 @@
+use crate::geometry::workspace::{EuclidianDistance, UniformTopology};
+use crate::tests::out_dir;
 /// Generates a large map and test the algorithms
-
 use crate::{
-    geometry::{ polygon_map_generator::gen_pol_map_square},
+    geometry::polygon_map_generator::gen_pol_map_square,
     graphs::Graph,
     path_planning::visibility_graph::{compute_vis_graph_fullmap, vis_graph_opt1},
     svg::{self, graph::put_graph, object::Style},
     tests::giggle_coords,
 };
 use rand::{distr::Distribution, rng, Rng};
-use crate::tests::out_dir;
 
 pub fn test_square_map() {
+    let workspace = UniformTopology::new_borderless(EuclidianDistance);
+
     let mut rng = rng();
 
     println!("Computing the map..");
@@ -71,9 +73,12 @@ pub fn test_square_map() {
     let start_j = rng.random_range(0..obstacles2[start_i].0.len());
     let end_i = distr.sample(&mut rng);
     let end_j = rng.random_range(0..obstacles2[end_i].0.len());
-    if let Some((path, _)) = vis.a_star_with((start_i, start_j), (end_i, end_j), |(i, j)| {
-        obstacles2[i].0[j]
-    }) {
+    if let Some((path, _)) = vis.a_star_with(
+        (start_i, start_j),
+        (end_i, end_j),
+        |(i, j)| obstacles2[i].0[j],
+        &workspace,
+    ) {
         println!("Writing path");
         svg.push(
             path.iter()

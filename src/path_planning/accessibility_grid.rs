@@ -1,5 +1,6 @@
 use crate::datastructures::r_tree::RTree;
 use crate::geometry::shapes::Cube;
+use crate::geometry::workspace::{EuclidianDistance, UniformTopology};
 use crate::geometry::VecN;
 use crate::graphs::{Graph, Grid};
 use crate::utils::numbers::F64_EPSILON;
@@ -15,7 +16,11 @@ impl<const N: usize> AccesibilityGrid<N> {
         let sizes = bbox.size().map(|w| (w / resolution).ceil() as usize);
         Grid::new(sizes)
     }
-    pub fn new_with_rtree(tree: &RTree<N, Cube<N>>, resolution: f64, bounding_box: Cube<N>) -> Self {
+    pub fn new_with_rtree(
+        tree: &RTree<N, Cube<N>>,
+        resolution: f64,
+        bounding_box: Cube<N>,
+    ) -> Self {
         let grid = Self::get_grid(bounding_box, resolution);
         let accessible = vec![true; grid.size];
 
@@ -40,7 +45,11 @@ impl<const N: usize> AccesibilityGrid<N> {
 
         res
     }
-    pub fn new_with_painting(cubes: &[Cube<N>], resolution: f64, mut bounding_box: Cube<N>) -> Self {
+    pub fn new_with_painting(
+        cubes: &[Cube<N>],
+        resolution: f64,
+        mut bounding_box: Cube<N>,
+    ) -> Self {
         bounding_box.end = bounding_box.end + VecN::from_fn(|_| F64_EPSILON);
         let grid = Self::get_grid(bounding_box, resolution);
         let accessible = vec![true; grid.size];
@@ -93,12 +102,16 @@ impl<const N: usize> AccesibilityGrid<N> {
     ) -> Option<(Vec<VecN<N, f64>>, f64)> {
         let start_idx = self.grid.index(self.position_int_from_float(start));
         let end_idx = self.grid.index(self.position_int_from_float(end));
+        let workspace = UniformTopology::new_borderless(EuclidianDistance);
 
         self.grid
             .subgraph(|_, b| self.accessible[*b])
-            .a_star_with(start_idx, end_idx, |i| {
-                self.position_flaot_from_int(self.grid.coords(i))
-            })
+            .a_star_with(
+                start_idx,
+                end_idx,
+                |i| self.position_flaot_from_int(self.grid.coords(i)),
+                &workspace,
+            )
             .map(|(path, length)| {
                 (
                     path.into_iter()

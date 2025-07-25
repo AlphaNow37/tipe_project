@@ -2,17 +2,17 @@ use crate::{
     datastructures::r_tree::RTree,
     geometry::{
         shapes::{Cube, Segment},
-        space::Space,
+        workspace::WorkspaceTopology,
         VecN,
     },
 };
 
-pub trait ObstaclesEnv<S: Space> {
+pub trait ObstaclesEnv<V> {
     /// Retourne true ssi a est dans les obstacles
-    fn contains(&self, a: S) -> bool;
+    fn contains(&self, a: V) -> bool;
 
     /// Retourne true ssi b est visible depuis a
-    fn visible(&self, a: S, b: S) -> bool;
+    fn visible(&self, a: V, b: V) -> bool;
 }
 
 impl<const N: usize> ObstaclesEnv<VecN<N, f64>> for RTree<N, Cube<N>> {
@@ -24,32 +24,32 @@ impl<const N: usize> ObstaclesEnv<VecN<N, f64>> for RTree<N, Cube<N>> {
     }
 }
 
-pub struct MapperObstacles<O, S1, S2> {
-    sub_obstacles: O,
-    map_position: Box<dyn Fn(S1) -> S2>,
-    visible_resolution: f64,
+pub struct ObstaclesApprox<'a, W: WorkspaceTopology> {
+    pub contains_func: Box<dyn Fn(W::Vertex) -> bool + 'a>,
+    pub visible_resolution: f64,
+    pub workspace: W,
 }
-impl<O: ObstaclesEnv<S2>, S1: Space, S2: Space> MapperObstacles<O, S1, S2> {
-    fn visible_recurse(&self, a: S1, b: S1, nbr_rec: usize) -> bool {
+impl<'a, W: WorkspaceTopology> ObstaclesApprox<'a, W> {
+    fn visible_recurse(&self, a: W::Vertex, b: W::Vertex, nbr_rec: usize) -> bool {
         if nbr_rec == 0 {
             true
         } else {
-            let mid = a.lerp(b, 0.5);
+            let mid = self.workspace.lerp(a, b, 0.5);
             (!self.contains(mid))
                 && self.visible_recurse(a, mid, nbr_rec - 1)
                 && self.visible_recurse(mid, b, nbr_rec - 1)
         }
     }
 }
-impl<O: ObstaclesEnv<S2>, S1: Space, S2: Space> ObstaclesEnv<S1> for MapperObstacles<O, S1, S2> {
-    fn contains(&self, a: S1) -> bool {
-        self.sub_obstacles.contains((self.map_position)(a))
+impl<'a, W: WorkspaceTopology> ObstaclesEnv<W::Vertex> for ObstaclesApprox<'a, W> {
+    fn contains(&self, a: W::Vertex) -> bool {
+        (self.contains_func)(a)
     }
-    fn visible(&self, a: S1, b: S1) -> bool {
+    fn visible(&self, a: W::Vertex, b: W::Vertex) -> bool {
         if self.contains(a) || self.contains(b) {
             return false;
         }
-        let dist = a.distance(b);
+        let dist = self.workspace.distance(a, b);
         let nb_recurses = (dist / self.visible_resolution).log2().ceil().max(0.) as usize;
         self.visible_recurse(a, b, nb_recurses)
     }

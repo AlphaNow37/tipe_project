@@ -1,9 +1,10 @@
 use std::collections::{hash_map::Entry, HashMap};
 use std::hash::Hash;
+use std::ops::Range;
 use std::sync::Arc;
 
 use crate::datastructures::priority_queue::PriorityQueue;
-use crate::geometry::space::Space;
+use crate::geometry::workspace::WorkspaceTopology;
 use crate::graphs::SubGraph;
 use crate::utils::numbers::NotNanF64;
 use crate::utils::traits::Weight;
@@ -63,11 +64,12 @@ pub trait Graph<Vertex> {
             }
         }
     }
-    fn a_star_with<S: Space>(
+    fn a_star_with<W: WorkspaceTopology>(
         &self,
         start: Vertex,
         end: Vertex,
-        pos_fn: impl Fn(Vertex) -> S,
+        pos_fn: impl Fn(Vertex) -> W::Vertex,
+        workspace: &W,
     ) -> Option<(Vec<Vertex>, f64)>
     where
         Vertex: Hash + Eq + Copy,
@@ -77,10 +79,11 @@ pub trait Graph<Vertex> {
             let pos_a = pos_fn(a);
             let pos_b = pos_fn(b);
             NotNanF64::new(
-                pos_a.distance(pos_b) + (pos_b.distance(pos_end) - pos_a.distance(pos_end)) * 0.99,
+                workspace.distance(pos_a, pos_b) + workspace.distance(pos_b, pos_end)
+                    - workspace.distance(pos_a, pos_end),
             )
         })
-        .map(|(path, weight)| (path, *weight + pos_fn(start).distance(pos_end)))
+        .map(|(path, weight)| (path, *weight + workspace.distance(pos_fn(start), pos_end)))
     }
 
     fn subgraph<'a, F: Fn(&Vertex, &Vertex) -> bool + 'a>(
@@ -100,4 +103,18 @@ pub trait Graph<Vertex> {
 /// A graph where the collection of vertex is known
 pub trait IterableGraph<V>: Graph<V> {
     fn iter(&self) -> impl Iterator<Item = V>;
+}
+
+/// Path graph
+impl Graph<usize> for Range<usize> {
+    fn neighbors(&self, vertex: usize) -> impl Iterator<Item = usize> {
+        debug_assert!(self.start <= vertex && vertex < self.end);
+        let next = vertex + 1;
+        (next < self.end).then_some(next).into_iter()
+    }
+}
+impl IterableGraph<usize> for Range<usize> {
+    fn iter(&self) -> impl Iterator<Item = usize> {
+        self.clone()
+    }
 }

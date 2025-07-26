@@ -1,3 +1,4 @@
+
 /// Un union-find impératif
 pub struct UnionFind {
     parent_height: Vec<(usize, usize)>,

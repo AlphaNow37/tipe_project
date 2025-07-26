@@ -2,6 +2,8 @@ use std::{collections::HashMap, hash::Hash};
 
 use crate::graphs::{Graph, IterableGraph};
 
+
+/// A tree (or maybe forest) where each node know his parent
 #[derive(Clone, Debug)]
 pub struct ParentTree<Id> {
     parent: HashMap<Id, Id>,

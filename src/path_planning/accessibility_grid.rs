@@ -5,6 +5,7 @@ use crate::geometry::VecN;
 use crate::graphs::{Graph, Grid};
 use crate::utils::numbers::F64_EPSILON;
 
+/// A N-dimensionnal graph using a grid
 pub struct AccesibilityGrid<const N: usize> {
     pub grid: Grid<N>,
     pub accessible: Vec<bool>,

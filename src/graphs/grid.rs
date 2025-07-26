@@ -14,8 +14,11 @@ fn calculate_offsets<const N: usize>(sizes: [usize; N]) -> ([usize; N], usize) {
 /// A N-dimensions grid graph
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Grid<const N: usize> {
+    /// Nombre de ligne sur chaque dimension
     pub sizes: [usize; N],
+    /// Ecart d'indice entre (x1, .., xi, .., xn) et (x1, .., xi+1, .., xn)
     offsets: [usize; N],
+    /// Nombre de noeuds de la grille
     pub size: usize,
 }
 impl<const N: usize> Grid<N> {

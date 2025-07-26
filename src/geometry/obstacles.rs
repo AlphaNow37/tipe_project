@@ -24,6 +24,8 @@ impl<const N: usize> ObstaclesEnv<VecN<N, f64>> for RTree<N, Cube<N>> {
     }
 }
 
+/// Une approximation utile lorsque on possède seulement une fonction qui teste l'appartenance
+/// Exemple: bras robotique
 pub struct ObstaclesApprox<'a, W: WorkspaceTopology> {
     pub contains_func: Box<dyn Fn(W::Vertex) -> bool + 'a>,
     pub visible_resolution: f64,

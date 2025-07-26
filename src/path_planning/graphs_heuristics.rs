@@ -3,25 +3,37 @@ use std::marker::PhantomData;
 use rand::rng;
 
 use crate::{
-    datastructures::geometrical_queries::GeometricalQueryDataStore,
-    geometry::{obstacles::ObstaclesEnv, workspace::WorkspaceTopology},
+    geometry::{
+        geometrical_queries::GeometricalQueryDataStore, obstacles::ObstaclesEnv,
+        workspace::WorkspaceTopology,
+    },
     graphs::{Graph, MapGraph, ParentTree},
 };
 
+/// Standard parameters for graph heuristics
 pub struct GraphHeuristicParameters<
     'a,
     W: WorkspaceTopology,
     O: ObstaclesEnv<W::Vertex>,
     Q: GeometricalQueryDataStore<W>,
 > {
+    /// The obstacles space
     pub obstacles: &'a O,
+    /// The path's start
     pub start: W::Vertex,
+    /// The path's end
     pub goal: W::Vertex,
+    /// The workspace where we try to find a path
     pub workspace: W,
+    /// The maximum distance between two vertices on the graph
     pub moving_radius: f64,
+    /// The data structure than shall be used for geometrical queries
     pub vertices: PhantomData<Q>,
 }
 
+
+/// Algo RRT
+/// N'est pas asymptotiquement optimal
 pub fn rrt<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
     param: GraphHeuristicParameters<W, impl ObstaclesEnv<W::Vertex>, Q>,
 ) -> (Option<(Vec<W::Vertex>, f64)>, ParentTree<W::Vertex>) {
@@ -62,6 +74,8 @@ pub fn rrt<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
     (None, tree)
 }
 
+/// Algo PRM
+/// Est asymptotiquement optimal
 pub fn prm<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
     param: GraphHeuristicParameters<W, impl ObstaclesEnv<W::Vertex>, Q>,
 ) -> (Option<(Vec<W::Vertex>, f64)>, MapGraph<W::Vertex>) {

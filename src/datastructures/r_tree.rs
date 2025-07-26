@@ -5,16 +5,23 @@ use crate::utils::numbers::NotNanF64;
 /// Taille avant laquelle les feuilles sont aplaties directement
 const FINAL_SIZE_THRESHOLD: usize = 8;
 
-pub trait RTreeleaf<const N: usize>: Clone {
+
+/// Les feuilles peuvent contenir plus de données que juste la bounding box
+pub trait RTreeLeaf<const N: usize>: Clone {
     fn bounding_box(&self) -> Cube<N>;
 }
 
-impl<const N: usize> RTreeleaf<N> for Cube<N> {
+impl<const N: usize> RTreeLeaf<N> for Cube<N> {
     fn bounding_box(&self) -> Cube<N> {
         *self
     }
 }
 
+
+/// Un R-Tree est un arbre où chaque noeud possède un rectangle, où:
+/// - Si c'est une feuille, alors c'est un obstacle plein
+/// - Si c'est un noeud interne, c'est un rectangle qui englobe ceux des fils
+/// Si l'arbre est équilibré (c'est le cas avec RTree::bulk_load) les opérations se font en O(log n) dans les cas pas trop dégénerés
 #[derive(Debug, Clone)]
 pub enum RTree<const N: usize, T> {
     Node {
@@ -24,7 +31,7 @@ pub enum RTree<const N: usize, T> {
     Leaf(T),
 }
 
-impl<const N: usize, T: RTreeleaf<N>> RTree<N, T> {
+impl<const N: usize, T: RTreeLeaf<N>> RTree<N, T> {
     fn node_from_children(children: Vec<Self>) -> Self {
         Self::Node {
             bounding_box: children
@@ -49,7 +56,7 @@ impl<const N: usize, T: RTreeleaf<N>> RTree<N, T> {
     }
 
     /// Utilise l'algo STR (sort-tile-recursive)
-    /// On divise le groupe en 2 sur chaque dimension
+    /// On divise le groupe en 2 sur chaque dimension, chaque noeud a 2^N fils
     pub fn bulk_load(objs: &mut [T]) -> Self {
         assert!(objs.len() > 0);
         if objs.len() == 1 {

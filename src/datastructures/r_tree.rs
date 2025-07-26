@@ -55,7 +55,7 @@ impl<const N: usize, T: RTreeleaf<N>> RTree<N, T> {
         if objs.len() == 1 {
             return Self::Leaf(objs[0].clone());
         }
-        if objs.len() < (1 << N).max(8) {
+        if objs.len() < (1 << N).max(FINAL_SIZE_THRESHOLD) {
             Self::node_from_children(objs.iter().map(|o| Self::Leaf(o.clone())).collect())
         } else {
             let mut out = Vec::new();

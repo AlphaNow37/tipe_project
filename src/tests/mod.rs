@@ -10,7 +10,7 @@ mod test_perf_path_2d;
 mod test_path_simple_2d;
 mod background;
 mod test_path_grid_3d;
-mod test_rtree_3d;
+mod test_datastructures_3d;
 mod test_datastructures_2d;
 mod test_path_rrt_3d;
 

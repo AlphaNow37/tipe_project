@@ -1,7 +1,6 @@
 use crate::graphs::{Graph, IterableGraph};
 use std::collections::HashMap;
 use std::hash::Hash;
-use std::ops::Deref;
 use std::sync::{Arc, Mutex};
 
 /// A graph using integers as vertices and an adjacency list

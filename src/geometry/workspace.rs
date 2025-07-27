@@ -134,3 +134,9 @@ impl<const N: usize> Length<N> for TchebychevDistance {
         mx
     }
 }
+
+pub fn path_length<W: WorkspaceTopology>(workspace: &W, path: &[W::Vertex]) -> f64 {
+    (0..(path.len() - 1))
+        .map(|i| workspace.distance(path[i], path[i + 1]))
+        .sum::<f64>()
+}

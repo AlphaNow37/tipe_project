@@ -1,6 +1,8 @@
+use rand::rand_core::impls;
+
 use crate::datastructures::r_tree::RTree;
 use crate::geometry::shapes::Cube;
-use crate::geometry::workspace::{EuclidianDistance, UniformTopology};
+use crate::geometry::workspace::{self, EuclidianDistance, Length, UniformTopology};
 use crate::geometry::VecN;
 use crate::graphs::{Graph, Grid};
 use crate::utils::numbers::F64_EPSILON;
@@ -100,10 +102,10 @@ impl<const N: usize> AccesibilityGrid<N> {
         &self,
         start: VecN<N, f64>,
         end: VecN<N, f64>,
+        workspace: UniformTopology<N, impl Length<N>>,
     ) -> Option<(Vec<VecN<N, f64>>, f64)> {
         let start_idx = self.grid.index(self.position_int_from_float(start));
         let end_idx = self.grid.index(self.position_int_from_float(end));
-        let workspace = UniformTopology::new_borderless(EuclidianDistance);
 
         self.grid
             .subgraph(|_, b| self.accessible[*b])

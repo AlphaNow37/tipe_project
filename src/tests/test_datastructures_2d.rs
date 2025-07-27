@@ -44,7 +44,8 @@ mod rtree {
 }
 
 mod grid {
-    use crate::geometry::shapes::Cube;
+    use crate::geometry::workspace::{EuclidianDistance, UniformTopology};
+    use crate::geometry::{shapes::Cube, workspace};
     use crate::geometry::VecN;
     use crate::path_planning::accessibility_grid::AccesibilityGrid;
     use crate::svg::grid::put_grid;
@@ -99,9 +100,11 @@ mod grid {
         );
 
         let size = grid.grid_size();
+        let workspace = UniformTopology::new_borderless(EuclidianDistance);
         if let Some((path, _)) = grid.shortest_path(
             grid.bounding_box.start,
             grid.bounding_box.end - VecN::splat(F64_EPSILON),
+            workspace,
         ) {
             for pos in path {
                 svg.push(

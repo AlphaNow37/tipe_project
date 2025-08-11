@@ -69,10 +69,10 @@ impl<const N: usize> Cube<N> {
             let (min, max) = if seg_size[i] >= 0. {
                 (delta_pos_1[i] / seg_size[i], delta_pos_2[i] / seg_size[i])
             } else {
-                (-delta_pos_2[i] / seg_size[i], -delta_pos_1[i] / seg_size[i])
+                (delta_pos_2[i] / seg_size[i], delta_pos_1[i] / seg_size[i])
             };
-            min_bound = min_bound.min(min);
-            max_bound = max_bound.max(max);
+            min_bound = min_bound.max(min);
+            max_bound = max_bound.min(max);
         }
         min_bound <= max_bound
     }
@@ -310,4 +310,48 @@ fn test_polygon() {
     //     VecN([2., 1.]),
     // ])
     // .is_counter_clockwise());
+}
+
+#[test]
+fn test_cubes() {
+    let c = Cube::from_point(VecN([0., 1., 0.])).with_point(VecN([1., 0., 1.]));
+    assert_eq!(
+        c,
+        Cube {
+            start: VecN([0., 0., 0.]),
+            end: VecN([1., 1., 1.])
+        }
+    );
+
+    assert!(c.contains_point(VecN([0.5, 0.5, 0.5])));
+    assert!(!c.contains_point(VecN([1.2, 0.5, 0.2])));
+
+    assert!(c.intersect_segment(Segment {
+        start: VecN([-0.2, -0.2, -0.3]),
+        end: VecN([1.1, 1.4, 1.1])
+    }));
+    assert!(!c.intersect_segment(Segment {
+        start: VecN([1.6, 0.5, 0.5]),
+        end: VecN([0.5, 1.6, 0.7])
+    }));
+    assert!(c.intersect_segment(Segment {
+        start: VecN([-0.1, -0.1, 0.3]),
+        end: VecN([1.1, 1.1, 1.5])
+    }));
+    assert!(!c.intersect_segment(Segment {
+        start: VecN([1.6, 0.5, -0.1]),
+        end: VecN([0.5, 1.6, 1.4])
+    }));
+    assert!(c.intersect_segment(Segment {
+        start: VecN([0.5, -2., 0.5]),
+        end: VecN([0.5, 2., 0.6])
+    }));
+    assert!(c.intersect_segment(Segment {
+        start: VecN([0.5, 0.4, 0.5]),
+        end: VecN([0.5, 2., 0.6])
+    }));
+    assert!(c.intersect_segment(Segment {
+        start: VecN([0.5, 0.4, 0.5]),
+        end: VecN([-0.4, 2., 0.7])
+    }));
 }

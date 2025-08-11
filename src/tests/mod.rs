@@ -12,11 +12,14 @@ mod background;
 mod test_path_3d;
 mod test_datastructures_3d;
 mod test_datastructures_2d;
+mod test_conv_path;
+
 
 pub fn out_dir() -> PathBuf {
     let here = current_dir()
         .expect("Expected a working directory")
         .join("out");
+    dbg!(&here);
     here
 }
 
@@ -35,7 +38,7 @@ pub fn giggle_coords(polys: &mut [Polygon]) {
 
 pub fn tests() {
     // test_complex::test_square_map();
-    // test_perfs::test_perf();
+    // test_perf_path_2d::test_perf();
     // test_simple::test_pretty_simple();
     // background::generate_backgrounds();
     test_path_3d::test_3d()

@@ -1,13 +1,13 @@
 use std::marker::PhantomData;
+use std::time::{Duration, Instant};
 
+use crate::datastructures::bsp::Bsp;
 use crate::datastructures::r_tree::RTree;
 use crate::geometry::shapes::Cube;
-use crate::geometry::workspace::{
-    self, EuclidianDistance, Length, TchebychevDistance, UniformTopology, WorkspaceTopology
-};
+use crate::geometry::workspace::{EuclidianDistance, Length, UniformTopology};
 use crate::geometry::VecN;
 use crate::path_planning::accessibility_grid::AccesibilityGrid;
-use crate::path_planning::graphs_heuristics::{prm, rrt, GraphHeuristicParameters};
+use crate::path_planning::graphs_heuristics::{prm, rrt, ContinueUntil, GraphHeuristicParameters, SampleNTimes};
 use crate::render_3d::cubes::place_cubes;
 use crate::render_3d::graphs::place_graph;
 use crate::render_3d::grid::place_grid;
@@ -15,7 +15,7 @@ use lib_space_animation::math::{trans, Transform};
 use lib_space_animation::world::primitives::color::Color;
 use lib_space_animation::world::world_builder::{WorldBuilder, WorldsBuilder};
 
-const HEURISTIC: Heuristic = Heuristic::Prm;
+const HEURISTIC: Heuristic = Heuristic::Rrt;
 
 #[derive(Eq, PartialEq)]
 enum Heuristic {
@@ -48,22 +48,24 @@ fn using_grids(
     grid.shortest_path(start, end, workspace)
 }
 
-fn using_graph_heuristic<W: WorkspaceTopology<Vertex = VecN<3, f64>>>(
+fn using_graph_heuristic<D: Length<3>>(
     world: &mut WorldBuilder,
     obstacles: RTree<3, Cube<3>>,
     obstacles_tr: Transform,
     heuristic: Heuristic,
-    workspace: W,
+    workspace: UniformTopology<3, D>,
     start: VecN<3, f64>,
     end: VecN<3, f64>,
 ) -> Option<(Vec<VecN<3, f64>>, f64)> {
     let params = GraphHeuristicParameters {
-        start: VecN([0.2, 0.4, 0.4]),
-        end: VecN([3.8, 0.4, 0.4]),
+        start,
+        end,
         moving_radius: 0.1,
         obstacles: &obstacles,
         workspace,
-        vertices: PhantomData::<(Vec<W::Vertex>, W)>,
+        vertices: PhantomData::<(Bsp<3>, UniformTopology<3, D>)>,
+        // execution_manager: ContinueUntil(Instant::now() + Duration::from_secs_f64(0.003)),
+        execution_manager: SampleNTimes(5000),
     };
 
     let pos = |p| p;
@@ -79,6 +81,7 @@ fn using_graph_heuristic<W: WorkspaceTopology<Vertex = VecN<3, f64>>>(
         Heuristic::Rrt => {
             let (path, graph) = rrt(params);
             place_graph(world, &graph, pos, color, width, obstacles_tr);
+            dbg!(graph.nb_links());
             path
         }
         _ => unreachable!(),
@@ -105,10 +108,10 @@ pub fn test_3d() {
         let mut world = worlds.add_world(0);
         let obstacles_tr = trans(-2., 0., -2.);
         let obstacles = RTree::bulk_load(&mut cubes);
-        let start = VecN([0.2, 0.2, 0.4]);
-        let end = VecN([3.8, 0.4, 0.4]);
+        let start = VecN([0.2, 0.2, 0.9]);
+        let end = VecN([3.8, 0.4, 0.9]);
         let workspace = UniformTopology {
-            dist: TchebychevDistance,
+            dist: EuclidianDistance,
             is_torus: VecN::splat(false),
             offsets: VecN::splat(0.),
             sizes: VecN([4., 1., 1.]),

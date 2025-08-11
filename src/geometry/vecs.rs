@@ -64,6 +64,17 @@ impl<const N: usize> VecN<N, f64> {
 
         ratio.unwrap_or(Some(f64::INFINITY))
     }
+
+    pub fn max_component_index(self) -> usize {
+        debug_assert!(N > 0);
+        let mut mx_i = 0;
+        for i in 1..N {
+            if self[i] > self[mx_i] {
+                mx_i = i;
+            }
+        }
+        mx_i
+    }
 }
 
 impl<const N: usize, T: Debug> Debug for VecN<N, T> {

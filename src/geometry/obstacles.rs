@@ -20,7 +20,7 @@ impl<const N: usize> ObstaclesEnv<VecN<N, f64>> for RTree<N, Cube<N>> {
         self.contains_point(a)
     }
     fn visible(&self, a: VecN<N, f64>, b: VecN<N, f64>) -> bool {
-        self.intersect_segment(Segment { start: a, end: b })
+        !self.intersect_segment(Segment { start: a, end: b })
     }
 }
 

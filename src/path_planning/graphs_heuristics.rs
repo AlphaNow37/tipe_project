@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use std::{marker::PhantomData, time::Instant};
 
 use rand::rng;
 
@@ -11,12 +11,34 @@ use crate::{
     graphs::{Graph, MapGraph, ParentTree},
 };
 
+pub trait ExecutionManager<V> {
+    fn logs(&mut self, _graph: &impl Graph<V>, _length: impl FnOnce() -> Option<f64>) {}
+    fn must_stop(&self, _nb_samples: usize) -> bool {
+        false
+    }
+}
+
+pub struct ContinueUntil(pub Instant);
+impl<V> ExecutionManager<V> for ContinueUntil {
+    fn must_stop(&self, _nb_samples: usize) -> bool {
+        Instant::now() > self.0
+    }
+}
+
+pub struct SampleNTimes(pub usize);
+impl<V> ExecutionManager<V> for SampleNTimes {
+    fn must_stop(&self, nb_samples: usize) -> bool {
+        nb_samples > self.0
+    }
+}
+
 /// Standard parameters for graph heuristics
 pub struct GraphHeuristicParameters<
     'a,
     W: WorkspaceTopology,
     O: ObstaclesEnv<W::Vertex>,
     Q: GeometricalQueryDataStore<W>,
+    M: ExecutionManager<W::Vertex>,
 > {
     /// The obstacles space
     pub obstacles: &'a O,
@@ -30,12 +52,19 @@ pub struct GraphHeuristicParameters<
     pub moving_radius: f64,
     /// The data structure than shall be used for geometrical queries
     pub vertices: PhantomData<Q>,
+    /// Decides when to return and allow intermediate logs
+    pub execution_manager: M,
 }
 
 /// Algo RRT
 /// N'est pas asymptotiquement optimal
 pub fn rrt<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
-    param: GraphHeuristicParameters<W, impl ObstaclesEnv<W::Vertex>, Q>,
+    mut param: GraphHeuristicParameters<
+        W,
+        impl ObstaclesEnv<W::Vertex>,
+        Q,
+        impl ExecutionManager<W::Vertex>,
+    >,
 ) -> (Option<(Vec<W::Vertex>, f64)>, ParentTree<W::Vertex>) {
     // Initialisation des structures de données
     let mut rng = rng();
@@ -44,9 +73,15 @@ pub fn rrt<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
     vertices.insert_vertex(param.start);
 
     // Boucle principale
-    for _ in 0..100000 {
+    let mut n = 0;
+    while !param.execution_manager.must_stop(n) {
+        n += 1;
+        param.execution_manager.logs(&tree, || None);
+
         let xrand = param.workspace.sample_random(&mut rng);
-        let xnear = vertices.nearest_vertex(xrand);
+        let xnear = vertices
+            .nearest_vertex(xrand)
+            .expect("There shoudl be at least one vertex");
         let xnew = param
             .workspace
             .steer_in_disc(xrand, xnear, param.moving_radius);
@@ -75,7 +110,12 @@ pub fn rrt<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
 /// Algo PRM
 /// Est asymptotiquement optimal
 pub fn prm<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
-    param: GraphHeuristicParameters<W, impl ObstaclesEnv<W::Vertex>, Q>,
+    mut param: GraphHeuristicParameters<
+        W,
+        impl ObstaclesEnv<W::Vertex>,
+        Q,
+        impl ExecutionManager<W::Vertex>,
+    >,
 ) -> (Option<(Vec<W::Vertex>, f64)>, MapGraph<W::Vertex>) {
     // Initialisation des structures de données
     let mut rng = rng();
@@ -86,19 +126,26 @@ pub fn prm<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
     vertices.insert_vertex(param.end);
 
     // Boucle principale
-    for _ in 0..5000 {
+    let mut n = 0;
+    while !param.execution_manager.must_stop(n) {
+        n += 1;
+        param.execution_manager.logs(&graph, || {
+            graph
+                .a_star_with(param.start, param.end, |v| v, &param.workspace)
+                .map(|(_, l)| l)
+        });
+
         let xrand = param.workspace.sample_random(&mut rng);
 
         if param.obstacles.contains(xrand) {
             continue;
         }
 
-        vertices.map_r_neighbors(xrand, param.moving_radius, &mut |xnear| {
-            if !param.obstacles.visible(xrand, xnear) {
-                return;
+        vertices.foreach_r_neighbors(xrand, param.moving_radius, &mut |xnear| {
+            if param.obstacles.visible(xrand, xnear) {
+                graph.add_new_link(xrand, xnear);
+                graph.add_new_link(xnear, xrand);
             }
-            graph.add_new_link(xrand, xnear);
-            graph.add_new_link(xnear, xrand);
         });
 
         vertices.insert_vertex(xrand);

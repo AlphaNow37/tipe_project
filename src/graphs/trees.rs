@@ -18,6 +18,9 @@ impl<Id: Hash + Eq + Copy> ParentTree<Id> {
     pub fn get_parent(&self, id: Id) -> Option<Id> {
         self.parent.get(&id).copied()
     }
+    pub fn nb_links(&self) -> usize {
+        self.parent.len()
+    }
     pub fn path_to(&self, mut x: Id) -> Vec<Id> {
         let mut path = vec![x];
         while let Some(p) = self.get_parent(x) {

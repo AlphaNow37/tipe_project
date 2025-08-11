@@ -3,7 +3,7 @@ use std::{fmt::Debug, hash::Hash};
 
 use rand::Rng;
 
-use crate::geometry::VecN;
+use crate::geometry::{shapes::Cube, VecN};
 
 /// Représente la "forme" de l'espace de travail ainsi que le système de coordonnées
 /// Ces noms sont sujets à changement
@@ -48,18 +48,35 @@ impl<const N: usize, D> UniformTopology<N, D> {
         }
     }
 }
+impl<const N: usize, D: Length<N>> UniformTopology<N, D> {
+    /// Computes the (positive) distance between the two coordinates, considering only the dimension dim
+    fn delta_pos(&self, coord_a: f64, coord_b: f64, dim: usize) -> f64 {
+        let diff = (coord_a - coord_b).abs();
+        if self.is_torus[dim] && self.sizes[dim] - diff < diff {
+            self.sizes[dim] - diff
+        } else {
+            diff
+        }
+    }
+    /// (minimum) distance between a and c. Assumes that c is "In one part", and does not go loop around any border
+    pub fn distance_to_cube(&self, a: VecN<N, f64>, c: Cube<N>) -> f64 {
+        self.dist.length(VecN::from_fn(|i| {
+            if c.start[i] <= a[i] && a[i] <= c.end[i] {
+                0.
+            } else {
+                self.delta_pos(a[i], c.start[i], i)
+                    .min(self.delta_pos(a[i], c.end[i], i))
+            }
+        }))
+    }
+}
+
 impl<const N: usize, D: Length<N>> WorkspaceTopology for UniformTopology<N, D> {
     type Vertex = VecN<N, f64>;
 
     fn distance(&self, a: Self::Vertex, b: Self::Vertex) -> f64 {
-        self.dist.length(VecN::from_fn(|i| {
-            let diff = (a[i] - b[i]).abs();
-            if self.is_torus[i] && self.sizes[i] - diff < diff {
-                self.sizes[i] - diff
-            } else {
-                diff
-            }
-        }))
+        self.dist
+            .length(VecN::from_fn(|i| self.delta_pos(a[i], b[i], i)))
     }
     fn lerp(&self, a: Self::Vertex, b: Self::Vertex, time: f64) -> Self::Vertex {
         debug_assert!(0. <= time && time <= 1.);

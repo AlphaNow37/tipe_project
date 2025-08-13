@@ -4,10 +4,22 @@ use std::ops::Range;
 use std::sync::Arc;
 
 use crate::datastructures::priority_queue::PriorityQueue;
+use crate::geometry::obstacles::ObstaclesEnv;
 use crate::geometry::workspace::WorkspaceTopology;
 use crate::graphs::SubGraph;
 use crate::utils::numbers::NotNanF64;
 use crate::utils::traits::Weight;
+
+fn dist_heuristic<W: WorkspaceTopology>(
+    workspace: &W,
+    end: W::Vertex,
+    a: W::Vertex,
+    b: W::Vertex,
+) -> NotNanF64 {
+    NotNanF64::new(
+        workspace.distance(a, b) + workspace.distance(b, end) - workspace.distance(a, end),
+    )
+}
 
 /// A graph interface
 pub trait Graph<Vertex> {
@@ -16,48 +28,53 @@ pub trait Graph<Vertex> {
         &self,
         start: Vertex,
         end: Vertex,
-        cost_fn: impl Fn(Vertex, Vertex) -> W,
+        dist_fn: impl Fn(Vertex, Vertex) -> W,
+        should_shortcut: impl Fn(Vertex, Vertex) -> bool,
     ) -> Option<(Vec<Vertex>, W)>
     where
         Vertex: Hash + Eq + Copy,
     {
-        let mut parent_weight = HashMap::new();
+        let mut parent_cost = HashMap::new();
         let mut queue = PriorityQueue::default();
-        parent_weight.insert(start, (start, W::ZERO));
+        parent_cost.insert(start, (start, W::ZERO));
         queue.push(W::ZERO, start);
         loop {
-            let Some((weight, vertex)) = queue.pop_min() else {
+            let Some((cost, vertex)) = queue.pop_min() else {
                 return None;
             };
-            let (_, best_w) = parent_weight.get(&vertex).unwrap();
-            if *best_w < weight {
+            let (parent, best_cost) = parent_cost[&vertex];
+            if best_cost < cost {
                 continue;
             }
             if vertex == end {
                 let mut path = vec![end];
                 let mut v = vertex;
                 while v != start {
-                    let (p, _) = parent_weight.get(&v).unwrap();
-                    v = *p;
+                    v = parent_cost[&v].0;
                     path.push(v);
                 }
                 path.reverse();
-                return Some((path, weight));
+                return Some((path, cost));
             }
             for child in self.neighbors(vertex) {
-                let new_weight = weight + cost_fn(vertex, child);
-                assert!(new_weight >= weight);
-                match parent_weight.entry(child) {
+                let (new_parent, new_cost, pcost) = if should_shortcut(parent, child) {
+                    let pcost = parent_cost[&parent].1;
+                    (parent, pcost + dist_fn(parent, child), pcost)
+                } else {
+                    (vertex, cost + dist_fn(vertex, child), cost)
+                };
+                debug_assert!(new_cost >= pcost);
+                match parent_cost.entry(child) {
                     Entry::Vacant(e) => {
-                        e.insert((vertex, new_weight));
-                        queue.push(new_weight, child);
+                        e.insert((new_parent, new_cost));
+                        queue.push(new_cost, child);
                     }
                     Entry::Occupied(mut e) => {
-                        if e.get().1 <= new_weight {
+                        if e.get().1 <= new_cost {
                             continue;
                         } else {
-                            e.insert((vertex, new_weight));
-                            queue.push(new_weight, child);
+                            e.insert((new_parent, new_cost));
+                            queue.push(new_cost, child);
                         }
                     }
                 }
@@ -75,14 +92,33 @@ pub trait Graph<Vertex> {
         Vertex: Hash + Eq + Copy,
     {
         let pos_end = pos_fn(end);
-        self.dijkstra_with(start, end, |a, b| {
-            let pos_a = pos_fn(a);
-            let pos_b = pos_fn(b);
-            NotNanF64::new(
-                workspace.distance(pos_a, pos_b) + workspace.distance(pos_b, pos_end)
-                    - workspace.distance(pos_a, pos_end),
-            )
-        })
+        self.dijkstra_with(
+            start,
+            end,
+            |a, b| dist_heuristic(workspace, pos_end, pos_fn(a), pos_fn(b)),
+            |_, _| false,
+        )
+        .map(|(path, weight)| (path, *weight + workspace.distance(pos_fn(start), pos_end)))
+    }
+
+    fn theta_star_with<W: WorkspaceTopology>(
+        &self,
+        start: Vertex,
+        end: Vertex,
+        pos_fn: impl Fn(Vertex) -> W::Vertex,
+        workspace: &W,
+        obstacles: &impl ObstaclesEnv<W::Vertex>,
+    ) -> Option<(Vec<Vertex>, f64)>
+    where
+        Vertex: Hash + Eq + Copy,
+    {
+        let pos_end = pos_fn(end);
+        self.dijkstra_with(
+            start,
+            end,
+            |a, b| dist_heuristic(workspace, pos_end, pos_fn(a), pos_fn(b)),
+            |a, b| obstacles.visible(pos_fn(a), pos_fn(b)),
+        )
         .map(|(path, weight)| (path, *weight + workspace.distance(pos_fn(start), pos_end)))
     }
 

@@ -263,7 +263,13 @@ pub fn prm<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
         vertices.insert_vertex(xrand);
     }
     (
-        graph.a_star_with(param.start, param.end, |v| v, &param.workspace),
+        graph.theta_star_with(
+            param.start,
+            param.end,
+            |v| v,
+            &param.workspace,
+            param.obstacles,
+        ),
         graph,
     )
 }

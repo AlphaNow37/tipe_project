@@ -17,7 +17,7 @@ use lib_space_animation::math::{trans, Transform};
 use lib_space_animation::world::primitives::color::Color;
 use lib_space_animation::world::world_builder::{WorldBuilder, WorldsBuilder};
 
-const HEURISTIC: Heuristic = Heuristic::RrtStar;
+const HEURISTIC: Heuristic = Heuristic::Prm;
 
 #[derive(Eq, PartialEq)]
 enum Heuristic {
@@ -62,13 +62,13 @@ fn using_graph_heuristic<D: Length<3>>(
     let params = GraphHeuristicParameters {
         start,
         end,
-        moving_radius: 0.1,
+        moving_radius: 0.3,
         base_rewire_radius: 0.7,
         obstacles: &obstacles,
         workspace,
         vertices: PhantomData::<(Bsp<3>, UniformTopology<3, D>)>,
         // execution_manager: ContinueUntil(Instant::now() + Duration::from_secs_f64(0.003)),
-        execution_manager: SampleNTimes(500000),
+        execution_manager: SampleNTimes(700),
     };
 
     let pos = |p| p;
@@ -106,8 +106,8 @@ pub fn test_3d() {
         Cube::from_point(VecN([-0.1, -0.1, -0.1])).with_point(VecN([0.1, 1.1, 1.1])),
         Cube::from_point(VecN([-0.1, 1.1, -0.1])).with_point(VecN([4.1, 0.9, 1.1])),
         Cube::from_point(VecN([4.1, -0.1, -0.1])).with_point(VecN([3.9, 1.1, 1.1])),
-        Cube::from_point(VecN([0.95, 0., 0.])).with_point(VecN([1.05, 0.75, 1.0])),
-        Cube::from_point(VecN([1.95, 0.25, 0.])).with_point(VecN([2.05, 1., 1.0])),
+        Cube::from_point(VecN([0.95, 0., 0.])).with_point(VecN([1.05, 0.7, 1.0])),
+        Cube::from_point(VecN([1.95, 0.3, 0.])).with_point(VecN([2.05, 1., 1.0])),
         Cube::from_point(VecN([2.95, 0., 0.35])).with_point(VecN([3.05, 1., 1.0])),
     ];
 

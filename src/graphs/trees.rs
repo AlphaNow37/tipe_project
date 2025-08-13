@@ -83,6 +83,12 @@ impl<Id: Hash + Eq + Copy> Tree<Id> {
     pub fn get_parent(&self, id: Id) -> Option<Id> {
         self.parent_children.get(&id).and_then(|(p, _)| *p)
     }
+    pub fn get_children(&self, id: Id) -> &[Id] {
+        self.parent_children
+            .get(&id)
+            .map(|(_, children)| &**children)
+            .unwrap_or(&[])
+    }
     pub fn nb_links(&self) -> usize {
         self.parent_children.len()
     }

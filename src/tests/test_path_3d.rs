@@ -7,7 +7,9 @@ use crate::geometry::shapes::Cube;
 use crate::geometry::workspace::{EuclidianDistance, Length, UniformTopology};
 use crate::geometry::VecN;
 use crate::path_planning::accessibility_grid::AccesibilityGrid;
-use crate::path_planning::graphs_heuristics::{prm, rrt, ContinueUntil, GraphHeuristicParameters, SampleNTimes};
+use crate::path_planning::graphs_heuristics::{
+    prm, rrt, rrt_star, ContinueUntil, GraphHeuristicParameters, SampleNTimes
+};
 use crate::render_3d::cubes::place_cubes;
 use crate::render_3d::graphs::place_graph;
 use crate::render_3d::grid::place_grid;
@@ -15,7 +17,7 @@ use lib_space_animation::math::{trans, Transform};
 use lib_space_animation::world::primitives::color::Color;
 use lib_space_animation::world::world_builder::{WorldBuilder, WorldsBuilder};
 
-const HEURISTIC: Heuristic = Heuristic::Rrt;
+const HEURISTIC: Heuristic = Heuristic::RrtStar;
 
 #[derive(Eq, PartialEq)]
 enum Heuristic {
@@ -61,11 +63,12 @@ fn using_graph_heuristic<D: Length<3>>(
         start,
         end,
         moving_radius: 0.1,
+        base_rewire_radius: 0.7,
         obstacles: &obstacles,
         workspace,
         vertices: PhantomData::<(Bsp<3>, UniformTopology<3, D>)>,
         // execution_manager: ContinueUntil(Instant::now() + Duration::from_secs_f64(0.003)),
-        execution_manager: SampleNTimes(5000),
+        execution_manager: SampleNTimes(500000),
     };
 
     let pos = |p| p;
@@ -80,6 +83,12 @@ fn using_graph_heuristic<D: Length<3>>(
         }
         Heuristic::Rrt => {
             let (path, graph) = rrt(params);
+            place_graph(world, &graph, pos, color, width, obstacles_tr);
+            dbg!(graph.nb_links());
+            path
+        }
+        Heuristic::RrtStar => {
+            let (path, graph) = rrt_star(params);
             place_graph(world, &graph, pos, color, width, obstacles_tr);
             dbg!(graph.nb_links());
             path

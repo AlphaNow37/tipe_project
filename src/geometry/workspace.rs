@@ -9,6 +9,7 @@ use crate::geometry::{shapes::Cube, VecN};
 /// Ces noms sont sujets à changement
 pub trait WorkspaceTopology: Clone {
     type Vertex: Copy + Eq + Hash + Debug;
+    const NB_DIMENSIONS: usize;
 
     /// Retourne la distance entre deux points dans cet espace
     /// Doit satisfaire les conditions habituelles d'une distance
@@ -73,6 +74,7 @@ impl<const N: usize, D: Length<N>> UniformTopology<N, D> {
 
 impl<const N: usize, D: Length<N>> WorkspaceTopology for UniformTopology<N, D> {
     type Vertex = VecN<N, f64>;
+    const NB_DIMENSIONS: usize = N;
 
     fn distance(&self, a: Self::Vertex, b: Self::Vertex) -> f64 {
         self.dist

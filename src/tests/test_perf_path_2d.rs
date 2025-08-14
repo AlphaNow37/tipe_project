@@ -5,8 +5,8 @@ use crate::{
     geometry::{
         polygon_map_generator::gen_pol_map_square,
         shapes::Polygon,
-        workspace::{EuclidianDistance, UniformTopology},
     },
+    workspace::workspace::{EuclidianDistance, UniformTopology},
     graphs::Graph,
     path_planning::visibility_graph::{
         compute_vis_graph_cachemap, compute_vis_graph_fullmap, vis_graph_naive, vis_graph_opt1,

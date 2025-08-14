@@ -2,7 +2,7 @@ use rand::rand_core::impls;
 
 use crate::datastructures::r_tree::RTree;
 use crate::geometry::shapes::Cube;
-use crate::geometry::workspace::{self, EuclidianDistance, Length, UniformTopology};
+use crate::workspace::workspace::{self, EuclidianDistance, Length, UniformTopology};
 use crate::geometry::VecN;
 use crate::graphs::{Graph, Grid};
 use crate::utils::numbers::F64_EPSILON;

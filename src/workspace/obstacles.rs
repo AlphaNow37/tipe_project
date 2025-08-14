@@ -2,9 +2,9 @@ use crate::{
     datastructures::r_tree::RTree,
     geometry::{
         shapes::{Cube, Segment},
-        workspace::WorkspaceTopology,
         VecN,
     },
+    workspace::workspace::WorkspaceTopology,
 };
 
 pub trait ObstaclesEnv<V> {

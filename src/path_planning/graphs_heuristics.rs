@@ -3,10 +3,10 @@ use std::{collections::HashMap, marker::PhantomData, time::Instant};
 use rand::rng;
 
 use crate::{
-    geometry::{
+    workspace::{
         geometrical_queries::GeometricalQueryDataStore,
         obstacles::ObstaclesEnv,
-        workspace::{self, path_length, WorkspaceTopology},
+        workspace::{path_length, WorkspaceTopology},
     },
     graphs::{Graph, MapGraph, ParentTree, Tree},
 };

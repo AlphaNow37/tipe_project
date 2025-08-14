@@ -4,8 +4,8 @@ use std::ops::Range;
 use std::sync::Arc;
 
 use crate::datastructures::priority_queue::PriorityQueue;
-use crate::geometry::obstacles::ObstaclesEnv;
-use crate::geometry::workspace::WorkspaceTopology;
+use crate::workspace::obstacles::ObstaclesEnv;
+use crate::workspace::workspace::WorkspaceTopology;
 use crate::graphs::SubGraph;
 use crate::utils::numbers::NotNanF64;
 use crate::utils::traits::Weight;

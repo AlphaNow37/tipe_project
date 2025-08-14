@@ -2,9 +2,9 @@ use crate::{
     datastructures::bsp::Bsp,
     geometry::{
         shapes::Cube,
-        workspace::{Length, UniformTopology, WorkspaceTopology},
         VecN,
     },
+    workspace::workspace::{Length, UniformTopology, WorkspaceTopology},
 };
 
 /// Used to answer geometrical queries like nearest neighbors / R-nearest neighbors

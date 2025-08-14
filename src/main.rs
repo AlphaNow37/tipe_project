@@ -6,6 +6,7 @@ pub mod svg;
 mod tests;
 pub mod utils;
 mod render_3d;
+pub mod workspace;
 
 fn main() {
     tests::tests();

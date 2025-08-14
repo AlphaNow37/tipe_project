@@ -1,4 +1,4 @@
-use crate::geometry::workspace::{EuclidianDistance, UniformTopology};
+use crate::workspace::workspace::{EuclidianDistance, UniformTopology};
 use crate::tests::out_dir;
 /// Generates a large map and test the algorithms
 use crate::{

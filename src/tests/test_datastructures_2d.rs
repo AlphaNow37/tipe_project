@@ -44,8 +44,7 @@ mod rtree {
 }
 
 mod grid {
-    use crate::geometry::workspace::{EuclidianDistance, UniformTopology};
-    use crate::geometry::{shapes::Cube, workspace};
+    use crate::geometry::shapes::Cube;
     use crate::geometry::VecN;
     use crate::path_planning::accessibility_grid::AccesibilityGrid;
     use crate::svg::grid::put_grid;
@@ -53,6 +52,7 @@ mod grid {
     use crate::svg::SvgGroup;
     use crate::tests::out_dir;
     use crate::utils::numbers::F64_EPSILON;
+    use crate::workspace::workspace::{EuclidianDistance, UniformTopology};
     use rand::{rng, Rng};
     use std::array::from_fn;
 

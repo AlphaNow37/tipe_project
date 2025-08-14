@@ -4,7 +4,7 @@ use std::time::{Duration, Instant};
 use crate::datastructures::bsp::Bsp;
 use crate::datastructures::r_tree::RTree;
 use crate::geometry::shapes::Cube;
-use crate::geometry::workspace::{EuclidianDistance, Length, UniformTopology};
+use crate::workspace::workspace::{EuclidianDistance, Length, UniformTopology};
 use crate::geometry::VecN;
 use crate::path_planning::accessibility_grid::AccesibilityGrid;
 use crate::path_planning::graphs_heuristics::{

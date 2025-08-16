@@ -1,3 +1,5 @@
+use rand::Rng;
+
 /// A bunch of geometrical shapes
 use crate::utils::numbers::{NotNanF64, UsizeExt, F64_EPSILON};
 use std::f64::consts::PI;
@@ -75,6 +77,9 @@ impl<const N: usize> Cube<N> {
             max_bound = max_bound.min(max);
         }
         min_bound <= max_bound
+    }
+    pub fn random_vertex(self, rng: &mut impl Rng) -> VecN<N, f64> {
+        VecN::from_fn(|i| rng.random_range(self.start[i]..self.end[i]))
     }
 }
 

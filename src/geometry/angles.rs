@@ -3,6 +3,11 @@ use std::{
     ops::{Add, Deref, Mul, Neg, Sub},
 };
 
+use rand::{
+    distr::{Distribution, StandardUniform},
+    Rng,
+};
+
 use crate::utils::numbers::{NotNanF64, Zero};
 
 use super::VecN;
@@ -88,5 +93,10 @@ impl Mul<f64> for Angle {
     type Output = Self;
     fn mul(self, rhs: f64) -> Self::Output {
         Self::new(*self.0 * rhs)
+    }
+}
+impl Distribution<Angle> for StandardUniform {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Angle {
+        Angle(NotNanF64::new_debug_checked(rng.random_range(0.0..TAU)))
     }
 }

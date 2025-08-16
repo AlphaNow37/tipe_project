@@ -4,15 +4,15 @@ use std::time::{Duration, Instant};
 use crate::datastructures::bsp::Bsp;
 use crate::datastructures::r_tree::RTree;
 use crate::geometry::shapes::Cube;
-use crate::workspace::workspace::{EuclidianDistance, Length, UniformTopology};
 use crate::geometry::VecN;
 use crate::path_planning::accessibility_grid::AccesibilityGrid;
 use crate::path_planning::graphs_heuristics::{
-    prm, rrt, rrt_star, ContinueUntil, GraphHeuristicParameters, SampleNTimes
+    prm, rrt, rrt_star, ContinueUntil, GraphHeuristicParameters, SampleNTimes,
 };
 use crate::render_3d::cubes::place_cubes;
 use crate::render_3d::graphs::place_graph;
 use crate::render_3d::grid::place_grid;
+use crate::workspace::cartesians::{CartesianTopology, EuclidianDistance, Length};
 use lib_space_animation::math::{trans, Transform};
 use lib_space_animation::world::primitives::color::Color;
 use lib_space_animation::world::world_builder::{WorldBuilder, WorldsBuilder};
@@ -33,18 +33,11 @@ fn using_grids(
     world: &mut WorldBuilder,
     obstacles: RTree<3, Cube<3>>,
     obstacles_tr: Transform,
-    workspace: UniformTopology<3, impl Length<3>>,
+    workspace: CartesianTopology<3, impl Length<3>>,
     start: VecN<3, f64>,
     end: VecN<3, f64>,
 ) -> Option<(Vec<VecN<3, f64>>, f64)> {
-    let grid = AccesibilityGrid::new_with_rtree(
-        &obstacles,
-        0.04,
-        Cube {
-            start: workspace.offsets,
-            end: workspace.offsets + workspace.sizes,
-        },
-    );
+    let grid = AccesibilityGrid::new_with_rtree(&obstacles, 0.04, workspace.space);
     place_grid(world, &grid, obstacles_tr);
 
     grid.shortest_path(start, end, workspace)
@@ -55,7 +48,7 @@ fn using_graph_heuristic<D: Length<3>>(
     obstacles: RTree<3, Cube<3>>,
     obstacles_tr: Transform,
     heuristic: Heuristic,
-    workspace: UniformTopology<3, D>,
+    workspace: CartesianTopology<3, D>,
     start: VecN<3, f64>,
     end: VecN<3, f64>,
 ) -> Option<(Vec<VecN<3, f64>>, f64)> {
@@ -66,7 +59,7 @@ fn using_graph_heuristic<D: Length<3>>(
         base_rewire_radius: 0.7,
         obstacles: &obstacles,
         workspace,
-        vertices: PhantomData::<(Bsp<3>, UniformTopology<3, D>)>,
+        vertices: PhantomData::<(Bsp<3>, CartesianTopology<3, D>)>,
         // execution_manager: ContinueUntil(Instant::now() + Duration::from_secs_f64(0.003)),
         execution_manager: SampleNTimes(700),
     };
@@ -119,11 +112,12 @@ pub fn test_3d() {
         let obstacles = RTree::bulk_load(&mut cubes);
         let start = VecN([0.2, 0.2, 0.9]);
         let end = VecN([3.8, 0.4, 0.9]);
-        let workspace = UniformTopology {
+        let workspace = CartesianTopology {
             dist: EuclidianDistance,
-            is_torus: VecN::splat(false),
-            offsets: VecN::splat(0.),
-            sizes: VecN([4., 1., 1.]),
+            space: Cube {
+                start: VecN::splat(0.),
+                end: VecN([4., 1., 1.]),
+            },
         };
 
         place_cubes(&mut world, &cubes[..5], Color::BLUE, obstacles_tr, true);

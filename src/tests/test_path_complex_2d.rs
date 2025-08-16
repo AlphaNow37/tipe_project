@@ -1,4 +1,4 @@
-use crate::workspace::workspace::{EuclidianDistance, UniformTopology};
+use crate::workspace::cartesians::{EuclidianDistance, CartesianTopology};
 use crate::tests::out_dir;
 /// Generates a large map and test the algorithms
 use crate::{
@@ -11,7 +11,7 @@ use crate::{
 use rand::{distr::Distribution, rng, Rng};
 
 pub fn test_square_map() {
-    let workspace = UniformTopology::new_borderless(EuclidianDistance);
+    let workspace = CartesianTopology::new_borderless(EuclidianDistance);
 
     let mut rng = rng();
 

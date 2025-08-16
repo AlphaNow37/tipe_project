@@ -1,11 +1,9 @@
-use rand::rand_core::impls;
-
 use crate::datastructures::r_tree::RTree;
 use crate::geometry::shapes::Cube;
-use crate::workspace::workspace::{self, EuclidianDistance, Length, UniformTopology};
 use crate::geometry::VecN;
 use crate::graphs::{Graph, Grid};
 use crate::utils::numbers::F64_EPSILON;
+use crate::workspace::cartesians::{CartesianTopology, Length};
 
 /// A N-dimensionnal graph using a grid
 pub struct AccesibilityGrid<const N: usize> {
@@ -102,7 +100,7 @@ impl<const N: usize> AccesibilityGrid<N> {
         &self,
         start: VecN<N, f64>,
         end: VecN<N, f64>,
-        workspace: UniformTopology<N, impl Length<N>>,
+        workspace: CartesianTopology<N, impl Length<N>>,
     ) -> Option<(Vec<VecN<N, f64>>, f64)> {
         let start_idx = self.grid.index(self.position_int_from_float(start));
         let end_idx = self.grid.index(self.position_int_from_float(end));

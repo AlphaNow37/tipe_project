@@ -6,7 +6,7 @@ use crate::{
         polygon_map_generator::gen_pol_map_square,
         shapes::Polygon,
     },
-    workspace::workspace::{EuclidianDistance, UniformTopology},
+    workspace::cartesians::{EuclidianDistance, CartesianTopology},
     graphs::Graph,
     path_planning::visibility_graph::{
         compute_vis_graph_cachemap, compute_vis_graph_fullmap, vis_graph_naive, vis_graph_opt1,
@@ -16,8 +16,8 @@ use crate::{
 
 use super::{giggle_coords, out_dir};
 
-const WORKSPACE: UniformTopology<2, EuclidianDistance> =
-    UniformTopology::new_borderless(EuclidianDistance);
+const WORKSPACE: CartesianTopology<2, EuclidianDistance> =
+    CartesianTopology::new_borderless(EuclidianDistance);
 
 struct Param {
     polys: Vec<Polygon>,

@@ -3,12 +3,12 @@ use std::{collections::HashMap, marker::PhantomData, time::Instant};
 use rand::rng;
 
 use crate::{
+    graphs::{Graph, MapGraph, ParentTree, Tree},
     workspace::{
         geometrical_queries::GeometricalQueryDataStore,
         obstacles::ObstaclesEnv,
         workspace::{path_length, WorkspaceTopology},
     },
-    graphs::{Graph, MapGraph, ParentTree, Tree},
 };
 
 pub trait ExecutionManager<V> {
@@ -36,7 +36,7 @@ impl<V> ExecutionManager<V> for SampleNTimes {
 pub struct GraphHeuristicParameters<
     'a,
     W: WorkspaceTopology,
-    O: ObstaclesEnv<W::Vertex>,
+    O: ObstaclesEnv<W>,
     Q: GeometricalQueryDataStore<W>,
     M: ExecutionManager<W::Vertex>,
 > {
@@ -61,48 +61,46 @@ pub struct GraphHeuristicParameters<
 /// Algo RRT
 /// N'est pas asymptotiquement optimal
 pub fn rrt<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
-    mut param: GraphHeuristicParameters<
-        W,
-        impl ObstaclesEnv<W::Vertex>,
-        Q,
-        impl ExecutionManager<W::Vertex>,
-    >,
+    mut p: GraphHeuristicParameters<W, impl ObstaclesEnv<W>, Q, impl ExecutionManager<W::Vertex>>,
 ) -> (Option<(Vec<W::Vertex>, f64)>, ParentTree<W::Vertex>) {
     // Initialisation des structures de données
     let mut rng = rng();
     let mut tree = ParentTree::new();
-    let mut vertices = Q::new_store(param.workspace.clone());
-    vertices.insert_vertex(param.start);
+    let mut vertices = Q::new_store(p.workspace.clone());
+    vertices.insert_vertex(p.start);
 
     // Boucle principale
     let mut n = 1;
-    while !param.execution_manager.must_stop(n) {
+    while !p.execution_manager.must_stop(n) {
         n += 1;
-        param.execution_manager.logs(&tree, || None);
+        p.execution_manager.logs(&tree, || None);
 
-        let xrand = param.workspace.sample_random(&mut rng);
-        let xnearest = vertices
+        let xrand = p.workspace.sample_random(&mut rng);
+        let snearest = vertices
             .nearest_vertex(xrand)
+            .map(|s| p.workspace.segment_reverse(s))
             .expect("There should be at least one vertex");
-        let xnew = param
-            .workspace
-            .steer_in_disc(xrand, xnearest, param.moving_radius);
+        let snew = p.workspace.steer_in_disc(snearest, p.moving_radius);
 
-        if !param.obstacles.visible(xnearest, xnew) {
+        if p.obstacles.collide_segment(snearest) {
             continue;
         }
 
+        let xnew = p.workspace.segment_end(snew);
+        let xnearest = p.workspace.segment_start(snew);
         vertices.insert_vertex(xnew);
         tree.set_parent(xnew, xnearest);
 
         // Early return pour rrt
-        if param.workspace.distance(xnew, param.end) <= param.moving_radius
-            && param.obstacles.visible(xnew, param.end)
+        if p.workspace.distance(xnew, p.end) <= p.moving_radius
+            && !p
+                .obstacles
+                .collide_segment(p.workspace.segment(xnew, p.end))
         {
-            vertices.insert_vertex(param.end);
-            tree.set_parent(param.end, xnew);
-            let path = tree.path_to(param.end);
-            let length = path_length(&param.workspace, &path);
+            vertices.insert_vertex(p.end);
+            tree.set_parent(p.end, xnew);
+            let path = tree.path_to(p.end);
+            let length = path_length(&p.workspace, &path);
             return (Some((path, length)), tree);
         }
     }
@@ -112,56 +110,50 @@ pub fn rrt<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
 /// Algo RRT*
 /// Est asymptotiquement optimal
 pub fn rrt_star<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
-    mut param: GraphHeuristicParameters<
-        W,
-        impl ObstaclesEnv<W::Vertex>,
-        Q,
-        impl ExecutionManager<W::Vertex>,
-    >,
+    mut p: GraphHeuristicParameters<W, impl ObstaclesEnv<W>, Q, impl ExecutionManager<W::Vertex>>,
 ) -> (Option<(Vec<W::Vertex>, f64)>, Tree<W::Vertex>) {
     // Initialisation des structures de données
     let mut rng = rng();
     let mut tree = Tree::new();
     let mut distance: HashMap<W::Vertex, f64> = HashMap::new();
-    let mut vertices = Q::new_store(param.workspace.clone());
+    let mut vertices = Q::new_store(p.workspace.clone());
 
-    vertices.insert_vertex(param.start);
-    distance.insert(param.start, 0.);
+    vertices.insert_vertex(p.start);
+    distance.insert(p.start, 0.);
 
-    distance.insert(param.end, f64::INFINITY);
+    distance.insert(p.end, f64::INFINITY);
 
     let mut visible_nears = Vec::new();
 
     // Boucle principale
     let mut n = 1;
-    while !param.execution_manager.must_stop(n) {
+    while !p.execution_manager.must_stop(n) {
         n += 1;
-        param
-            .execution_manager
-            .logs(&tree, || distance.get(&param.end).copied());
+        p.execution_manager
+            .logs(&tree, || distance.get(&p.end).copied());
 
         // Usual sampling and steering, like in RRT
-        let xrand = param.workspace.sample_random(&mut rng);
-        let xnearest = vertices
+        let xrand = p.workspace.sample_random(&mut rng);
+        let snearest = vertices
             .nearest_vertex(xrand)
+            .map(|s| p.workspace.segment_reverse(s))
             .expect("There should be at least one vertex");
-        let xnew = param
-            .workspace
-            .steer_in_disc(xrand, xnearest, param.moving_radius);
+        let snew = p.workspace.steer_in_disc(snearest, p.moving_radius);
 
-        if !param.obstacles.visible(xnearest, xnew) {
+        if p.obstacles.collide_segment(snew) {
             continue;
         }
 
-        // dbg!("adding a new vertex");
+        let xnew = p.workspace.segment_end(snew);
+        let xnearest = p.workspace.segment_start(snew);
 
         // We find near & visible vertices
         visible_nears.clear();
-        let radius = param.base_rewire_radius
+        let radius = p.base_rewire_radius
             * (((n as f64).ln() + 1.) / (n as f64)).powf(1. / (W::NB_DIMENSIONS + 1) as f64);
-        vertices.foreach_r_neighbors(xnew, radius, &mut |xnear| {
-            if param.obstacles.visible(xnew, xnear) {
-                visible_nears.push((xnear, param.workspace.distance(xnew, xnear)))
+        vertices.foreach_r_neighbors(xnew, radius, &mut |snear, dist| {
+            if !p.obstacles.collide_segment(snear) {
+                visible_nears.push((snear, dist))
             }
         });
 
@@ -169,11 +161,12 @@ pub fn rrt_star<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
 
         // We find the best parent for xnew
         let mut best_parent = xnearest;
-        let mut best_cost = distance[&xnearest] + param.workspace.distance(xnearest, xnew);
-        for (xnear, dist) in &visible_nears {
+        let mut best_cost = distance[&xnearest] + p.workspace.length(snew);
+        for (snear, dist) in &visible_nears {
+            let xnear = p.workspace.segment_end(*snear);
             let cost = distance[&xnear] + dist;
             if cost < best_cost {
-                best_parent = *xnear;
+                best_parent = xnear;
                 best_cost = cost;
             }
         }
@@ -184,37 +177,40 @@ pub fn rrt_star<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
         distance.insert(xnew, best_cost);
 
         // We rewire
-        for (xnear, dist) in &visible_nears {
-            if distance[xnear] > best_cost + dist {
-                // dbg!("rewiring");
-                tree.set_parent(*xnear, xnew);
-                let mut stack = vec![(xnew, *xnear, best_cost)];
-                while let Some((parent, child, parent_cost)) = stack.pop() {
-                    // dbg!(child);
-                    let child_cost = parent_cost + param.workspace.distance(parent, child);
-                    distance.insert(child, child_cost);
-                    for c in tree.get_children(child) {
-                        stack.push((child, *c, child_cost))
+        for (snear, dist) in &visible_nears {
+            let xnear = p.workspace.segment_end(*snear);
+            let delta = best_cost + dist - distance[&xnear];
+            // We see an improvement
+            if delta < 0. {
+                tree.set_parent(xnear, xnew);
+                let mut stack = vec![xnear];
+                while let Some(child) = stack.pop() {
+                    distance.entry(child).and_modify(|cost| *cost += delta);
+                    for subchild in tree.get_children(child) {
+                        stack.push(*subchild)
                     }
                 }
             }
         }
 
-        let dist_to_end = param.workspace.distance(xnew, param.end);
-        if dist_to_end <= param.moving_radius
-            && param.obstacles.visible(xnew, param.end)
-            && best_cost + dist_to_end < distance[&param.end]
+        // TODO place it in a vertex filter operation..
+        let dist_to_end = p.workspace.distance(xnew, p.end);
+        if dist_to_end <= p.moving_radius
+            && !p
+                .obstacles
+                .collide_segment(p.workspace.segment(xnew, p.end))
+            && best_cost + dist_to_end < distance[&p.end]
         {
-            distance.insert(param.end, best_cost + dist_to_end);
-            tree.set_parent(param.end, xnew);
+            distance.insert(p.end, best_cost + dist_to_end);
+            tree.set_parent(p.end, xnew);
         }
     }
 
-    let end_cost = distance[&param.end];
+    let end_cost = distance[&p.end];
     if end_cost == f64::INFINITY {
         (None, tree)
     } else {
-        let path = tree.path_to(param.end);
+        let path = tree.path_to(p.end);
         (Some((path, end_cost)), tree)
     }
 }
@@ -222,39 +218,35 @@ pub fn rrt_star<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
 /// Algo PRM
 /// Est asymptotiquement optimal
 pub fn prm<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
-    mut param: GraphHeuristicParameters<
-        W,
-        impl ObstaclesEnv<W::Vertex>,
-        Q,
-        impl ExecutionManager<W::Vertex>,
-    >,
+    mut p: GraphHeuristicParameters<W, impl ObstaclesEnv<W>, Q, impl ExecutionManager<W::Vertex>>,
 ) -> (Option<(Vec<W::Vertex>, f64)>, MapGraph<W::Vertex>) {
     // Initialisation des structures de données
     let mut rng = rng();
     let mut graph = MapGraph::default();
-    let mut vertices = Q::new_store(param.workspace.clone());
+    let mut vertices = Q::new_store(p.workspace.clone());
 
-    vertices.insert_vertex(param.start);
-    vertices.insert_vertex(param.end);
+    vertices.insert_vertex(p.start);
+    vertices.insert_vertex(p.end);
 
     // Boucle principale
     let mut n = 1;
-    while !param.execution_manager.must_stop(n) {
+    while !p.execution_manager.must_stop(n) {
         n += 1;
-        param.execution_manager.logs(&graph, || {
+        p.execution_manager.logs(&graph, || {
             graph
-                .a_star_with(param.start, param.end, |v| v, &param.workspace)
+                .a_star_with(p.start, p.end, |v| v, &p.workspace)
                 .map(|(_, l)| l)
         });
 
-        let xrand = param.workspace.sample_random(&mut rng);
+        let xrand = p.workspace.sample_random(&mut rng);
 
-        if param.obstacles.contains(xrand) {
+        if p.obstacles.collide_vertex(xrand) {
             continue;
         }
 
-        vertices.foreach_r_neighbors(xrand, param.moving_radius, &mut |xnear| {
-            if param.obstacles.visible(xrand, xnear) {
+        vertices.foreach_r_neighbors(xrand, p.moving_radius, &mut |snear, _| {
+            if !p.obstacles.collide_segment(snear) {
+                let xnear = p.workspace.segment_end(snear);
                 graph.add_new_link(xrand, xnear);
                 graph.add_new_link(xnear, xrand);
             }
@@ -263,13 +255,7 @@ pub fn prm<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
         vertices.insert_vertex(xrand);
     }
     (
-        graph.theta_star_with(
-            param.start,
-            param.end,
-            |v| v,
-            &param.workspace,
-            param.obstacles,
-        ),
+        graph.theta_star_with(p.start, p.end, |v| v, &p.workspace, p.obstacles),
         graph,
     )
 }

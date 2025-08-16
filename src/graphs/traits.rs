@@ -4,11 +4,11 @@ use std::ops::Range;
 use std::sync::Arc;
 
 use crate::datastructures::priority_queue::PriorityQueue;
-use crate::workspace::obstacles::ObstaclesEnv;
-use crate::workspace::workspace::WorkspaceTopology;
 use crate::graphs::SubGraph;
 use crate::utils::numbers::NotNanF64;
 use crate::utils::traits::Weight;
+use crate::workspace::obstacles::ObstaclesEnv;
+use crate::workspace::workspace::WorkspaceTopology;
 
 fn dist_heuristic<W: WorkspaceTopology>(
     workspace: &W,
@@ -107,7 +107,7 @@ pub trait Graph<Vertex> {
         end: Vertex,
         pos_fn: impl Fn(Vertex) -> W::Vertex,
         workspace: &W,
-        obstacles: &impl ObstaclesEnv<W::Vertex>,
+        obstacles: &impl ObstaclesEnv<W>,
     ) -> Option<(Vec<Vertex>, f64)>
     where
         Vertex: Hash + Eq + Copy,
@@ -117,7 +117,7 @@ pub trait Graph<Vertex> {
             start,
             end,
             |a, b| dist_heuristic(workspace, pos_end, pos_fn(a), pos_fn(b)),
-            |a, b| obstacles.visible(pos_fn(a), pos_fn(b)),
+            |a, b| !obstacles.collide_segment(workspace.segment(pos_fn(a), pos_fn(b))),
         )
         .map(|(path, weight)| (path, *weight + workspace.distance(pos_fn(start), pos_end)))
     }

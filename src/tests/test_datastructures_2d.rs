@@ -52,7 +52,7 @@ mod grid {
     use crate::svg::SvgGroup;
     use crate::tests::out_dir;
     use crate::utils::numbers::F64_EPSILON;
-    use crate::workspace::workspace::{EuclidianDistance, UniformTopology};
+    use crate::workspace::cartesians::{EuclidianDistance, CartesianTopology};
     use rand::{rng, Rng};
     use std::array::from_fn;
 
@@ -100,7 +100,7 @@ mod grid {
         );
 
         let size = grid.grid_size();
-        let workspace = UniformTopology::new_borderless(EuclidianDistance);
+        let workspace = CartesianTopology::new_borderless(EuclidianDistance);
         if let Some((path, _)) = grid.shortest_path(
             grid.bounding_box.start,
             grid.bounding_box.end - VecN::splat(F64_EPSILON),

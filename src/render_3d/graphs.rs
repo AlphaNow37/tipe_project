@@ -1,4 +1,4 @@
-use crate::workspace::workspace::{EuclidianDistance, Length};
+use crate::workspace::cartesians::{EuclidianDistance, Length};
 use crate::geometry::VecN;
 use crate::graphs::IterableGraph;
 use lib_space_animation::math::{Transform, Vec3};

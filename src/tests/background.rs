@@ -7,13 +7,13 @@ use crate::{
     graphs::Graph,
     path_planning::visibility_graph::{compute_vis_graph_fullmap, vis_graph_opt1},
     svg::{self, graph::put_graph, object::Style},
-    workspace::workspace::{EuclidianDistance, UniformTopology},
+    workspace::cartesians::{EuclidianDistance, CartesianTopology},
 };
 
 use super::giggle_coords;
 
 pub fn generate_backgrounds() {
-    let workspace = UniformTopology::new_borderless(EuclidianDistance);
+    let workspace = CartesianTopology::new_borderless(EuclidianDistance);
 
     let p1 = Polygon::new(vec![
         VecN([0., 0.]),

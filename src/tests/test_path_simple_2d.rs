@@ -4,7 +4,7 @@ use crate::{
         shapes::Polygon,
         VecN,
     },
-    workspace::workspace::{EuclidianDistance, UniformTopology},
+    workspace::cartesians::{EuclidianDistance, CartesianTopology},
     graphs::Graph,
     path_planning::visibility_graph::{compute_vis_graph_fullmap, vis_graph_opt1},
     svg::{self, graph::put_graph, object::Style},
@@ -13,7 +13,7 @@ use crate::{
 use super::{giggle_coords, out_dir};
 
 pub fn test_pretty_simple() {
-    let workspace = UniformTopology::new_borderless(EuclidianDistance);
+    let workspace = CartesianTopology::new_borderless(EuclidianDistance);
 
     let p1 = Polygon::new(vec![
         VecN([0., 0.]),

@@ -2,3 +2,4 @@
 pub mod visibility_graph;
 pub mod accessibility_grid;
 pub mod graphs_heuristics;
+pub mod shortcuts;

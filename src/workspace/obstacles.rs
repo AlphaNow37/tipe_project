@@ -4,23 +4,26 @@ use crate::{
         shapes::{Cube, Segment},
         VecN,
     },
-    workspace::workspace::WorkspaceTopology,
+    workspace::{
+        cartesians::{CartesianTopology, Length},
+        workspace::WorkspaceTopology,
+    },
 };
 
-pub trait ObstaclesEnv<V> {
+pub trait ObstaclesEnv<W: WorkspaceTopology> {
     /// Retourne true ssi a est dans les obstacles
-    fn contains(&self, a: V) -> bool;
+    fn collide_vertex(&self, a: W::Vertex) -> bool;
 
-    /// Retourne true ssi b est visible depuis a
-    fn visible(&self, a: V, b: V) -> bool;
+    /// Retourne true ssi il existe s intersecte les obstacles
+    fn collide_segment(&self, s: W::Segment) -> bool;
 }
 
-impl<const N: usize> ObstaclesEnv<VecN<N, f64>> for RTree<N, Cube<N>> {
-    fn contains(&self, a: VecN<N, f64>) -> bool {
+impl<const N: usize, D: Length<N>> ObstaclesEnv<CartesianTopology<N, D>> for RTree<N, Cube<N>> {
+    fn collide_vertex(&self, a: VecN<N, f64>) -> bool {
         self.contains_point(a)
     }
-    fn visible(&self, a: VecN<N, f64>, b: VecN<N, f64>) -> bool {
-        !self.intersect_segment(Segment { start: a, end: b })
+    fn collide_segment(&self, s: Segment<N>) -> bool {
+        self.intersect_segment(s)
     }
 }
 
@@ -32,27 +35,29 @@ pub struct ObstaclesApprox<'a, W: WorkspaceTopology> {
     pub workspace: W,
 }
 impl<'a, W: WorkspaceTopology> ObstaclesApprox<'a, W> {
-    fn visible_recurse(&self, a: W::Vertex, b: W::Vertex, nbr_rec: usize) -> bool {
+    fn visible_recurse(&self, s: W::Segment, nbr_rec: usize) -> bool {
         if nbr_rec == 0 {
             true
         } else {
-            let mid = self.workspace.lerp(a, b, 0.5);
-            (!self.contains(mid))
-                && self.visible_recurse(a, mid, nbr_rec - 1)
-                && self.visible_recurse(mid, b, nbr_rec - 1)
+            let (left, right) = self.workspace.split(s, 0.5);
+            (!self.collide_vertex(self.workspace.segment_start(right)))
+                && self.visible_recurse(left, nbr_rec - 1)
+                && self.visible_recurse(right, nbr_rec - 1)
         }
     }
 }
-impl<'a, W: WorkspaceTopology> ObstaclesEnv<W::Vertex> for ObstaclesApprox<'a, W> {
-    fn contains(&self, a: W::Vertex) -> bool {
+impl<'a, W: WorkspaceTopology> ObstaclesEnv<W> for ObstaclesApprox<'a, W> {
+    fn collide_vertex(&self, a: W::Vertex) -> bool {
         (self.contains_func)(a)
     }
-    fn visible(&self, a: W::Vertex, b: W::Vertex) -> bool {
-        if self.contains(a) || self.contains(b) {
+    fn collide_segment(&self, s: W::Segment) -> bool {
+        if self.collide_vertex(self.workspace.segment_start(s))
+            || self.collide_vertex(self.workspace.segment_end(s))
+        {
             return false;
         }
-        let dist = self.workspace.distance(a, b);
+        let dist = self.workspace.length(s);
         let nb_recurses = (dist / self.visible_resolution).log2().ceil().max(0.) as usize;
-        self.visible_recurse(a, b, nb_recurses)
+        !self.visible_recurse(s, nb_recurses)
     }
 }

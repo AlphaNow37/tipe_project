@@ -3,155 +3,35 @@ use std::{fmt::Debug, hash::Hash};
 
 use rand::Rng;
 
-use crate::geometry::{shapes::Cube, VecN};
-
 /// Représente la "forme" de l'espace de travail ainsi que le système de coordonnées
 /// Ces noms sont sujets à changement
 pub trait WorkspaceTopology: Clone {
     type Vertex: Copy + Eq + Hash + Debug;
+    type Segment: Copy + Debug;
     const NB_DIMENSIONS: usize;
 
+    /// Retourne un segment reliant start à end
+    fn segment(&self, start: Self::Vertex, end: Self::Vertex) -> Self::Segment;
+    /// Premier point du segment
+    fn segment_start(&self, segment: Self::Segment) -> Self::Vertex;
+    /// Dernier point du segment
+    fn segment_end(&self, segment: Self::Segment) -> Self::Vertex;
+    /// Retourne un segment
+    fn segment_reverse(&self, segment: Self::Segment) -> Self::Segment;
+    /// Retourne la longueur d'un segment
+    fn length(&self, segment: Self::Segment) -> f64;
     /// Retourne la distance entre deux points dans cet espace
-    /// Doit satisfaire les conditions habituelles d'une distance
-    fn distance(&self, a: Self::Vertex, b: Self::Vertex) -> f64;
+    /// Doit satisfaire l'inégalité triangulaire mais peut être asymétrique
+    fn distance(&self, start: Self::Vertex, end: Self::Vertex) -> f64 {
+        self.length(self.segment(start, end))
+    }
     /// Retourne un point res du segment [a; b] tel que dist(a, res) = time * dist(a, b)
     /// time doit être dans [0; 1]
-    fn lerp(&self, a: Self::Vertex, b: Self::Vertex, time: f64) -> Self::Vertex;
+    fn lerp(&self, segment: Self::Segment, time: f64) -> Self::Vertex;
     /// Retourne un point de l'espace choisie de façon aléatoire
     fn sample_random(&self, rng: &mut impl Rng) -> Self::Vertex;
-    /// Retourne un point du segment [center; pt] tel que dist(center, res) <= radius
-    fn steer_in_disc(&self, pt: Self::Vertex, center: Self::Vertex, radius: f64) -> Self::Vertex {
-        let dist = self.distance(pt, center);
-        if dist <= radius {
-            pt
-        } else {
-            self.lerp(center, pt, radius / dist)
-        }
-    }
-}
-
-/// Une espace de travail constitué de N coordonnées, pouvant potentiellement boucler sur elle même, et dotée d'une distance D
-/// Exemple: [0; 1] x [0; 1] x [0; 1], ou des angles, ..
-#[derive(Clone, Copy, Debug)]
-pub struct UniformTopology<const N: usize, D> {
-    pub dist: D,
-    pub offsets: VecN<N, f64>,
-    pub sizes: VecN<N, f64>,
-    pub is_torus: VecN<N, bool>,
-}
-impl<const N: usize, D> UniformTopology<N, D> {
-    pub const fn new_borderless(dist: D) -> Self {
-        Self {
-            dist,
-            offsets: VecN::splat(f64::NEG_INFINITY),
-            sizes: VecN::splat(f64::INFINITY),
-            is_torus: VecN::splat(false),
-        }
-    }
-}
-impl<const N: usize, D: Length<N>> UniformTopology<N, D> {
-    /// Computes the (positive) distance between the two coordinates, considering only the dimension dim
-    fn delta_pos(&self, coord_a: f64, coord_b: f64, dim: usize) -> f64 {
-        let diff = (coord_a - coord_b).abs();
-        if self.is_torus[dim] && self.sizes[dim] - diff < diff {
-            self.sizes[dim] - diff
-        } else {
-            diff
-        }
-    }
-    /// (minimum) distance between a and c. Assumes that c is "In one part", and does not go loop around any border
-    pub fn distance_to_cube(&self, a: VecN<N, f64>, c: Cube<N>) -> f64 {
-        self.dist.length(VecN::from_fn(|i| {
-            if c.start[i] <= a[i] && a[i] <= c.end[i] {
-                0.
-            } else {
-                self.delta_pos(a[i], c.start[i], i)
-                    .min(self.delta_pos(a[i], c.end[i], i))
-            }
-        }))
-    }
-}
-
-impl<const N: usize, D: Length<N>> WorkspaceTopology for UniformTopology<N, D> {
-    type Vertex = VecN<N, f64>;
-    const NB_DIMENSIONS: usize = N;
-
-    fn distance(&self, a: Self::Vertex, b: Self::Vertex) -> f64 {
-        self.dist
-            .length(VecN::from_fn(|i| self.delta_pos(a[i], b[i], i)))
-    }
-    fn lerp(&self, a: Self::Vertex, b: Self::Vertex, time: f64) -> Self::Vertex {
-        debug_assert!(0. <= time && time <= 1.);
-        VecN::from_fn(|i| {
-            if self.is_torus[i] {
-                let diff = (a[i] - b[i]).abs();
-                if self.sizes[i] - diff < diff {
-                    if a[i] < b[i] {
-                        let mut result = a[i] + (-self.sizes[i] - a[i] + b[i]) * time;
-                        if result < self.offsets[i] {
-                            result += self.sizes[i];
-                        }
-                        return result;
-                    } else {
-                        let mut result = a[i] + (self.sizes[i] - a[i] + b[i]) * time;
-                        if result >= self.offsets[i] + self.sizes[i] {
-                            result -= self.sizes[i];
-                        }
-                        return result;
-                    }
-                }
-            }
-            (1. - time) * a[i] + time * b[i]
-        })
-    }
-    fn sample_random(&self, rng: &mut impl Rng) -> Self::Vertex {
-        VecN::from_fn(|i| rng.random_range(self.offsets[i]..(self.offsets[i] + self.sizes[i])))
-    }
-}
-
-/// Représente une fonction de norme d'un vecteur.
-/// Doit satisfaire les conditions habituelles d'une norme
-pub trait Length<const N: usize>: Clone + Debug {
-    fn length(&self, vector: VecN<N, f64>) -> f64;
-}
-
-/// La norme euclidienne, sqrt(sum x^2), L_2
-#[derive(Clone, Copy, Debug)]
-pub struct EuclidianDistance;
-impl<const N: usize> Length<N> for EuclidianDistance {
-    fn length(&self, vector: VecN<N, f64>) -> f64 {
-        let mut sm = 0.0f64;
-        for d in *vector {
-            sm += d * d;
-        }
-        sm.sqrt()
-    }
-}
-
-/// La norme de Manathann, sum |x|, L_1
-#[derive(Clone, Copy, Debug)]
-pub struct ManathannDistance;
-impl<const N: usize> Length<N> for ManathannDistance {
-    fn length(&self, vector: VecN<N, f64>) -> f64 {
-        let mut sm = 0.0f64;
-        for d in *vector {
-            sm += d.abs();
-        }
-        sm
-    }
-}
-
-/// La norme de Tchebychev, max |x|, L_inf
-#[derive(Clone, Copy, Debug)]
-pub struct TchebychevDistance;
-impl<const N: usize> Length<N> for TchebychevDistance {
-    fn length(&self, vector: VecN<N, f64>) -> f64 {
-        let mut mx = 0.0f64;
-        for d in *vector {
-            mx = mx.max(d.abs());
-        }
-        mx
-    }
+    /// Tronque le segment pour que sa longueur soit inférieur à radius
+    fn steer_in_disc(&self, segment: Self::Segment, radius: f64) -> Self::Segment;
 }
 
 pub fn path_length<W: WorkspaceTopology>(workspace: &W, path: &[W::Vertex]) -> f64 {

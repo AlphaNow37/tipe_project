@@ -123,6 +123,7 @@ pub fn rrt_star<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
 
     distance.insert(p.end, f64::INFINITY);
 
+    // xnew->xnear
     let mut visible_nears = Vec::new();
 
     // Boucle principale
@@ -134,10 +135,12 @@ pub fn rrt_star<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
 
         // Usual sampling and steering, like in RRT
         let xrand = p.workspace.sample_random(&mut rng);
+        // snearest: xnearest->xrand
         let snearest = vertices
             .nearest_vertex(xrand)
             .map(|s| p.workspace.segment_reverse(s))
             .expect("There should be at least one vertex");
+        // snew: xnearest->xnew
         let snew = p.workspace.steer_in_disc(snearest, p.moving_radius);
 
         if p.obstacles.collide_segment(snew) {

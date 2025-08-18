@@ -1,8 +1,8 @@
-/// Implement the protocol for drawing various objects
-
-use std::{fmt::Display, io::Write};
 use std::sync::Arc;
+/// Implement the protocol for drawing various objects
+use std::{fmt::Display, io::Write};
 
+use crate::geometry::shapes::CircleArc;
 use crate::geometry::{
     shapes::{Cube, Polygon, Segment},
     VecN,
@@ -126,5 +126,32 @@ impl SvgObject for Vec<VecN<2, f64>> {
             .map(|pt| Cube::from_point(*pt))
             .reduce(Cube::join)
             .unwrap_or_default()
+    }
+}
+
+impl SvgObject for CircleArc {
+    fn write(&self, writer: &mut dyn Write, style: &Style) -> std::io::Result<()> {
+        write!(
+            writer,
+            "\t<path {} d=\"M {} {} A {} {} {} {} {} {} {}\"",
+            style,
+            self.start[0],
+            self.start[1],
+            self.radius,
+            self.radius,
+            0,
+            self.large_arc as usize,
+            self.clockwise as usize,
+            self.end[0],
+            self.end[1],
+        )?;
+        writeln!(writer, "/>")?;
+        Ok(())
+    }
+    fn collide_box(&self) -> Cube<2> {
+        Cube::from_point(self.start - VecN([self.radius, self.radius]))
+            .with_point(self.start + VecN([self.radius, self.radius]))
+            .with_point(self.end - VecN([self.radius, self.radius]))
+            .with_point(self.end + VecN([self.radius, self.radius]))
     }
 }

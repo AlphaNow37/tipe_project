@@ -16,6 +16,11 @@ pub struct Cube<const N: usize> {
     pub end: VecN<N, f64>,
 }
 impl<const N: usize> Cube<N> {
+    pub const INFINTE: Self = Self {
+        start: VecN::splat(f64::NEG_INFINITY),
+        end: VecN::splat(f64::INFINITY),
+    };
+
     pub fn join(self, other: Self) -> Self {
         let start = self
             .start
@@ -276,6 +281,15 @@ impl Ray<2> {
     pub fn is_on_left_side(self, pt: VecN<2, f64>) -> bool {
         self.rotate_left().dot(pt) >= 0.
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct CircleArc {
+    pub start: VecN<2, f64>,
+    pub end: VecN<2, f64>,
+    pub clockwise: bool,
+    pub large_arc: bool,
+    pub radius: f64,
 }
 
 #[test]

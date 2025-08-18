@@ -17,7 +17,7 @@ use lib_space_animation::math::{trans, Transform};
 use lib_space_animation::world::primitives::color::Color;
 use lib_space_animation::world::world_builder::{WorldBuilder, WorldsBuilder};
 
-const HEURISTIC: Heuristic = Heuristic::Prm;
+const HEURISTIC: Heuristic = Heuristic::RrtStar;
 
 #[derive(Eq, PartialEq)]
 enum Heuristic {

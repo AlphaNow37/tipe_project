@@ -11,6 +11,7 @@ pub mod graph;
 pub mod object;
 pub mod grid;
 pub mod rtree;
+pub mod curves;
 
 #[derive(Default)]
 pub struct SvgGroup {

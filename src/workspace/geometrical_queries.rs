@@ -42,7 +42,7 @@ impl<W: WorkspaceTopology> GeometricalQueryDataStore<W> for (Vec<W::Vertex>, W) 
     ) {
         for v in self.0.iter() {
             let segment = self.1.segment(center, *v);
-            let distance = self.1.distance(center, *v);
+            let distance = self.1.length(segment);
             if distance <= radius {
                 f(segment, distance)
             }

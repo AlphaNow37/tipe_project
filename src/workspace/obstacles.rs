@@ -35,14 +35,19 @@ pub struct ObstaclesApprox<'a, W: WorkspaceTopology> {
     pub workspace: W,
 }
 impl<'a, W: WorkspaceTopology> ObstaclesApprox<'a, W> {
-    fn visible_recurse(&self, s: W::Segment, nbr_rec: usize) -> bool {
-        if nbr_rec == 0 {
+    /// Applique l'algo visible-recurse pour déterminer si le segment n'entre en collisions avec aucun obstacle
+    /// Commence par regarder le milieu du segment, puis traite les deux cotés séparements
+    /// 0. <= left < right <= 1.
+    fn visible_recurse(&self, s: W::Segment, left: f64, right: f64, resolution: f64) -> bool {
+        debug_assert!(left < right);
+        debug_assert!(resolution > 0.);
+        if right - left < resolution {
             true
         } else {
-            let (left, right) = self.workspace.split(s, 0.5);
-            (!self.collide_vertex(self.workspace.segment_start(right)))
-                && self.visible_recurse(left, nbr_rec - 1)
-                && self.visible_recurse(right, nbr_rec - 1)
+            let mid = left.midpoint(right);
+            (!self.collide_vertex(self.workspace.lerp(s, mid)))
+                && self.visible_recurse(s, left, mid, resolution)
+                && self.visible_recurse(s, mid, right, resolution)
         }
     }
 }
@@ -54,10 +59,9 @@ impl<'a, W: WorkspaceTopology> ObstaclesEnv<W> for ObstaclesApprox<'a, W> {
         if self.collide_vertex(self.workspace.segment_start(s))
             || self.collide_vertex(self.workspace.segment_end(s))
         {
-            return false;
+            return true;
         }
         let dist = self.workspace.length(s);
-        let nb_recurses = (dist / self.visible_resolution).log2().ceil().max(0.) as usize;
-        !self.visible_recurse(s, nb_recurses)
+        !self.visible_recurse(s, 0., 1., self.visible_resolution / dist)
     }
 }

@@ -38,6 +38,10 @@ impl<T: Neg<Output = T>> VecN<2, T> {
         let [x, y] = self.0;
         Self([-y, x])
     }
+    pub fn rotate_right(self) -> Self {
+        let [x, y] = self.0;
+        Self([y, -x])
+    }
 }
 impl<const N: usize> VecN<N, f64> {
     // self * ratio = other

@@ -55,13 +55,13 @@ fn using_graph_heuristic<D: Length<3>>(
     let params = GraphHeuristicParameters {
         start,
         end,
-        moving_radius: 0.1,
-        base_rewire_radius: 0.2,
+        moving_radius: 0.2,
+        base_rewire_radius: 0.8,
         obstacles: &obstacles,
         workspace,
         vertices: PhantomData::<(Bsp<3>, CartesianTopology<3, D>)>,
         // execution_manager: ContinueUntil(Instant::now() + Duration::from_secs_f64(0.003)),
-        execution_manager: SampleNTimes(70000),
+        execution_manager: SampleNTimes(7000),
     };
 
     let pos = |p| p;

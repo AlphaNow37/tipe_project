@@ -29,15 +29,14 @@ impl<const N: usize, D> CartesianTopology<N, D> {
     }
 }
 impl<const N: usize, D: Length<N>> CartesianTopology<N, D> {
-    /// (minimum) distance between a and c. Assumes that c is "In one part", and does not go loop around any border
     pub fn distance_to_cube(&self, a: VecN<N, f64>, c: Cube<N>) -> f64 {
         self.dist.length(VecN::from_fn(|i| {
-            if c.start[i] < a[i] {
-                a[i] - c.start[i]
+            if a[i] < c.start[i] {
+                c.start[i] - a[i]
             } else if a[i] <= c.end[i] {
                 0.
             } else {
-                c.end[i] - a[i]
+                a[i] - c.end[i]
             }
         }))
     }

@@ -2,6 +2,7 @@ use std::{collections::HashMap, marker::PhantomData, time::Instant};
 
 use rand::rng;
 
+use crate::utils::numbers::F64_EPSILON;
 use crate::{
     graphs::{Graph, MapGraph, ParentTree, Tree},
     workspace::{
@@ -82,7 +83,7 @@ pub fn rrt<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
             .expect("There should be at least one vertex");
         let snew = p.workspace.steer_in_disc(snearest, p.moving_radius);
 
-        if p.obstacles.collide_segment(snearest) {
+        if p.obstacles.collide_segment(snew) {
             continue;
         }
 
@@ -143,6 +144,15 @@ pub fn rrt_star<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
         // snew: xnearest->xnew
         let snew = p.workspace.steer_in_disc(snearest, p.moving_radius);
 
+        debug_assert!(
+            p.workspace.length(snew) <= p.moving_radius + F64_EPSILON,
+            "{}, {}",
+            p.workspace.length(snew),
+            p.moving_radius
+        );
+        debug_assert_eq!(p.workspace.segment_start(snew), p.workspace.segment_start(snearest));
+        debug_assert_eq!(p.workspace.segment_end(snearest), xrand);
+
         if p.obstacles.collide_segment(snew) {
             continue;
         }
@@ -155,6 +165,8 @@ pub fn rrt_star<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
         let radius = p.base_rewire_radius
             * (((n as f64).ln() + 1.) / (n as f64)).powf(1. / (W::NB_DIMENSIONS + 1) as f64);
         vertices.foreach_r_neighbors(xnew, radius, &mut |snear, dist| {
+            debug_assert_eq!(dist, p.workspace.length(snear));
+            debug_assert_eq!(p.workspace.segment_start(snear), xnew);
             if !p.obstacles.collide_segment(snear) {
                 visible_nears.push((snear, dist))
             }

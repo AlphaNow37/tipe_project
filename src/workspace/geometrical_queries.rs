@@ -13,14 +13,14 @@ pub trait GeometricalQueryDataStore<W: WorkspaceTopology> {
     fn new_store(workspace: W) -> Self;
     /// Ajoute un sommmet
     fn insert_vertex(&mut self, pt: W::Vertex);
-    /// Applique f à tout les sommets à distance inférieure à radius de center
+    /// Applique f à tout les sommets à distance inférieure à radius de center: f([center, pt])
     fn foreach_r_neighbors(
         &self,
         center: W::Vertex,
         radius: f64,
         f: &mut impl FnMut(W::Segment, f64),
     );
-    /// Retourne le sommet le plus proche (renvoie None s'il n'y en a pas)
+    /// Retourne le sommet le plus proche (renvoie None s'il n'y en a pas): [pt; nearest]
     fn nearest_vertex(&self, pt: W::Vertex) -> Option<W::Segment>;
     /// Applique f à touts les sommets
     fn foreach_vertex(&self, f: &mut impl FnMut(W::Vertex));

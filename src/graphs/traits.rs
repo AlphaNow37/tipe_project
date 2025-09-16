@@ -1,4 +1,5 @@
 use std::collections::{hash_map::Entry, HashMap};
+use std::fmt::Debug;
 use std::hash::Hash;
 use std::ops::Range;
 use std::sync::Arc;
@@ -139,6 +140,16 @@ pub trait Graph<Vertex> {
 /// A graph where the collection of vertex is known
 pub trait IterableGraph<V>: Graph<V> {
     fn iter(&self) -> impl Iterator<Item = V>;
+
+    fn debug(&self) where V: Debug {
+        for u in self.iter() {
+            print!("{u:?} :     ");
+            for v in self.neighbors(u) {
+                print!("{v:?} ; ");
+            }
+            println!();
+        }
+    }
 }
 
 /// Path graph

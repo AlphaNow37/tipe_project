@@ -276,7 +276,7 @@ pub fn vis_graph_opt1(
             end: v.pos,
         };
         for npos in v.nexts {
-            if npos != vertex.pos && !new_ray.is_on_left_side(npos) {
+            if npos != vertex.pos && npos != v.pos && !new_ray.is_on_left_side(npos) {
                 if DBG {
                     println!("Removed: {:?}-{:?}", v.pos, npos);
                 }
@@ -296,6 +296,9 @@ pub fn vis_graph_opt1(
 
         // Adds new segments coming from v
         for npos in v.nexts {
+            if npos == v.pos {
+                continue;
+            }
             // Don't add segments going to vertex
             if npos == vertex.pos {
                 visible = true;

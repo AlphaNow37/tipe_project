@@ -16,11 +16,15 @@ pub mod curves;
 #[derive(Default)]
 pub struct SvgGroup {
     objects: Vec<(Box<dyn SvgObject>, f64, Style)>,
+    background: String,
 }
 
 impl SvgGroup {
     pub fn push(&mut self, object: impl SvgObject + 'static, height: f64, style: Style) {
         self.objects.push((Box::new(object), height, style));
+    }
+    pub fn set_background(&mut self, color: String) {
+        self.background = color;
     }
     pub fn write(&mut self, writer: &mut impl Write) -> std::io::Result<()> {
         self.objects.sort_by_key(|(_, h, _)| NotNanF64::new(*h));
@@ -33,13 +37,14 @@ impl SvgGroup {
         let VecN([w, h]) = area.size();
         writeln!(
             writer,
-            r#"<svg width="{}" height="{}" viewBox="{},{},{},{}" xmlns="http://www.w3.org/2000/svg">"#,
+            r#"<svg width="{}" height="{}" viewBox="{},{},{},{}" xmlns="http://www.w3.org/2000/svg" style="background: {}">"#,
             w * 20.,
             h * 20.,
             area.start[0] - w * 0.1,
             area.start[1] - h * 0.1,
             w * 1.2,
             h * 1.2,
+            &self.background,
         )?;
         for obj in &self.objects {
             obj.0.write(writer, &obj.2)?;

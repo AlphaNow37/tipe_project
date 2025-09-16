@@ -45,8 +45,9 @@ pub fn tests() {
     // test_complex::test_square_map();
     // test_perf_path_2d::test_perf();
     // test_path_simple_2d::test_pretty_simple();
+    test_path_simple_2d::illustration_presentation();
     // background::generate_backgrounds();
-    test_path_3d::test_3d()
+    // test_path_3d::test_3d()
     // test_rtree_3d::test_rtree()
     // test_datastructures_2d::test_rtree_2d()
     // test_datastructures_2d::test_grid_2d()

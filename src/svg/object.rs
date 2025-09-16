@@ -155,3 +155,32 @@ impl SvgObject for CircleArc {
             .with_point(self.end + VecN([self.radius, self.radius]))
     }
 }
+
+#[derive(Clone, Debug)]
+pub struct Text {
+    pub position: VecN<2, f64>,
+    pub content: String,
+    pub font_size: f64,
+}
+impl SvgObject for Text {
+    fn collide_box(&self) -> Cube<2> {
+        Cube::from_point(self.position).with_point(
+            self.position
+                + VecN([
+                    self.font_size * (self.content.len() as f64),
+                    self.font_size,
+                ]),
+        )
+    }
+    fn write(&self, writer: &mut dyn Write, style: &Style) -> std::io::Result<()> {
+        writeln!(
+            writer,
+            "<text {} x={} y={} font-size={}>{}</text>",
+            style,
+            s(&self.position[0]),
+            s(&self.position[1]),
+            s(&self.font_size),
+            &self.content
+        )
+    }
+}

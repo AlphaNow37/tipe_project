@@ -51,9 +51,9 @@ impl Angle {
     pub fn iter_to(self, dest: Self, max_resolution: Self) -> impl Iterator<Item = Self> {
         let delta = dest - self;
         let n = (*delta.0 / *max_resolution.0).ceil();
-        return (0..=(n as usize))
+        (0..=(n as usize))
             .map(|i| i as f64)
-            .map(move |i| self + delta * (i / n));
+            .map(move |i| self + delta * (i / n))
     }
     pub fn to_vec(self) -> VecN<2, f64> {
         let (s, c) = self.0.sin_cos();

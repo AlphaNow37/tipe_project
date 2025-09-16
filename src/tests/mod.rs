@@ -15,6 +15,7 @@ mod test_path_complex_2d;
 mod test_path_reeds_shepp;
 mod test_path_simple_2d;
 mod test_perf_path_2d;
+mod test_visibility_graph;
 
 pub fn out_dir() -> PathBuf {
     let here = current_dir().expect("Expected a working directory");
@@ -45,7 +46,7 @@ pub fn tests() {
     // test_complex::test_square_map();
     // test_perf_path_2d::test_perf();
     // test_path_simple_2d::test_pretty_simple();
-    test_path_simple_2d::illustration_presentation();
+    // test_path_simple_2d::illustration_presentation();
     // background::generate_backgrounds();
     // test_path_3d::test_3d()
     // test_rtree_3d::test_rtree()
@@ -53,4 +54,5 @@ pub fn tests() {
     // test_datastructures_2d::test_grid_2d()
     // test_base_reeds_shepp::test_base_reeds_shepp();
     // test_path_reeds_shepp::test_path_reeds_shepp();
+    test_visibility_graph::illustration_lower_bound_visibility();
 }

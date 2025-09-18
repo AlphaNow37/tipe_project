@@ -17,6 +17,27 @@ impl<const N: usize> AccesibilityGrid<N> {
         let sizes = bbox.size().map(|w| (w / resolution).ceil() as usize);
         Grid::new(sizes)
     }
+    pub fn new_with_check(accessible_f: impl Fn(VecN<N, usize>) -> bool, bounding_box: Cube<N>) -> Self {
+        let resolution = 1.;
+        let grid = Self::get_grid(bounding_box, resolution);
+        let accessible = vec![false; grid.size];
+
+        let mut res = Self {
+            accessible,
+            grid,
+            bounding_box,
+            resolution,
+        };
+
+        for i in 0..res.grid.size {
+            let coords = res.grid.coords(i);
+            if accessible_f(coords) {
+                res.accessible[i] = true;
+            }
+        }
+
+        res
+    }
     pub fn new_with_rtree(
         tree: &RTree<N, Cube<N>>,
         resolution: f64,
@@ -94,6 +115,15 @@ impl<const N: usize> AccesibilityGrid<N> {
         VecN::from_fn(|i| {
             (self.bounding_box.end[i] - self.bounding_box.start[i]) / (self.grid.sizes[i] as f64)
         })
+    }
+
+    pub fn contains_point(&self, pos: VecN<N, f64>) -> bool {
+        if !self.bounding_box.contains_point(pos) {
+            return true;
+        }
+        let coords = self.position_int_from_float(pos);
+        let index = self.grid.index(coords);
+        !self.accessible[index]
     }
 
     pub fn shortest_path(

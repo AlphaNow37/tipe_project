@@ -16,17 +16,24 @@ mod test_path_reeds_shepp;
 mod test_path_simple_2d;
 mod test_perf_path_2d;
 mod test_visibility_graph;
+mod text_circuit_tetra;
 
-pub fn out_dir() -> PathBuf {
+fn dir(name: &str) -> PathBuf {
     let here = current_dir().expect("Expected a working directory");
 
     let root = here
         .ancestors()
         .find(|p| p.ends_with(Path::new("tipe_project")))
         .expect("There should be an ancestor named tipe_project");
-    let out = root.join("out");
-    dbg!(&out);
-    out
+    let path = root.join(name);
+    path
+}
+
+pub fn out_dir() -> PathBuf {
+    dbg!(dir("out"))
+}
+pub fn in_dir() -> PathBuf {
+    dbg!(dir("inputs"))
 }
 
 const GIGGLE_INTENSITY: f64 = 0.001;
@@ -54,5 +61,6 @@ pub fn tests() {
     // test_datastructures_2d::test_grid_2d()
     // test_base_reeds_shepp::test_base_reeds_shepp();
     // test_path_reeds_shepp::test_path_reeds_shepp();
-    test_visibility_graph::illustration_lower_bound_visibility();
+    // test_visibility_graph::illustration_lower_bound_visibility();
+    text_circuit_tetra::test_circuit_tetra();
 }

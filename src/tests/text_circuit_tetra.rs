@@ -25,7 +25,7 @@ const INPUT_IMAGE_FILENAME: &'static str = "circuit_tetra_1.png";
 const INPUT_GRID_FILENAME: &'static str = "circuit_tetra_1_arr.txt";
 const STEERING_RADIUS: f64 = 50.;
 
-pub fn test_circuit_tetra() {
+pub fn illustration_circuit_tetra() {
     let mut svg = svg::SvgGroup::default();
     let in_dir = in_dir();
     let (obstacles, start_pos, end_pos) = read_image(&in_dir.clone().join(INPUT_GRID_FILENAME));
@@ -80,6 +80,7 @@ pub fn test_circuit_tetra() {
     let workspace_reeds_shepp = ReedsSheppWorkspace {
         physical_space: obstacles.bounding_box,
         steering_radius: STEERING_RADIUS,
+        forward_only: false,
     };
 
     let params = GraphHeuristicParameters {

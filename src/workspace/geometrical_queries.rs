@@ -20,8 +20,19 @@ pub trait GeometricalQueryDataStore<W: WorkspaceTopology> {
         radius: f64,
         f: &mut impl FnMut(W::Segment, f64),
     );
+    /// Applique f à tout les sommets à distance inférieure à radius de center: f([pt, center])
+    /// Useful for pseudometrics (dist(a, b) != dist(b, a))
+    fn foreach_r_neighbors_rev(
+        &self,
+        center: W::Vertex,
+        radius: f64,
+        f: &mut impl FnMut(W::Segment, f64),
+    );
     /// Retourne le sommet le plus proche (renvoie None s'il n'y en a pas): [pt; nearest]
     fn nearest_vertex(&self, pt: W::Vertex) -> Option<W::Segment>;
+    /// Retourne le sommet le plus proche (renvoie None s'il n'y en a pas): [nearest; pt]
+    /// Useful for pseudometrics (dist(a, b) != dist(b, a))
+    fn nearest_vertex_rev(&self, pt: W::Vertex) -> Option<W::Segment>;
     /// Applique f à touts les sommets
     fn foreach_vertex(&self, f: &mut impl FnMut(W::Vertex));
 }
@@ -48,11 +59,38 @@ impl<W: WorkspaceTopology> GeometricalQueryDataStore<W> for (Vec<W::Vertex>, W) 
             }
         }
     }
+    fn foreach_r_neighbors_rev(
+        &self,
+        center: W::Vertex,
+        radius: f64,
+        f: &mut impl FnMut(W::Segment, f64),
+    ) {
+        for v in self.0.iter() {
+            let segment = self.1.segment(*v, center);
+            let distance = self.1.length(segment);
+            if distance <= radius {
+                f(segment, distance)
+            }
+        }
+    }
     fn nearest_vertex(&self, pt: W::Vertex) -> Option<W::Segment> {
         let mut min_s = None;
         let mut min_dist = f64::INFINITY;
         for v in self.0.iter() {
             let segment = self.1.segment(pt, *v);
+            let dist = self.1.length(segment);
+            if dist < min_dist {
+                min_dist = dist;
+                min_s = Some(segment);
+            }
+        }
+        min_s
+    }
+    fn nearest_vertex_rev(&self, pt: W::Vertex) -> Option<W::Segment> {
+        let mut min_s = None;
+        let mut min_dist = f64::INFINITY;
+        for v in self.0.iter() {
+            let segment = self.1.segment(*v, pt);
             let dist = self.1.length(segment);
             if dist < min_dist {
                 min_dist = dist;
@@ -91,6 +129,16 @@ impl<D: Length<N>, const N: usize> GeometricalQueryDataStore<CartesianTopology<N
             &mut |end| f(Segment { start: center, end }, self.1.distance(center, end)),
         )
     }
+    fn foreach_r_neighbors_rev(
+        &self,
+        center: VecN<N, f64>,
+        radius: f64,
+        f: &mut impl FnMut(Segment<N>, f64),
+    ) {
+        self.foreach_r_neighbors(center, radius, &mut move |s, d| {
+            f(self.1.segment_reverse(s), d)
+        })
+    }
     fn nearest_vertex(&self, pt: VecN<N, f64>) -> Option<Segment<N>> {
         self.0
             .nearest(&|v| self.1.distance(pt, v), &|c| {
@@ -100,6 +148,9 @@ impl<D: Length<N>, const N: usize> GeometricalQueryDataStore<CartesianTopology<N
                 start: pt,
                 end: nearest,
             })
+    }
+    fn nearest_vertex_rev(&self, pt: VecN<N, f64>) -> Option<Segment<N>> {
+        self.nearest_vertex(pt).map(|s| self.1.segment_reverse(s))
     }
     fn foreach_vertex(&self, f: &mut impl FnMut(VecN<N, f64>)) {
         self.0.foreach(f);

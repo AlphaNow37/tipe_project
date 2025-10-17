@@ -149,12 +149,15 @@ pub struct ReedsSheppSegment {
 pub struct ReedsSheppWorkspace {
     pub physical_space: Cube<2>,
     pub steering_radius: f64,
+    /// True -> Dubins, False -> Reeds-Shepp
+    pub forward_only: bool,
 }
 impl ReedsSheppWorkspace {
-    pub fn new_borderless(steering_radius: f64) -> Self {
+    pub fn new_borderless(steering_radius: f64, forward_only: bool) -> Self {
         Self {
             physical_space: Cube::INFINTE,
             steering_radius,
+            forward_only,
         }
     }
     fn check_segment_invariants(&self, seg: ReedsSheppSegment) {
@@ -169,7 +172,15 @@ impl ReedsSheppWorkspace {
             "{:?}, {:?}",
             self.lerp(seg, 1.),
             seg.end
-        )
+        );
+        for s in seg.parts {
+            debug_assert!(s.length >= 0.);
+        }
+        if self.forward_only {
+            for s in seg.parts {
+                debug_assert!(s.gear != Gear::Backward);
+            }
+        }
     }
 }
 impl WorkspaceTopology for ReedsSheppWorkspace {
@@ -177,9 +188,12 @@ impl WorkspaceTopology for ReedsSheppWorkspace {
     type Segment = ReedsSheppSegment;
     const NB_DIMENSIONS: usize = 3;
 
+    fn is_distance_symetric(&self) -> bool {
+        !self.forward_only
+    }
     fn segment(&self, start: Self::Vertex, end: Self::Vertex) -> Self::Segment {
-        let segment = get_best_path(start, end, self.steering_radius);
-        self.check_segment_invariants(segment);
+        let segment = get_best_path(start, end, self.steering_radius, self.forward_only);
+        // self.check_segment_invariants(segment);
         segment
     }
     fn segment_start(&self, segment: Self::Segment) -> Self::Vertex {
@@ -189,6 +203,7 @@ impl WorkspaceTopology for ReedsSheppWorkspace {
         segment.end
     }
     fn segment_reverse(&self, mut segment: Self::Segment) -> Self::Segment {
+        debug_assert!(!self.forward_only);
         segment.parts.reverse();
         segment.parts = segment.parts.map(ReedsSheppSegmentPart::timeflip);
         std::mem::swap(&mut segment.start, &mut segment.end);

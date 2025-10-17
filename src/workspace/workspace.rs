@@ -9,7 +9,9 @@ pub trait WorkspaceTopology: Clone {
     type Vertex: Copy + Eq + Hash + Debug;
     type Segment: Copy + Debug;
     const NB_DIMENSIONS: usize;
-
+    
+    /// Vrai lorsque la fonction distanc est symétrique
+    fn is_distance_symetric(&self) -> bool;
     /// Retourne un segment reliant start à end
     fn segment(&self, start: Self::Vertex, end: Self::Vertex) -> Self::Segment;
     /// Premier point du segment

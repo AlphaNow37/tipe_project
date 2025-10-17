@@ -108,6 +108,161 @@ pub fn rrt<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
     (None, tree)
 }
 
+// struct RrtStarState<'a, R, W: WorkspaceTopology, Q, E, M> {
+//     rng: R,
+//     workspace: W,
+//     vertices: Q,
+//     end: W::Vertex,
+//     execution_manager: M,
+//     obstacles: &'a E,
+//     moving_radius: f64,
+//     base_rewire_radius: f64,
+//     tree: Tree<W::Vertex>,
+//     distance: HashMap<W::Vertex, f64>,
+//     visible_nears: Vec<(W::Segment, f64)>,
+//     iteration_count: usize,
+// }
+// impl<
+//         'a,
+//         R: rand::Rng,
+//         W: WorkspaceTopology,
+//         Q: GeometricalQueryDataStore<W>,
+//         E: ObstaclesEnv<W>,
+//         M: ExecutionManager<W::Vertex>,
+//     > RrtStarState<'a, R, W, Q, E, M>
+// {
+//     fn new(params: GraphHeuristicParameters<'a, W, E, Q, M>, rng: R) -> Self {
+//         let mut s = Self {
+//             rng,
+//             vertices: Q::new_store(params.workspace.clone()),
+//             obstacles: params.obstacles,
+//             end: params.end,
+//             execution_manager: params.execution_manager,
+//             moving_radius: params.moving_radius,
+//             base_rewire_radius: params.base_rewire_radius,
+//             workspace: params.workspace,
+//             tree: Tree::new(),
+//             distance: HashMap::new(),
+//             visible_nears: Vec::new(),
+//             iteration_count: 1,
+//         };
+//         s.add_node(params.start, 0., None);
+//         s.distance.insert(params.end, f64::INFINITY);
+//         s
+//     }
+//     fn add_node(&mut self, vertex: W::Vertex, distance: f64, parent: Option<W::Vertex>) {
+//         self.vertices.insert_vertex(vertex);
+//         self.distance.insert(vertex, distance);
+//         if let Some(p) = parent {
+//             self.tree.set_parent(vertex, p);
+//         }
+//     }
+//     fn random_node(&mut self) -> W::Segment {
+//         // Usual sampling and steering, like in RRT
+//         let xrand = self.workspace.sample_random(&mut self.rng);
+//         // snearest: xnearest->xrand
+//         let snearest = self
+//             .vertices
+//             .nearest_vertex_rev(xrand)
+//             .expect("There should be at least one vertex");
+//         // snew: xnearest->xnew
+//         let snew = self.workspace.steer_in_disc(snearest, self.moving_radius);
+//
+//         debug_assert!(
+//             self.workspace.length(snew) <= self.moving_radius + F64_EPSILON,
+//             "{}, {}",
+//             self.workspace.length(snew),
+//             self.moving_radius
+//         );
+//         debug_assert_eq!(
+//             self.workspace.segment_start(snew),
+//             self.workspace.segment_start(snearest)
+//         );
+//         debug_assert_eq!(self.workspace.segment_end(snearest), xrand);
+//
+//         snew
+//     }
+//     fn update_visible_verteces(&mut self, xnew: W::Vertex, reverse: bool) {
+//         // We find near & visible vertices
+//         self.visible_nears.clear();
+//         let radius = self.base_rewire_radius
+//             * (((self.iteration_count as f64).ln() + 1.) / (self.iteration_count as f64)).powf(1. / (W::NB_DIMENSIONS + 1) as f64);
+//         let mut f = |snear, dist| {
+//             debug_assert_eq!(dist, self.workspace.length(snear));
+//             debug_assert_eq!(self.workspace.segment_start(snear), xnew);
+//             if !self.obstacles.collide_segment(snear) {
+//                 self.visible_nears.push((snear, dist))
+//             }
+//         };
+//         if reverse {
+//             self.vertices.foreach_r_neighbors_rev(xnew, radius, &mut f);
+//         } else {
+//             self.vertices.foreach_r_neighbors(xnew, radius, &mut f);
+//         }
+//     }
+//     fn find_best_parent(&mut self, xnew: W::Vertex, xnearest: W::Vertex, snew: W::Segment) -> (W::Vertex, f64) {
+//         let mut best_parent = xnearest;
+//         let mut best_cost = self.distance[&xnearest] + self.workspace.length(snew);
+//         for (snear, dist) in &self.visible_nears {
+//             let xnear = self.workspace.segment_end(*snear);
+//             let cost = self.distance[&xnear] + dist;
+//             if cost < best_cost {
+//                 best_parent = xnear;
+//                 best_cost = cost;
+//             }
+//         }
+//         (best_parent, best_cost)
+//     }
+//     fn change_parent(&mut self, xnode: W::Vertex, xparent: W::Vertex, delta: f64) {
+//         self.tree.set_parent(xnode, xparent);
+//         let mut stack = vec![xnode];
+//         while let Some(child) = stack.pop() {
+//             self.distance.entry(child).and_modify(|cost| *cost += delta);
+//             for subchild in self.tree.get_children(child) {
+//                 stack.push(*subchild)
+//             }
+//         }
+//     }
+//     fn rewire_symetric(&mut self, xnew: W::Vertex, xnew_cost: f64) {
+//         for (snear, dist) in &self.visible_nears {
+//             let xnear = self.workspace.segment_end(*snear);
+//             let delta = xnew_cost + dist - self.distance[&xnear];
+//             // We see an improvement
+//             if delta < 0. {
+//                 self.change_parent(xnear, xnew, delta)
+//             }
+//         }
+//     }
+//     fn rewire_non_symetric(&mut self, xnew: W::Vertex) {
+//         self.update_visible_verteces(xnew, true);
+//     }
+//     fn main_loop(&mut self) {
+//         self.iteration_count = 1;
+//         while !self.execution_manager.must_stop(self.iteration_count) {
+//             self.iteration_count += 1;
+//             self.execution_manager
+//                 .logs(&self.tree, || self.distance.get(&self.end).copied());
+//
+//             let snew = self.random_node();
+//             if self.obstacles.collide_segment(snew) {
+//                 continue;
+//             }
+//
+//             let xnew = self.workspace.segment_end(snew);
+//             let xnearest = self.workspace.segment_start(snew);
+//
+//             self.update_visible_verteces(xnew, false);
+//
+//             let (xparent, cost) = self.find_best_parent(xnew, xnearest, snew);
+//
+//             self.add_node(xnew, cost, Some(xparent))
+//
+//
+//
+//         }
+//     }
+// }
+
 /// Algo RRT*
 /// Est asymptotiquement optimal
 pub fn rrt_star<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
@@ -150,7 +305,10 @@ pub fn rrt_star<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
             p.workspace.length(snew),
             p.moving_radius
         );
-        debug_assert_eq!(p.workspace.segment_start(snew), p.workspace.segment_start(snearest));
+        debug_assert_eq!(
+            p.workspace.segment_start(snew),
+            p.workspace.segment_start(snearest)
+        );
         debug_assert_eq!(p.workspace.segment_end(snearest), xrand);
 
         if p.obstacles.collide_segment(snew) {
@@ -184,7 +342,9 @@ pub fn rrt_star<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
                 best_parent = xnear;
                 best_cost = cost;
             }
-        }
+        }    fn rewire() {
+
+    }
 
         // dbg!(xnew, best_parent, best_cost);
         vertices.insert_vertex(xnew);
@@ -208,7 +368,6 @@ pub fn rrt_star<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
             }
         }
 
-        // TODO place it in a vertex filter operation..
         let dist_to_end = p.workspace.distance(xnew, p.end);
         if dist_to_end <= p.moving_radius
             && !p

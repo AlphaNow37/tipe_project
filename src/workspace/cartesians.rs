@@ -46,6 +46,9 @@ impl<const N: usize, D: Length<N>> WorkspaceTopology for CartesianTopology<N, D>
     type Segment = Segment<N>;
     const NB_DIMENSIONS: usize = N;
 
+    fn is_distance_symetric(&self) -> bool {
+        true
+    }
     fn segment(&self, start: Self::Vertex, end: Self::Vertex) -> Self::Segment {
         Segment { start, end }
     }
@@ -116,6 +119,9 @@ impl<const N: usize, D: Length<N>> WorkspaceTopology for LoopingCartesianTopolog
     type Segment = (VecN<N, f64>, VecN<N, f64>);
     const NB_DIMENSIONS: usize = N;
 
+    fn is_distance_symetric(&self) -> bool {
+        true
+    }
     fn segment(&self, start: Self::Vertex, end: Self::Vertex) -> Self::Segment {
         (start, end)
     }

@@ -1,0 +1,16 @@
+<svg width="170" height="160" viewBox="-1.85,-3.8,10.2,9.6" xmlns="http://www.w3.org/2000/svg" style="background: #FFFFFF">
+	<polygon fill="#555555"  points="-1,3 2,-1 2.5,2 "/>
+	<polygon fill="#555555"  points="4,3 3.5,-3 5.5,-1.5 7,5 "/>
+	<polygon fill="#555555"  points="1,3 3,2.5 4,5 "/>
+	<line fill="none" stroke="#FF0000" stroke-width="0.1"  x1="-1" y1="3" x2="2" y2="-1"/>
+	<line fill="none" stroke="#FF0000" stroke-width="0.1"  x1="2" y1="-1" x2="2.5" y2="2"/>
+	<line fill="none" stroke="#FF0000" stroke-width="0.1"  x1="4" y1="3" x2="3.5" y2="-3"/>
+	<line fill="none" stroke="#FF0000" stroke-width="0.1"  x1="5.5" y1="-1.5" x2="7" y2="5"/>
+	<line stroke="#FFAA00" stroke-width="0.1"  x1="0" y1="0" x2="7.5" y2="2.5"/>
+	<rect fill="black"  x="-0.05" y="-0.05" width="0.1" height="0.1"/>
+<text fill="black"  x="-0.5" y="-0.25" font-size="0.5">center</text>
+<text fill="#FF0000"  x="-0.07000000000000006" y="0.76" font-size="0.5">A1</text>
+<text fill="#FF0000"  x="2.3945575695328576" y="0.4342404050778571" font-size="0.5">A2</text>
+<text fill="#FF0000"  x="3.101381696702048" y="0.03321819194149599" font-size="0.5">B1</text>
+<text fill="#FF0000"  x="6.389756478277848" y="1.6600561973204966" font-size="0.5">B3</text>
+</svg>

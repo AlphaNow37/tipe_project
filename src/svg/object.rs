@@ -149,10 +149,10 @@ impl SvgObject for CircleArc {
         Ok(())
     }
     fn collide_box(&self) -> Cube<2> {
-        Cube::from_point(self.start - VecN([self.radius, self.radius]))
-            .with_point(self.start + VecN([self.radius, self.radius]))
-            .with_point(self.end - VecN([self.radius, self.radius]))
-            .with_point(self.end + VecN([self.radius, self.radius]))
+        Cube::from_point(self.start - VecN([self.radius, self.radius]) * 2.)
+            .with_point(self.start + VecN([self.radius, self.radius]) * 2.)
+            .with_point(self.end - VecN([self.radius, self.radius]) * 2.)
+            .with_point(self.end + VecN([self.radius, self.radius]) * 2.)
     }
 }
 

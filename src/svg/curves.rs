@@ -1,3 +1,4 @@
+use std::f64::consts::PI;
 use crate::geometry::shapes::{CircleArc, Segment};
 use crate::svg::object::Style;
 use crate::svg::SvgGroup;
@@ -9,13 +10,14 @@ pub fn put_reeds_shepp(svg: &mut SvgGroup, style: Style, curve: ReedsSheppSegmen
     for p in curve.parts {
         let next_pos = p.at_distance(curr_pos, p.length);
         let forward = p.gear == Gear::Forward;
+        let large_arc = p.length / p.radius > PI;
         match p.steering {
             Steering::Left => svg.push(
                 CircleArc {
                     start: curr_pos.0,
                     end: next_pos.0,
                     clockwise: forward,
-                    large_arc: false,
+                    large_arc,
                     radius: p.radius,
                 },
                 height,
@@ -26,7 +28,7 @@ pub fn put_reeds_shepp(svg: &mut SvgGroup, style: Style, curve: ReedsSheppSegmen
                     start: curr_pos.0,
                     end: next_pos.0,
                     clockwise: !forward,
-                    large_arc: false,
+                    large_arc,
                     radius: p.radius,
                 },
                 height,

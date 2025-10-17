@@ -25,11 +25,11 @@ pub fn test_path_reeds_shepp() {
 
     let mut rng = rng();
 
-    let mut obstacles_array = from_fn::<_, 200, _>(|_| {
+    let mut obstacles_array = from_fn::<_, 60, _>(|_| {
         let start = VecN([rng.random_range(0.0..10.0), rng.random_range(0.0..10.0)]);
         Cube {
             start,
-            end: start + VecN([rng.random_range(0.1..0.4), rng.random_range(0.1..0.4)]),
+            end: start + VecN([rng.random_range(0.5..1.), rng.random_range(0.5..1.)]),
         }
     })
     .to_vec();
@@ -57,13 +57,14 @@ pub fn test_path_reeds_shepp() {
             end: VecN([11., 11.]),
         },
         steering_radius: 1.,
+        forward_only: false
     };
 
     let params = GraphHeuristicParameters {
         start: (VecN([0.1, 0.1]), Angle::from_degrees(0.)),
         end: (VecN([9.9, 9.9]), Angle::from_degrees(90.)),
-        base_rewire_radius: 10.,
-        execution_manager: SampleNTimes(200),
+        base_rewire_radius: 5.,
+        execution_manager: SampleNTimes(10000),
         moving_radius: 4.,
         obstacles: &ObstaclesApprox {
             contains_func: Box::new(|p: OrientedCoord| obstacles_tree.contains_point(p.0)),
@@ -74,11 +75,17 @@ pub fn test_path_reeds_shepp() {
         workspace,
     };
 
-    let (out, graph) = prm(params);
+    println!("Computing path");
+
+    let (out, graph) = rrt_star(params);
+
+    println!("Drawing obstacles");
 
     for c in obstacles_array {
         svg.push(c, -1., Style::fill("red"));
     }
+
+    println!("Drawing the tree");
 
     let mut seen = HashSet::new();
     for start in graph.iter() {
@@ -112,6 +119,8 @@ pub fn test_path_reeds_shepp() {
             }
         }
     }
+
+    println!("writing");
 
     svg.write_to_file(&out_dir().join("test_path_reeds_shepp.svg"));
 }

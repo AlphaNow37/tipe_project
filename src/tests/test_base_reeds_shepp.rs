@@ -72,7 +72,7 @@ pub fn test_base_reeds_shepp() {
         points.push((
             (VecN([0., 0.]), Angle::ZERO),
             (VecN([x, y]), Angle::new(theta)),
-            "blue",
+            "white",
             1.,
         ));
     }
@@ -91,15 +91,15 @@ pub fn test_base_reeds_shepp() {
             -1.,
             Style::fill("black"),
         );
-        // for i in 0..25 {
-        //     let f = i as f64 / 25.;
-        //     let pt = workspace.lerp(segment, f);
-        //     svg.push(
-        //         Cube::from_point(pt.0 - VecN([0.1, 0.1])).with_point(pt.0 + VecN([0.1, 0.1])),
-        //         -1.,
-        //         Style::fill("green"),
-        //     );
-        // }
+        for i in 0..25 {
+            let f = i as f64 / 25.;
+            let pt = workspace.lerp(segment, f);
+            svg.push(
+                Cube::from_point(pt.0 - VecN([0.1, 0.1])).with_point(pt.0 + VecN([0.1, 0.1])),
+                -1.,
+                Style::fill("green"),
+            );
+        }
 
         put_reeds_shepp(
             &mut svg,

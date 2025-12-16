@@ -114,6 +114,12 @@ impl<const N: usize, D: Length<N>> LoopingCartesianTopology<N, D> {
         }))
     }
 }
+impl<const N: usize> Into<VecN<N, f64>> for (VecN<N, f64>, VecN<N, f64>) {
+    fn into(self) -> VecN<N, f64> {
+        self.0
+    }
+}
+
 impl<const N: usize, D: Length<N>> WorkspaceTopology for LoopingCartesianTopology<N, D> {
     type Vertex = VecN<N, f64>;
     type Segment = (VecN<N, f64>, VecN<N, f64>);

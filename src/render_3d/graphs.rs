@@ -8,7 +8,7 @@ use lib_space_animation::world::world_builder::WorldBuilder;
 use std::collections::HashSet;
 use std::hash::Hash;
 
-pub fn place_graph<V: Hash + Eq + Copy, G: IterableGraph<V>>(
+pub fn place_graph<V: Hash + Eq + Copy, I: Into<V>, G: IterableGraph<V, I>>(
     world: &mut WorldBuilder,
     graph: &G,
     pos: impl Fn(V) -> VecN<3, f64>,
@@ -25,6 +25,7 @@ pub fn place_graph<V: Hash + Eq + Copy, G: IterableGraph<V>>(
     for v in graph.iter() {
         let pos_v = pos(v);
         for n in graph.neighbors(v) {
+            let n = n.into();
             if placed.contains(&(n, v)) {
                 continue;
             }

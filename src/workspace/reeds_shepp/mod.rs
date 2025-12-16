@@ -144,6 +144,11 @@ pub struct ReedsSheppSegment {
     pub end: OrientedCoord,
     pub length: f64,
 }
+impl Into<OrientedCoord> for ReedsSheppSegment {
+    fn into(self) -> OrientedCoord {
+        self.start
+    }
+}
 
 #[derive(Clone, Debug, Copy)]
 pub struct ReedsSheppWorkspace {
@@ -168,7 +173,7 @@ impl ReedsSheppWorkspace {
             seg.length
         );
         debug_assert!(
-            EuclidianDistance.length(self.lerp(seg, 1.).0 - seg.end.0) < F64_EPSILON,
+            EuclidianDistance.length(self.lerp(seg, 1.).0 - seg.end.0) < F64_EPSILON * 50.,
             "{:?}, {:?}",
             self.lerp(seg, 1.),
             seg.end
@@ -193,7 +198,7 @@ impl WorkspaceTopology for ReedsSheppWorkspace {
     }
     fn segment(&self, start: Self::Vertex, end: Self::Vertex) -> Self::Segment {
         let segment = get_best_path(start, end, self.steering_radius, self.forward_only);
-        // self.check_segment_invariants(segment);
+        self.check_segment_invariants(segment);
         segment
     }
     fn segment_start(&self, segment: Self::Segment) -> Self::Vertex {

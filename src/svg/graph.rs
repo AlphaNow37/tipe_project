@@ -5,7 +5,7 @@ use crate::{
 };
 
 /// Draw a graph on the file
-pub fn put_graph<V: Hash + Eq + Copy, G: IterableGraph<V>>(
+pub fn put_graph<V: Hash + Eq + Copy, G: IterableGraph<V, I>, I: Into<V>>(
     svg: &mut SvgGroup,
     graph: &G,
     pos: impl Fn(V) -> VecN<2, f64>,
@@ -16,6 +16,7 @@ pub fn put_graph<V: Hash + Eq + Copy, G: IterableGraph<V>>(
     for v in graph.iter() {
         let pos_v = pos(v);
         for n in graph.neighbors(v) {
+            let n = n.into();
             if placed.contains(&(n, v)) {
                 continue;
             }

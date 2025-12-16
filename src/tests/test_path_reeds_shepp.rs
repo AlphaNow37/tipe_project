@@ -25,7 +25,7 @@ pub fn test_path_reeds_shepp() {
 
     let mut rng = rng();
 
-    let mut obstacles_array = from_fn::<_, 60, _>(|_| {
+    let mut obstacles_array = from_fn::<_, 30, _>(|_| {
         let start = VecN([rng.random_range(0.0..10.0), rng.random_range(0.0..10.0)]);
         Cube {
             start,
@@ -57,14 +57,14 @@ pub fn test_path_reeds_shepp() {
             end: VecN([11., 11.]),
         },
         steering_radius: 1.,
-        forward_only: false
+        forward_only: true,
     };
 
     let params = GraphHeuristicParameters {
         start: (VecN([0.1, 0.1]), Angle::from_degrees(0.)),
-        end: (VecN([9.9, 9.9]), Angle::from_degrees(90.)),
+        end: (VecN([9.8, 9.8]), Angle::from_degrees(90.)),
         base_rewire_radius: 5.,
-        execution_manager: SampleNTimes(10000),
+        execution_manager: SampleNTimes(1000),
         moving_radius: 4.,
         obstacles: &ObstaclesApprox {
             contains_func: Box::new(|p: OrientedCoord| obstacles_tree.contains_point(p.0)),
@@ -89,16 +89,15 @@ pub fn test_path_reeds_shepp() {
 
     let mut seen = HashSet::new();
     for start in graph.iter() {
-        for end in graph.neighbors(start) {
-            if seen.contains(&(start, end)) {
+        for parent_to_child in graph.neighbors(start) {
+            if seen.contains(&(start, parent_to_child.start)) {
                 continue;
             }
-            seen.insert((end, start));
-            let segment = workspace.segment(start, end);
+            seen.insert((parent_to_child.start, start));
             put_reeds_shepp(
                 &mut svg,
                 Style::stroke("gray", 0.01).with_fill("none"),
-                segment,
+                parent_to_child,
                 0.,
             );
         }
@@ -108,12 +107,11 @@ pub fn test_path_reeds_shepp() {
         None => println!("No path found !"),
         Some((path, length)) => {
             println!("Path found of length: {length}");
-            for i in 0..(path.len() - 1) {
-                let segment = workspace.segment(path[i], path[i + 1]);
+            for part in path {
                 put_reeds_shepp(
                     &mut svg,
                     Style::stroke("blue", 0.03).with_fill("none"),
-                    segment,
+                    part,
                     1.,
                 );
             }

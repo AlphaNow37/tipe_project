@@ -23,8 +23,8 @@ fn dist_heuristic<W: WorkspaceTopology>(
 }
 
 /// A graph interface
-pub trait Graph<Vertex> {
-    fn neighbors(&self, vertex: Vertex) -> impl Iterator<Item = Vertex>;
+pub trait Graph<Vertex, Info = Vertex> {
+    fn neighbors(&self, vertex: Vertex) -> impl Iterator<Item = Info>;
     fn dijkstra_with<W: Weight>(
         &self,
         start: Vertex,
@@ -34,6 +34,7 @@ pub trait Graph<Vertex> {
     ) -> Option<(Vec<Vertex>, W)>
     where
         Vertex: Hash + Eq + Copy,
+        Info: Into<Vertex>,
     {
         let mut parent_cost = HashMap::new();
         let mut queue = PriorityQueue::default();
@@ -57,7 +58,8 @@ pub trait Graph<Vertex> {
                 path.reverse();
                 return Some((path, cost));
             }
-            for child in self.neighbors(vertex) {
+            for child_info in self.neighbors(vertex) {
+                let child = child_info.into();
                 let (new_parent, new_cost, pcost) = if should_shortcut(parent, child) {
                     let pcost = parent_cost[&parent].1;
                     (parent, pcost + dist_fn(parent, child), pcost)
@@ -91,6 +93,7 @@ pub trait Graph<Vertex> {
     ) -> Option<(Vec<Vertex>, f64)>
     where
         Vertex: Hash + Eq + Copy,
+        Info: Into<Vertex>,
     {
         let pos_end = pos_fn(end);
         self.dijkstra_with(
@@ -112,6 +115,7 @@ pub trait Graph<Vertex> {
     ) -> Option<(Vec<Vertex>, f64)>
     where
         Vertex: Hash + Eq + Copy,
+        Info: Into<Vertex>,
     {
         let pos_end = pos_fn(end);
         self.dijkstra_with(
@@ -138,14 +142,18 @@ pub trait Graph<Vertex> {
 }
 
 /// A graph where the collection of vertex is known
-pub trait IterableGraph<V>: Graph<V> {
+pub trait IterableGraph<V, Info=V>: Graph<V, Info> {
     fn iter(&self) -> impl Iterator<Item = V>;
 
-    fn debug(&self) where V: Debug {
+    fn debug(&self)
+    where
+        V: Debug,
+        Info: Into<V>,
+    {
         for u in self.iter() {
             print!("{u:?} :     ");
             for v in self.neighbors(u) {
-                print!("{v:?} ; ");
+                print!("{:?} ; ", v.into());
             }
             println!();
         }

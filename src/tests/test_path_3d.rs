@@ -1,5 +1,4 @@
 use std::marker::PhantomData;
-use std::time::{Duration, Instant};
 
 use crate::datastructures::bsp::Bsp;
 use crate::datastructures::r_tree::RTree;
@@ -7,7 +6,7 @@ use crate::geometry::shapes::Cube;
 use crate::geometry::VecN;
 use crate::path_planning::accessibility_grid::AccesibilityGrid;
 use crate::path_planning::graphs_heuristics::{
-    prm, rrt, rrt_star, ContinueUntil, GraphHeuristicParameters, SampleNTimes,
+    prm, rrt, rrt_star, GraphHeuristicParameters, SampleNTimes,
 };
 use crate::render_3d::cubes::place_cubes;
 use crate::render_3d::graphs::place_graph;
@@ -89,7 +88,10 @@ fn using_graph_heuristic<D: Length<3>>(
         _ => unreachable!(),
     };
 
-    path
+    match path {
+        None => None,
+        Some((verteces, length)) => Some((verteces.into_iter().map(|s| s.start).collect(), length)),
+    }
 }
 
 pub fn test_3d() {

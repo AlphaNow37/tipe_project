@@ -1,3 +1,5 @@
+use crate::geometry::shapes::Cube;
+use crate::workspace::cartesians::LoopingCartesianTopology;
 use crate::{
     datastructures::bsp::Bsp,
     geometry::{shapes::Segment, VecN},
@@ -150,6 +152,60 @@ impl<D: Length<N>, const N: usize> GeometricalQueryDataStore<CartesianTopology<N
             })
     }
     fn nearest_vertex_rev(&self, pt: VecN<N, f64>) -> Option<Segment<N>> {
+        self.nearest_vertex(pt).map(|s| self.1.segment_reverse(s))
+    }
+    fn foreach_vertex(&self, f: &mut impl FnMut(VecN<N, f64>)) {
+        self.0.foreach(f);
+    }
+}
+
+/// Implémentations optimisées
+impl<D: Length<N>, const N: usize> GeometricalQueryDataStore<LoopingCartesianTopology<N, D>>
+    for (Bsp<N>, LoopingCartesianTopology<N, D>)
+{
+    fn new_store(workspace: LoopingCartesianTopology<N, D>) -> Self {
+        (
+            Bsp::new_default_config(Cube {
+                start: workspace.offsets,
+                end: workspace.offsets + workspace.sizes,
+            }),
+            workspace,
+        )
+    }
+    fn insert_vertex(&mut self, pt: VecN<N, f64>) {
+        self.0.insert(pt);
+    }
+    fn foreach_r_neighbors(
+        &self,
+        center: VecN<N, f64>,
+        radius: f64,
+        f: &mut impl FnMut((VecN<N, f64>, VecN<N, f64>), f64),
+    ) {
+        self.0.foreach_r_neighborhood(
+            radius,
+            &|v| self.1.distance(center, v),
+            &|c| self.1.distance_to_cube(center, c),
+            &mut |end| f((center, end), self.1.distance(center, end)),
+        )
+    }
+    fn foreach_r_neighbors_rev(
+        &self,
+        center: VecN<N, f64>,
+        radius: f64,
+        f: &mut impl FnMut((VecN<N, f64>, VecN<N, f64>), f64),
+    ) {
+        self.foreach_r_neighbors(center, radius, &mut move |s, d| {
+            f(self.1.segment_reverse(s), d)
+        })
+    }
+    fn nearest_vertex(&self, pt: VecN<N, f64>) -> Option<(VecN<N, f64>, VecN<N, f64>)> {
+        self.0
+            .nearest(&|v| self.1.distance(pt, v), &|c| {
+                self.1.distance_to_cube(pt, c)
+            })
+            .map(|nearest| (pt, nearest))
+    }
+    fn nearest_vertex_rev(&self, pt: VecN<N, f64>) -> Option<(VecN<N, f64>, VecN<N, f64>)> {
         self.nearest_vertex(pt).map(|s| self.1.segment_reverse(s))
     }
     fn foreach_vertex(&self, f: &mut impl FnMut(VecN<N, f64>)) {

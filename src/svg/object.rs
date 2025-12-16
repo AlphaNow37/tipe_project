@@ -165,11 +165,7 @@ pub struct Text {
 impl SvgObject for Text {
     fn collide_box(&self) -> Cube<2> {
         Cube::from_point(self.position).with_point(
-            self.position
-                + VecN([
-                    self.font_size * (self.content.len() as f64),
-                    self.font_size,
-                ]),
+            self.position + VecN([self.font_size * (self.content.len() as f64), self.font_size]),
         )
     }
     fn write(&self, writer: &mut dyn Write, style: &Style) -> std::io::Result<()> {
@@ -181,6 +177,27 @@ impl SvgObject for Text {
             s(&self.position[1]),
             s(&self.font_size),
             &self.content
+        )
+    }
+}
+
+pub struct Image {
+    pub positions: Cube<2>,
+    pub url: String,
+}
+impl SvgObject for Image {
+    fn collide_box(&self) -> Cube<2> {
+        self.positions
+    }
+    fn write(&self, writer: &mut dyn Write, _style: &Style) -> std::io::Result<()> {
+        write!(
+            writer,
+            r#"<image href="{}" x="{}" y="{}" width="{}" height="{}"/>"#,
+            self.url.clone(),
+            self.positions.start[0],
+            self.positions.start[1],
+            self.positions.size()[0],
+            self.positions.size()[1]
         )
     }
 }

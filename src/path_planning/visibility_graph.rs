@@ -87,7 +87,7 @@ impl<'a> Ord for SweepingTreeSegment<'a> {
     }
 }
 impl<'a> PartialOrd for SweepingTreeSegment<'a> {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }

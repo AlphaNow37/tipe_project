@@ -7,7 +7,7 @@ use rand::Rng;
 /// Ces noms sont sujets à changement
 pub trait WorkspaceTopology: Clone {
     type Vertex: Copy + Eq + Hash + Debug;
-    type Segment: Copy + Debug;
+    type Segment: Copy + Debug + Into<Self::Vertex>;
     const NB_DIMENSIONS: usize;
     
     /// Vrai lorsque la fonction distanc est symétrique
@@ -36,8 +36,8 @@ pub trait WorkspaceTopology: Clone {
     fn steer_in_disc(&self, segment: Self::Segment, radius: f64) -> Self::Segment;
 }
 
-pub fn path_length<W: WorkspaceTopology>(workspace: &W, path: &[W::Vertex]) -> f64 {
-    (0..(path.len() - 1))
-        .map(|i| workspace.distance(path[i], path[i + 1]))
+pub fn path_length<W: WorkspaceTopology>(workspace: &W, path: &[W::Segment]) -> f64 {
+    path.iter()
+        .map(|s| workspace.length(*s))
         .sum::<f64>()
 }

@@ -214,6 +214,11 @@ impl<const N: usize> Segment<N> {
         self.start == extr || self.end == extr
     }
 }
+impl<const N: usize> Into<VecN<N, f64>> for Segment<N> {
+    fn into(self) -> VecN<N, f64> {
+        self.start
+    }
+}
 impl Segment<2> {
     pub fn intersect_line(self, line: InfiniteLine<2>) -> bool {
         self.to_line()

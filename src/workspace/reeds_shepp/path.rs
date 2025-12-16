@@ -104,7 +104,7 @@ pub fn get_best_path(
         start,
         end,
         length: dist * radius,
-        parts: dbg!(s).map(|p| p.scale(radius)),
+        parts: s.map(|p| p.scale(radius)),
     })
     .expect("There should be at least one path !")
 }
@@ -156,7 +156,7 @@ fn path_rlr_dubins(x: f64, y: f64, phi: f64) -> Option<[ReedsSheppSegmentPart; 5
     let t = normalize_angle_positive(alpha + PI / 2. - theta);
     let u = normalize_angle_positive(PI + 2.0 * alpha);
     let v = normalize_angle_positive(alpha + theta + PI / 2. - phi);
-    dbg!(t, u, v);
+
     Some([
         ReedsSheppSegmentPart::new(t, Steering::Right, Gear::Forward),
         ReedsSheppSegmentPart::new(u, Steering::Left, Gear::Forward),

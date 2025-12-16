@@ -72,7 +72,7 @@ class Stats:
 
 stats = Stats()
 stats.search(pathlib.Path(__file__).parent.parent / "src")
-# stats.search(pathlib.Path(__file__).parent.parent / "tools")
-stats.search(pathlib.Path(__file__).parent.parent / "out")
+stats.search(pathlib.Path(__file__).parent.parent / "tools")
+# stats.search(pathlib.Path(__file__).parent.parent / "out")
 # stats.search(pathlib.Path("/home/alpha_now/Desktop/AlphaVault/"))
 stats.pprint()

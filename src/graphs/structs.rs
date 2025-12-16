@@ -55,19 +55,19 @@ impl IterableGraph<usize> for LinkGraph {
 
 /// A graph using an adjacency list stored in a hashmap
 #[derive(Clone, Debug)]
-pub struct MapGraph<V> {
-    nexts: HashMap<V, Vec<V>>,
+pub struct MapGraph<V, I=V> {
+    nexts: HashMap<V, Vec<I>>,
 }
-impl<V: Hash + Eq + Copy> MapGraph<V> {
-    pub fn add_new_link(&mut self, start: V, end: V) {
+impl<V: Hash + Eq + Copy, I: Copy + Into<V>> MapGraph<V, I> {
+    pub fn add_new_link(&mut self, start: V, end: I) {
         self.nexts.entry(start).or_default().push(end);
     }
-    pub fn add_link(&mut self, start: V, end: V) {
+    pub fn add_link(&mut self, start: V, end: I) where I: Eq {
         if !self.nexts[&start].contains(&end) {
             self.nexts.entry(start).or_default().push(end);
         }
     }
-    pub fn remove_link(&mut self, start: V, end: V) {
+    pub fn remove_link(&mut self, start: V, end: I) where I: Eq {
         let row = &mut self.nexts.entry(start).or_default();
         let mut i = 0;
         while i < row.len() {
@@ -78,29 +78,29 @@ impl<V: Hash + Eq + Copy> MapGraph<V> {
             }
         }
     }
-    pub fn set_neighbors(&mut self, start: V, ends: Vec<V>) {
+    pub fn set_neighbors(&mut self, start: V, ends: Vec<I>) {
         self.nexts.insert(start, ends);
     }
-    pub fn from_fn(verteces: impl Iterator<Item = V>, mut f: impl FnMut(V) -> Vec<V>) -> Self {
+    pub fn from_fn(verteces: impl Iterator<Item = V>, mut f: impl FnMut(V) -> Vec<I>) -> Self {
         Self {
             nexts: HashMap::from_iter(verteces.map(move |k| (k, f(k)))),
         }
     }
 }
-impl<V: Clone + Eq + Hash> Graph<V> for MapGraph<V> {
-    fn neighbors<'s>(&'s self, vertex: V) -> impl Iterator<Item = V> {
-        let empty: &'s [V] = &[];
+impl<V: Eq + Hash, I: Clone> Graph<V, I> for MapGraph<V, I> {
+    fn neighbors<'s>(&'s self, vertex: V) -> impl Iterator<Item = I> {
+        let empty: &'s [I] = &[];
         self.nexts
             .get(&vertex)
             .map_or(empty.iter().cloned(), |row| row.iter().cloned())
     }
 }
-impl<V: Clone + Eq + Hash> IterableGraph<V> for MapGraph<V> {
+impl<V: Eq + Hash + Clone, I: Clone> IterableGraph<V, I> for MapGraph<V, I> {
     fn iter(&self) -> impl Iterator<Item = V> {
         self.nexts.keys().cloned()
     }
 }
-impl<V> Default for MapGraph<V> {
+impl<V, I> Default for MapGraph<V, I> {
     fn default() -> Self {
         Self {
             nexts: HashMap::default(),

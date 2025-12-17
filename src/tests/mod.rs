@@ -19,6 +19,7 @@ mod test_visibility_graph;
 mod text_circuit_tetra;
 mod test_line_sweep;
 mod test_arms_simple;
+mod test_3d_divers;
 
 fn dir(name: &str) -> PathBuf {
     let here = current_dir().expect("Expected a working directory");
@@ -58,7 +59,7 @@ pub fn tests() {
     // test_path_simple_2d::illustration_presentation();
     // background::generate_backgrounds();
     // test_path_3d::test_3d()
-    // test_rtree_3d::test_rtree()
+    // test_datastructures_3d::test_rtree()
     // test_datastructures_2d::test_rtree_2d()
     // test_datastructures_2d::test_grid_2d()
     // test_base_reeds_shepp::test_base_reeds_shepp();
@@ -66,5 +67,6 @@ pub fn tests() {
     // test_visibility_graph::illustration_lower_bound_visibility();
     // text_circuit_tetra::illustration_circuit_tetra();
     // test_line_sweep::illustration_line_sweep();
-    test_arms_simple::test_arms_simple();
+    // test_arms_simple::test_arms_simple();
+    test_3d_divers::test_3d_illustration_shortest_euclidian_path();
 }

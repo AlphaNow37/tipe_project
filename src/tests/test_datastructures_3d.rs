@@ -8,10 +8,10 @@ use lib_space_animation::world::world_builder::{WorldBuilder, WorldsBuilder};
 use rand::{rng, Rng};
 use std::array::from_fn;
 
-const NCUBES: usize = 20;
+const NCUBES: usize = 1000;
 const TOTAL_WIDTH: f64 = 20.0;
 const MIN_WIDTH: f64 = 0.01;
-const MAX_WIDTH: f64 = 3.;
+const MAX_WIDTH: f64 = 0.2;
 
 pub fn test_rtree() {
     let mut rng = rng();

@@ -34,6 +34,12 @@ impl<V, I> ExecutionManager<V, I> for SampleNTimes {
     }
 }
 
+#[derive(Copy, Clone)]
+pub enum Goal<'a, W: WorkspaceTopology> {
+    Vertex(W::Vertex),
+    Predicate(&'a dyn Fn(W::Vertex) -> bool),
+}
+
 /// Standard parameters for graph heuristics
 pub struct GraphHeuristicParameters<
     'a,
@@ -47,7 +53,7 @@ pub struct GraphHeuristicParameters<
     /// The path's start
     pub start: W::Vertex,
     /// The path's end
-    pub end: W::Vertex,
+    pub end: Goal<'a, W>,
     /// The workspace where we try to find a path
     pub workspace: W,
     /// The maximum distance between two vertices on the graph
@@ -63,8 +69,16 @@ pub struct GraphHeuristicParameters<
 /// Algo RRT
 /// N'est pas asymptotiquement optimal
 pub fn rrt<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
-    mut p: GraphHeuristicParameters<W, impl ObstaclesEnv<W>, Q, impl ExecutionManager<W::Vertex, W::Segment>>,
-) -> (Option<(Vec<W::Segment>, f64)>, ParentTree<W::Vertex, W::Segment>) {
+    mut p: GraphHeuristicParameters<
+        W,
+        impl ObstaclesEnv<W>,
+        Q,
+        impl ExecutionManager<W::Vertex, W::Segment>,
+    >,
+) -> (
+    Option<(Vec<W::Segment>, f64)>,
+    ParentTree<W::Vertex, W::Segment>,
+) {
     // Initialisation des structures de données
     let mut rng = rng();
     let mut tree = ParentTree::new();
@@ -92,17 +106,26 @@ pub fn rrt<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
         vertices.insert_vertex(xnew);
         tree.set_parent(xnew, snew);
 
-        // Early return pour rrt
-        if p.workspace.distance(xnew, p.end) <= p.moving_radius
-            && !p
-                .obstacles
-                .collide_segment(p.workspace.segment(xnew, p.end))
-        {
-            vertices.insert_vertex(p.end);
-            tree.set_parent(p.end, p.workspace.segment_reverse(snew));
-            let path = tree.path_to(p.end);
-            let length = path_length(&p.workspace, &path);
-            return (Some((path, length)), tree);
+        match p.end {
+            Goal::Vertex(end) => {
+                // Early return pour rrt
+                if p.workspace.distance(xnew, end) <= p.moving_radius
+                    && !p.obstacles.collide_segment(p.workspace.segment(xnew, end))
+                {
+                    vertices.insert_vertex(end);
+                    tree.set_parent(end, p.workspace.segment_reverse(snew));
+                    let path = tree.path_to(end);
+                    let length = path_length(&p.workspace, &path);
+                    return (Some((path, length)), tree);
+                }
+            }
+            Goal::Predicate(predicate) => {
+                if predicate(xnew) {
+                    let path = tree.path_to(xnew);
+                    let length = path_length(&p.workspace, &path);
+                    return (Some((path, length)), tree);
+                }
+            }
         }
     }
     (None, tree)
@@ -111,7 +134,12 @@ pub fn rrt<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
 /// Algo RRT*
 /// Est asymptotiquement optimal
 pub fn rrt_star<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
-    mut p: GraphHeuristicParameters<W, impl ObstaclesEnv<W>, Q, impl ExecutionManager<W::Vertex, W::Segment>>,
+    mut p: GraphHeuristicParameters<
+        W,
+        impl ObstaclesEnv<W>,
+        Q,
+        impl ExecutionManager<W::Vertex, W::Segment>,
+    >,
 ) -> (Option<(Vec<W::Segment>, f64)>, Tree<W::Vertex, W::Segment>) {
     // Initialisation des structures de données
     let mut rng = rng();
@@ -122,7 +150,7 @@ pub fn rrt_star<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
     vertices.insert_vertex(p.start);
     distance.insert(p.start, 0.);
 
-    distance.insert(p.end, f64::INFINITY);
+    let mut best_end_vertex = None;
 
     // Boucle principale
     let mut n = 1;
@@ -177,17 +205,13 @@ pub fn rrt_star<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
                 if cost < best_cost {
                     best_parent = snear;
                     best_cost = cost;
-                    debug_assert!(!p
-                        .obstacles
-                        .collide_segment(snear));
+                    debug_assert!(!p.obstacles.collide_segment(snear));
                 }
             }
         });
 
         // dbg!(xnew, best_parent, best_cost);
-        debug_assert!(!p
-            .obstacles
-            .collide_segment(best_parent));
+        debug_assert!(!p.obstacles.collide_segment(best_parent));
 
         vertices.insert_vertex(xnew);
         tree.set_parent(xnew, best_parent);
@@ -213,13 +237,28 @@ pub fn rrt_star<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
                 }
             }
         });
-
-        let dist_to_end = p.workspace.distance(xnew, p.end);
-        if dist_to_end <= p.moving_radius {
-            let s_end = p.workspace.segment(xnew, p.end);
-            if !p.obstacles.collide_segment(s_end) && best_cost + dist_to_end < distance[&p.end] {
-                distance.insert(p.end, best_cost + dist_to_end);
-                tree.set_parent(p.end, s_end);
+        match p.end {
+            Goal::Vertex(end) => {
+                let dist_to_end = p.workspace.distance(xnew, end);
+                if dist_to_end <= p.moving_radius {
+                    let s_end = p.workspace.segment(xnew, end);
+                    if !p.obstacles.collide_segment(s_end)
+                        && best_cost + dist_to_end < distance[&end]
+                    {
+                        best_end_vertex = Some(end);
+                        distance.insert(end, best_cost + dist_to_end);
+                        tree.set_parent(end, s_end);
+                    }
+                }
+            }
+            Goal::Predicate(predicate) => {
+                if predicate(xnew) {
+                    if let Some(best) = best_end_vertex {
+                        if distance[&best] > distance[&xnew] {
+                            best_end_vertex = Some(xnew)
+                        }
+                    }
+                }
             }
         }
     }
@@ -227,28 +266,31 @@ pub fn rrt_star<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
     debug_assert!(tree
         .iter()
         .flat_map(|v| tree.neighbors(v))
-        .all(|parent_to_child| !p
-            .obstacles
-            .collide_segment(parent_to_child)));
+        .all(|parent_to_child| !p.obstacles.collide_segment(parent_to_child)));
 
-    let end_cost = distance[&p.end];
-    if end_cost == f64::INFINITY {
-        (None, tree)
-    } else {
-        let path = tree
-            .path_to(p.end)
-            .into_iter()
-            .map(|edge| edge)
-            .collect();
-        (Some((path, end_cost)), tree)
+    match best_end_vertex {
+        None => (None, tree),
+        Some(best_end) => {
+            let end_cost = distance[&best_end];
+            let path = tree.path_to(best_end).into_iter().map(|edge| edge).collect();
+            (Some((path, end_cost)), tree)
+        }
     }
 }
 
 /// Algo PRM
 /// Est asymptotiquement optimal
 pub fn prm<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
-    mut p: GraphHeuristicParameters<W, impl ObstaclesEnv<W>, Q, impl ExecutionManager<W::Vertex, W::Segment>>,
-) -> (Option<(Vec<W::Segment>, f64)>, MapGraph<W::Vertex, W::Segment>) {
+    mut p: GraphHeuristicParameters<
+        W,
+        impl ObstaclesEnv<W>,
+        Q,
+        impl ExecutionManager<W::Vertex, W::Segment>,
+    >,
+) -> (
+    Option<(Vec<W::Segment>, f64)>,
+    MapGraph<W::Vertex, W::Segment>,
+) {
     // Initialisation des structures de données
     let mut rng = rng();
     let mut graph = MapGraph::default();

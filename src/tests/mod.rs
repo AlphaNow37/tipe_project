@@ -68,5 +68,6 @@ pub fn tests() {
     // text_circuit_tetra::illustration_circuit_tetra();
     // test_line_sweep::illustration_line_sweep();
     // test_arms_simple::test_arms_simple();
-    test_3d_divers::test_3d_illustration_shortest_euclidian_path();
+    // test_3d_divers::test_3d_illustration_shortest_euclidian_path();
+    test_path_simple_2d::illustration_presentation_heuristics();
 }

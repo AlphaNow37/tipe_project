@@ -166,6 +166,43 @@ impl Polygon {
         // Counterclockwize like the arguments.. but may be self-crossing !
         Self(new_pts)
     }
+
+    pub fn contains_point(&self, pt: VecN<2, f64>) -> bool {
+        // ray casting algo
+        let mut count = 0;
+        for i in 0..self.0.len() {
+            let p1 = self.0[i];
+            let p2 = self.0[(i + 1) % self.len()];
+            if (Ray {
+                start: pt,
+                end: pt + VecN([1., 0.]),
+            })
+            .intersect_segment(Segment { start: p1, end: p2 })
+            {
+                count += 1;
+            }
+        }
+        count % 2 == 1
+    }
+
+    pub fn intersect_segment(&self, segment: Segment<2>) -> bool {
+        if self.contains_point(segment.start) || self.contains_point(segment.end) {
+            return true;
+        }
+        for i in 0..self.0.len() {
+            let p1 = self.0[i];
+            let p2 = self.0[(i + 1) % self.len()];
+            let seg = Segment { start: p1, end: p2 };
+            if seg.intersect_segment(segment) {
+                return true;
+            }
+        }
+        false
+    }
+
+    pub fn intersect_cube(&self, cube: Cube<2>) -> bool {
+        todo!()
+    }
 }
 
 /// An N-dimensions infinite line

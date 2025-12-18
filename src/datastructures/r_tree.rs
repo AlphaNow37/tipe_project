@@ -1,22 +1,46 @@
-use crate::geometry::shapes::{Cube, Segment};
+use crate::geometry::shapes::{Cube, Polygon, Segment};
 use crate::geometry::VecN;
 use crate::utils::numbers::NotNanF64;
 
 /// Taille avant laquelle les feuilles sont aplaties directement
 const FINAL_SIZE_THRESHOLD: usize = 8;
 
-
 /// Les feuilles peuvent contenir plus de données que juste la bounding box
 pub trait RTreeLeaf<const N: usize>: Clone {
     fn bounding_box(&self) -> Cube<N>;
+    fn contains_point_(&self, pt: VecN<N, f64>) -> bool;
+    fn intersect_segment_(&self, segment: Segment<N>) -> bool;
+    fn intersect_cube_(&self, cube: Cube<N>) -> bool;
 }
 
 impl<const N: usize> RTreeLeaf<N> for Cube<N> {
     fn bounding_box(&self) -> Cube<N> {
         *self
     }
+    fn contains_point_(&self, pt: VecN<N, f64>) -> bool {
+        Cube::contains_point(*self, pt)
+    }
+    fn intersect_segment_(&self, segment: Segment<N>) -> bool {
+        Cube::intersect_segment(*self, segment)
+    }
+    fn intersect_cube_(&self, cube: Cube<N>) -> bool {
+        Cube::intersect_cube(*self, cube)
+    }
 }
-
+impl RTreeLeaf<2> for (Polygon, Cube<2>) {
+    fn bounding_box(&self) -> Cube<2> {
+        self.1
+    }
+    fn contains_point_(&self, pt: VecN<2, f64>) -> bool {
+        self.1.contains_point(pt) && self.0.contains_point(pt)
+    }
+    fn intersect_segment_(&self, segment: Segment<2>) -> bool {
+        self.1.intersect_segment(segment) && self.0.intersect_segment(segment)
+    }
+    fn intersect_cube_(&self, cube: Cube<2>) -> bool {
+        todo!()
+    }
+}
 
 /// Un R-Tree est un arbre où chaque noeud possède un rectangle, où:
 /// - Si c'est une feuille, alors c'est un obstacle plein
@@ -79,16 +103,19 @@ impl<const N: usize, T: RTreeLeaf<N>> RTree<N, T> {
     }
     pub fn contains_point(&self, pt: VecN<N, f64>) -> bool {
         match self {
-            Self::Leaf(t) => t.bounding_box().contains_point(pt),
+            Self::Leaf(t) => t.contains_point_(pt),
             Self::Node {
                 bounding_box,
                 children,
-            } => bounding_box.contains_point(pt) && children.iter().any(|child| child.contains_point(pt)),
+            } => {
+                bounding_box.contains_point(pt)
+                    && children.iter().any(|child| child.contains_point(pt))
+            }
         }
     }
     pub fn intersect_cube(&self, cube: Cube<N>) -> bool {
         match self {
-            Self::Leaf(t) => t.bounding_box().intersect_cube(cube),
+            Self::Leaf(t) => t.intersect_cube_(cube),
             Self::Node {
                 bounding_box,
                 children,
@@ -100,13 +127,15 @@ impl<const N: usize, T: RTreeLeaf<N>> RTree<N, T> {
     }
     pub fn intersect_segment(&self, segment: Segment<N>) -> bool {
         match self {
-            Self::Leaf(t) => t.bounding_box().intersect_segment(segment),
+            Self::Leaf(t) => t.intersect_segment_(segment),
             Self::Node {
                 bounding_box,
                 children,
             } => {
                 bounding_box.intersect_segment(segment)
-                    && children.iter().any(|child| child.intersect_segment(segment))
+                    && children
+                        .iter()
+                        .any(|child| child.intersect_segment(segment))
             }
         }
     }

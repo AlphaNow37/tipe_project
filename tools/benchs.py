@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import csv
 from math import log
 
-with open("out/nice_perf_benchmark.csv") as f:
+with open("../out/nice_perf_benchmark.csv") as f:
     reader = csv.DictReader(f, delimiter=";")
     fields = reader.fieldnames
     datas = list(reader)
@@ -17,9 +17,8 @@ graphed_items = [
 ]
 params = [int(entry["nb_map_vertices"]) for entry in datas]
 
-
-fnaive = (lambda n: n**3, "~n^3")
-fopt1 = (lambda n: (n**2) * log(n), "~n^2 log n")
+fnaive = (lambda n: n**3, "~|S|^3")
+fopt1 = (lambda n: (n**2) * log(n), "~|S|^2 log |S|")
 asymps = {
     "time_naive_full": fnaive,
     "time_opt1_full": fopt1,
@@ -34,9 +33,9 @@ colors = {
 }
 labels = {
     "time_naive_full": "Algo naif",
-    "time_opt1_full": "Algo rayon tournant",
+    "time_opt1_full": "Algo line sweep",
     "time_naive_cache": "Algo naif, lazy",
-    "time_opt1_cache": "ALgo rayon tournant, lazy",
+    "time_opt1_cache": "ALgo line sweep, lazy",
 }
 
 for key in graphed_items:

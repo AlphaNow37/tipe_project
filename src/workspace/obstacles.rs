@@ -9,6 +9,7 @@ use crate::{
         workspace::WorkspaceTopology,
     },
 };
+use crate::datastructures::r_tree::RTreeLeaf;
 
 pub trait ObstaclesEnv<W: WorkspaceTopology> {
     /// Retourne true ssi a est dans les obstacles
@@ -18,7 +19,7 @@ pub trait ObstaclesEnv<W: WorkspaceTopology> {
     fn collide_segment(&self, s: W::Segment) -> bool;
 }
 
-impl<const N: usize, D: Length<N>> ObstaclesEnv<CartesianTopology<N, D>> for RTree<N, Cube<N>> {
+impl<const N: usize, D: Length<N>, T: RTreeLeaf<N>> ObstaclesEnv<CartesianTopology<N, D>> for RTree<N, T> {
     fn collide_vertex(&self, a: VecN<N, f64>) -> bool {
         self.contains_point(a)
     }

@@ -28,7 +28,7 @@ pub trait Graph<Vertex, Info = Vertex> {
     fn dijkstra_with<W: Weight>(
         &self,
         start: Vertex,
-        end: Vertex,
+        end_predicate: impl Fn(Vertex) -> bool,
         dist_fn: impl Fn(Vertex, Vertex) -> W,
         should_shortcut: impl Fn(Vertex, Vertex) -> bool,
     ) -> Option<(Vec<Vertex>, W)>
@@ -48,8 +48,8 @@ pub trait Graph<Vertex, Info = Vertex> {
             if best_cost < cost {
                 continue;
             }
-            if vertex == end {
-                let mut path = vec![end];
+            if end_predicate(vertex) {
+                let mut path = vec![vertex];
                 let mut v = vertex;
                 while v != start {
                     v = parent_cost[&v].0;
@@ -98,7 +98,7 @@ pub trait Graph<Vertex, Info = Vertex> {
         let pos_end = pos_fn(end);
         self.dijkstra_with(
             start,
-            end,
+            |pt| pt == end,
             |a, b| dist_heuristic(workspace, pos_end, pos_fn(a), pos_fn(b)),
             |_, _| false,
         )
@@ -120,11 +120,32 @@ pub trait Graph<Vertex, Info = Vertex> {
         let pos_end = pos_fn(end);
         self.dijkstra_with(
             start,
-            end,
+            |pt| pt == end,
             |a, b| dist_heuristic(workspace, pos_end, pos_fn(a), pos_fn(b)),
             |a, b| !obstacles.collide_segment(workspace.segment(pos_fn(a), pos_fn(b))),
         )
         .map(|(path, weight)| (path, *weight + workspace.distance(pos_fn(start), pos_end)))
+    }
+
+    fn theta_with<W: WorkspaceTopology>(
+        &self,
+        start: Vertex,
+        end_predicate: impl Fn(Vertex) -> bool,
+        pos_fn: impl Fn(Vertex) -> W::Vertex,
+        workspace: &W,
+        obstacles: &impl ObstaclesEnv<W>,
+    ) -> Option<(Vec<Vertex>, f64)>
+    where
+        Vertex: Hash + Eq + Copy,
+        Info: Into<Vertex>,
+    {
+        self.dijkstra_with(
+            start,
+            end_predicate,
+            |a, b| NotNanF64::new(workspace.distance(pos_fn(a), pos_fn(b))),
+            |a, b| !obstacles.collide_segment(workspace.segment(pos_fn(a), pos_fn(b))),
+        )
+        .map(|(path, weight)| (path, *weight))
     }
 
     fn subgraph<'a, F: Fn(&Vertex, &Vertex) -> bool + 'a>(
@@ -142,7 +163,7 @@ pub trait Graph<Vertex, Info = Vertex> {
 }
 
 /// A graph where the collection of vertex is known
-pub trait IterableGraph<V, Info=V>: Graph<V, Info> {
+pub trait IterableGraph<V, Info = V>: Graph<V, Info> {
     fn iter(&self) -> impl Iterator<Item = V>;
 
     fn debug(&self)

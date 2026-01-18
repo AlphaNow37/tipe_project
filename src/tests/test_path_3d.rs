@@ -5,7 +5,7 @@ use crate::datastructures::r_tree::RTree;
 use crate::geometry::shapes::Cube;
 use crate::geometry::VecN;
 use crate::path_planning::accessibility_grid::AccesibilityGrid;
-use crate::path_planning::graphs_heuristics::{prm, rrt, rrt_star, ContinueUntil, GraphHeuristicParameters, SampleNTimes};
+use crate::path_planning::graphs_heuristics::{prm, rrt, rrt_star, ContinueUntil, Goal, GraphHeuristicParameters, SampleNTimes};
 use crate::render_3d::cubes::place_cubes;
 use crate::render_3d::graphs::place_graph;
 use crate::render_3d::grid::place_grid;
@@ -51,7 +51,7 @@ fn using_graph_heuristic<D: Length<3>>(
 ) -> Option<(Vec<VecN<3, f64>>, f64)> {
     let params = GraphHeuristicParameters {
         start,
-        end,
+        end: Goal::Vertex(end),
         moving_radius: 0.2,
         base_rewire_radius: 0.8,
         obstacles: &obstacles,

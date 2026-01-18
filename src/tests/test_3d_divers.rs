@@ -2,9 +2,7 @@ use crate::datastructures::bsp::Bsp;
 use crate::datastructures::r_tree::RTree;
 use crate::geometry::shapes::Cube;
 use crate::geometry::VecN;
-use crate::path_planning::graphs_heuristics::{
-    prm, rrt_star, ContinueUntil, GraphHeuristicParameters,
-};
+use crate::path_planning::graphs_heuristics::{prm, rrt_star, ContinueUntil, Goal, GraphHeuristicParameters};
 use crate::render_3d::cubes::place_cubes;
 use crate::render_3d::graphs::{place_graph, place_graph_populars};
 use crate::workspace::cartesians::{CartesianTopology, EuclidianDistance};
@@ -50,7 +48,7 @@ pub fn test_3d_illustration_shortest_euclidian_path() {
 
         let params = GraphHeuristicParameters {
             start,
-            end,
+            end: Goal::Vertex(end),
             moving_radius: 1.,
             base_rewire_radius: 10.,
             obstacles: &obstacles,

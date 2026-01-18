@@ -17,7 +17,7 @@ use crate::{
         workspace::WorkspaceTopology,
     },
 };
-
+use crate::path_planning::graphs_heuristics::Goal;
 use super::out_dir;
 
 pub fn test_path_reeds_shepp() {
@@ -62,7 +62,7 @@ pub fn test_path_reeds_shepp() {
 
     let params = GraphHeuristicParameters {
         start: (VecN([0.1, 0.1]), Angle::from_degrees(0.)),
-        end: (VecN([9.8, 9.8]), Angle::from_degrees(90.)),
+        end: Goal::Vertex((VecN([9.8, 9.8]), Angle::from_degrees(90.))),
         base_rewire_radius: 5.,
         execution_manager: SampleNTimes(1000),
         moving_radius: 4.,

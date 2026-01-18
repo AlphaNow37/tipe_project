@@ -1,6 +1,6 @@
 use super::{in_dir, out_dir};
 use crate::datastructures::bsp::Bsp;
-use crate::path_planning::graphs_heuristics::ContinueUntil;
+use crate::path_planning::graphs_heuristics::{ContinueUntil, Goal};
 use crate::svg::graph::put_graph;
 use crate::utils::image_reader::read_image;
 use crate::workspace::cartesians::{CartesianTopology, EuclidianDistance};
@@ -37,7 +37,7 @@ pub fn illustration_circuit_tetra() {
 
     let params = GraphHeuristicParameters {
         start: start_pos,
-        end: end_pos,
+        end: Goal::Vertex(end_pos),
         base_rewire_radius: 400.,
         execution_manager: ContinueUntil(Instant::now() + Duration::from_secs_f64(0.5)),
         moving_radius: 200.,
@@ -90,7 +90,7 @@ pub fn illustration_circuit_tetra() {
 
     let params = GraphHeuristicParameters {
         start: (start_pos, Angle::from_degrees(-90.)),
-        end: (end_pos, Angle::from_degrees(-90.)),
+        end: Goal::Vertex((end_pos, Angle::from_degrees(-90.))),
         base_rewire_radius: 300.,
         execution_manager: ContinueUntil(Instant::now() + Duration::from_secs_f64(20.)),
         moving_radius: 100.,

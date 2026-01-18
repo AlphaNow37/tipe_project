@@ -102,7 +102,7 @@ pub fn rrt<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
         }
 
         let xnew = p.workspace.segment_end(snew);
-        let xnearest = p.workspace.segment_start(snew);
+        // let xnearest = p.workspace.segment_start(snew);
         vertices.insert_vertex(xnew);
         tree.set_parent(xnew, snew);
 
@@ -157,7 +157,7 @@ pub fn rrt_star<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
     while !p.execution_manager.must_stop(n) {
         n += 1;
         p.execution_manager
-            .logs(&tree, || distance.get(&p.end).copied());
+            .logs(&tree, || best_end_vertex.map(|best| distance[&best]));
 
         // Usual sampling and steering, like in RRT
         let xrand = p.workspace.sample_random(&mut rng);
@@ -257,6 +257,8 @@ pub fn rrt_star<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
                         if distance[&best] > distance[&xnew] {
                             best_end_vertex = Some(xnew)
                         }
+                    } else {
+                        best_end_vertex = Some(xnew)
                     }
                 }
             }
@@ -272,7 +274,11 @@ pub fn rrt_star<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
         None => (None, tree),
         Some(best_end) => {
             let end_cost = distance[&best_end];
-            let path = tree.path_to(best_end).into_iter().map(|edge| edge).collect();
+            let path = tree
+                .path_to(best_end)
+                .into_iter()
+                .map(|edge| edge)
+                .collect();
             (Some((path, end_cost)), tree)
         }
     }
@@ -297,16 +303,19 @@ pub fn prm<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
     let mut vertices = Q::new_store(p.workspace.clone());
 
     vertices.insert_vertex(p.start);
-    vertices.insert_vertex(p.end);
+    if let Goal::Vertex(end) = p.end {
+        vertices.insert_vertex(end);
+    }
 
     // Boucle principale
     let mut n = 1;
     while !p.execution_manager.must_stop(n) {
         n += 1;
         p.execution_manager.logs(&graph, || {
-            graph
-                .a_star_with(p.start, p.end, |v| v, &p.workspace)
-                .map(|(_, l)| l)
+            todo!()
+            // graph
+            //     .a_star_with(p.start, p.end, |v| v, &p.workspace)
+            //     .map(|(_, l)| l)
         });
 
         let xrand = p.workspace.sample_random(&mut rng);
@@ -325,9 +334,14 @@ pub fn prm<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
 
         vertices.insert_vertex(xrand);
     }
-    if let Some((path, length)) =
-        graph.theta_star_with(p.start, p.end, |v| v, &p.workspace, p.obstacles)
-    {
+
+    let res = match p.end {
+        Goal::Vertex(end) => graph.theta_star_with(p.start, end, |v| v, &p.workspace, p.obstacles),
+        Goal::Predicate(predicate) => {
+            graph.theta_with(p.start, predicate, |v| v, &p.workspace, p.obstacles)
+        }
+    };
+    if let Some((path, length)) = res {
         let mut edges = Vec::new();
         for i in 0..(path.len() - 1) {
             edges.push(p.workspace.segment(path[i], path[i + 1]))

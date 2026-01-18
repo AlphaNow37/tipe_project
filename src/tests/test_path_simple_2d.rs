@@ -3,7 +3,7 @@ use super::{giggle_coords, out_dir};
 use crate::datastructures::r_tree::RTree;
 use crate::geometry::shapes::Cube;
 use crate::graphs::IterableGraph;
-use crate::path_planning::graphs_heuristics::{prm, rrt, rrt_star, ContinueUntil, GraphHeuristicParameters, SampleNTimes};
+use crate::path_planning::graphs_heuristics::{prm, rrt, rrt_star, ContinueUntil, Goal, GraphHeuristicParameters, SampleNTimes};
 use crate::path_planning::visibility_graph::vis_graph_naive;
 use crate::svg::object::{SvgObject, Text};
 /// hardcoded, simple tests for debugging purposes
@@ -247,7 +247,7 @@ pub fn illustration_presentation_heuristics() {
 
     let (path_opt, graph) = prm(GraphHeuristicParameters {
         start,
-        end,
+        end: Goal::Vertex(end),
         workspace,
         vertices: PhantomData::<(Bsp<2>, CartesianTopology<2, EuclidianDistance>)>,
         base_rewire_radius: 0.5,

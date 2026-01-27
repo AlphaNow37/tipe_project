@@ -67,6 +67,7 @@ impl<const N: usize, T: RTreeLeaf<N>> RTree<N, T> {
         }
     }
 
+    /// Ajoute 2^(N-d) fils à out, en découpant à partir de la dimension d
     fn load_from_dimension(objs: &mut [T], d: usize, out: &mut Vec<Self>) {
         if d == N {
             return out.push(Self::bulk_load(objs));

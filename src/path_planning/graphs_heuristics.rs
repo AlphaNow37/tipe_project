@@ -243,7 +243,8 @@ pub fn rrt_star<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
                 if dist_to_end <= p.moving_radius {
                     let s_end = p.workspace.segment(xnew, end);
                     if !p.obstacles.collide_segment(s_end)
-                        && best_cost + dist_to_end < distance[&end]
+                        && (!distance.contains_key(&end)
+                            || best_cost + dist_to_end < distance[&end])
                     {
                         best_end_vertex = Some(end);
                         distance.insert(end, best_cost + dist_to_end);

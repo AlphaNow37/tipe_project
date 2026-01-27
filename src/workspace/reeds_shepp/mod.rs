@@ -139,6 +139,7 @@ impl ReedsSheppSegmentPart {
 
 #[derive(Debug, Clone, Copy)]
 pub struct ReedsSheppSegment {
+    /// 5 parties suffisent toujours
     pub parts: [ReedsSheppSegmentPart; 5],
     pub start: OrientedCoord,
     pub end: OrientedCoord,

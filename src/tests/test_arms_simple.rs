@@ -121,7 +121,7 @@ pub fn test_arms_simple() {
             ),
             workspace,
             vertices: PhantomData::<(Bsp<NDIM>, LoopingCartesianTopology<NDIM, _>)>,
-            execution_manager: ContinueUntil(Instant::now() + Duration::from_secs_f64(500.)),
+            execution_manager: ContinueUntil(Instant::now() + Duration::from_secs_f64(50.)),
             moving_radius: 0.5,
             base_rewire_radius: 2.,
             obstacles: &ObstaclesApprox {

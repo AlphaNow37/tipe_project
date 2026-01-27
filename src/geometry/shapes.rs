@@ -173,12 +173,11 @@ impl Polygon {
         for i in 0..self.0.len() {
             let p1 = self.0[i];
             let p2 = self.0[(i + 1) % self.len()];
-            if (Ray {
+            let ray = Ray {
                 start: pt,
                 end: pt + VecN([1., 0.]),
-            })
-            .intersect_segment(Segment { start: p1, end: p2 })
-            {
+            };
+            if (ray.intersect_segment(Segment { start: p1, end: p2 })) {
                 count += 1;
             }
         }

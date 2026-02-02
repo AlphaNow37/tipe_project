@@ -35,6 +35,9 @@ impl Benchmark {
         }
     }
     pub fn add_column<V: Display>(&mut self, name: impl ToString, values: &[V]) {
+        if self.columns.is_empty() {
+            self.nb_rows = values.len();
+        }
         assert_eq!(values.len(), self.nb_rows);
         let mut column = vec![name.to_string()];
         for v in values {

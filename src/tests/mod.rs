@@ -20,6 +20,7 @@ mod text_circuit_tetra;
 mod test_line_sweep;
 mod test_arms_simple;
 mod test_3d_divers;
+mod test_convergence_vitesse;
 
 fn dir(name: &str) -> PathBuf {
     let here = current_dir().expect("Expected a working directory");
@@ -65,9 +66,10 @@ pub fn tests() {
     // test_base_reeds_shepp::test_base_reeds_shepp();
     // test_path_reeds_shepp::test_path_reeds_shepp();
     // test_visibility_graph::illustration_lower_bound_visibility();
-    text_circuit_tetra::illustration_circuit_tetra();
+    // text_circuit_tetra::illustration_circuit_tetra();
     // test_line_sweep::illustration_line_sweep();
     // test_arms_simple::test_arms_simple();
     // test_3d_divers::test_3d_illustration_shortest_euclidian_path();
     // test_path_simple_2d::illustration_presentation_heuristics();
+    test_convergence_vitesse::test_convergence_straight();
 }

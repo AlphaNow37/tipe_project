@@ -13,22 +13,27 @@ use crate::{
     },
 };
 
-pub trait ExecutionManager<V, I> {
-    fn logs(&mut self, _graph: &impl Graph<V, I>, _length: impl FnOnce() -> Option<f64>) {}
+pub trait ExecutionManager<V, I, W: WorkspaceTopology> {
+    fn logs(
+        &mut self,
+        _graph: &impl Graph<V, I>,
+        _length: impl FnOnce() -> Option<Vec<W::Segment>>,
+    ) {
+    }
     fn must_stop(&self, _nb_samples: usize) -> bool {
         false
     }
 }
 
 pub struct ContinueUntil(pub Instant);
-impl<V, I> ExecutionManager<V, I> for ContinueUntil {
+impl<V, I, W: WorkspaceTopology> ExecutionManager<V, I, W> for ContinueUntil {
     fn must_stop(&self, _nb_samples: usize) -> bool {
         Instant::now() > self.0
     }
 }
 
 pub struct SampleNTimes(pub usize);
-impl<V, I> ExecutionManager<V, I> for SampleNTimes {
+impl<V, I, W: WorkspaceTopology> ExecutionManager<V, I, W> for SampleNTimes {
     fn must_stop(&self, nb_samples: usize) -> bool {
         nb_samples > self.0
     }
@@ -46,7 +51,7 @@ pub struct GraphHeuristicParameters<
     W: WorkspaceTopology,
     O: ObstaclesEnv<W>,
     Q: GeometricalQueryDataStore<W>,
-    M: ExecutionManager<W::Vertex, W::Segment>,
+    M: ExecutionManager<W::Vertex, W::Segment, W>,
 > {
     /// The obstacles space
     pub obstacles: &'a O,
@@ -73,7 +78,7 @@ pub fn rrt<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
         W,
         impl ObstaclesEnv<W>,
         Q,
-        impl ExecutionManager<W::Vertex, W::Segment>,
+        impl ExecutionManager<W::Vertex, W::Segment, W>,
     >,
 ) -> (
     Option<(Vec<W::Segment>, f64)>,
@@ -116,6 +121,7 @@ pub fn rrt<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
                     tree.set_parent(end, p.workspace.segment_reverse(snew));
                     let path = tree.path_to(end);
                     let length = path_length(&p.workspace, &path);
+                    p.execution_manager.logs(&tree, || Some(path.clone()));
                     return (Some((path, length)), tree);
                 }
             }
@@ -123,6 +129,7 @@ pub fn rrt<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
                 if predicate(xnew) {
                     let path = tree.path_to(xnew);
                     let length = path_length(&p.workspace, &path);
+                    p.execution_manager.logs(&tree, || Some(path.clone()));
                     return (Some((path, length)), tree);
                 }
             }
@@ -138,7 +145,7 @@ pub fn rrt_star<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
         W,
         impl ObstaclesEnv<W>,
         Q,
-        impl ExecutionManager<W::Vertex, W::Segment>,
+        impl ExecutionManager<W::Vertex, W::Segment, W>,
     >,
 ) -> (Option<(Vec<W::Segment>, f64)>, Tree<W::Vertex, W::Segment>) {
     // Initialisation des structures de données
@@ -152,12 +159,30 @@ pub fn rrt_star<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
 
     let mut best_end_vertex = None;
 
+    let end_path = |distance: &HashMap<W::Vertex, f64>,
+                    tree: &Tree<W::Vertex, W::Segment>,
+                    best_end_vertex: Option<W::Vertex>| {
+        match best_end_vertex {
+            None => None,
+            Some(best_end) => {
+                let end_cost = distance[&best_end];
+                let path = tree
+                    .path_to(best_end)
+                    .into_iter()
+                    .map(|edge| edge)
+                    .collect();
+                Some((path, end_cost))
+            }
+        }
+    };
+
     // Boucle principale
     let mut n = 1;
     while !p.execution_manager.must_stop(n) {
         n += 1;
-        p.execution_manager
-            .logs(&tree, || best_end_vertex.map(|best| distance[&best]));
+        p.execution_manager.logs(&tree, || {
+            end_path(&distance, &tree, best_end_vertex).map(|(p, _)| p)
+        });
 
         // Usual sampling and steering, like in RRT
         let xrand = p.workspace.sample_random(&mut rng);
@@ -271,18 +296,7 @@ pub fn rrt_star<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
         .flat_map(|v| tree.neighbors(v))
         .all(|parent_to_child| !p.obstacles.collide_segment(parent_to_child)));
 
-    match best_end_vertex {
-        None => (None, tree),
-        Some(best_end) => {
-            let end_cost = distance[&best_end];
-            let path = tree
-                .path_to(best_end)
-                .into_iter()
-                .map(|edge| edge)
-                .collect();
-            (Some((path, end_cost)), tree)
-        }
-    }
+    (end_path(&distance, &tree, best_end_vertex), tree)
 }
 
 /// Algo PRM
@@ -292,7 +306,7 @@ pub fn prm<W: WorkspaceTopology, Q: GeometricalQueryDataStore<W>>(
         W,
         impl ObstaclesEnv<W>,
         Q,
-        impl ExecutionManager<W::Vertex, W::Segment>,
+        impl ExecutionManager<W::Vertex, W::Segment, W>,
     >,
 ) -> (
     Option<(Vec<W::Segment>, f64)>,

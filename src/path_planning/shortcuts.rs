@@ -1,10 +1,7 @@
 use crate::workspace::obstacles::ObstaclesEnv;
-use crate::workspace::workspace::WorkspaceTopology;
+use crate::workspace::workspace::{path_length, WorkspaceTopology};
 use rand::{rng, Rng};
 
-fn path_length<W: WorkspaceTopology>(workspace: &W, path: &Vec<W::Segment>) -> f64 {
-    path.iter().map(|part| workspace.length(*part)).sum::<f64>()
-}
 
 pub fn shortcut<W: WorkspaceTopology>(
     workspace: &W,

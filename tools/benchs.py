@@ -2,7 +2,8 @@ import matplotlib.pyplot as plt
 import csv
 from math import log
 
-fname = "cvg_benchmark_straight"
+# fname = "cvg_benchmark_straight"
+fname = "perf_benchmark"
 
 with open(f"../out/{fname}.csv") as f:
     reader = csv.DictReader(f, delimiter=";")
@@ -11,20 +12,24 @@ with open(f"../out/{fname}.csv") as f:
 
 # Configuration
 graphed_items = [
-    # "time_naive_full",
-    # "time_opt1_full",
-    # "time_naive_cache",
-    # "time_opt1_cache",
+    "time_naive_full",
+    "time_opt1_full",
+    "time_naive_cache",
+    "time_opt1_cache",
+    "time_naive_gpu",
 
-    "rrt",
-    "rrt_shortcut",
-    "rrt_star",
-    "rrt_star_shortcut",
-    "rrt_nobsp",
-    "rrt_star_nobsp"
+    # "rrt",
+    # "rrt_shortcut",
+    # "rrt_star",
+    # "rrt_star_shortcut",
+    # "rrt_nobsp",
+    # "rrt_star_nobsp"
 ]
 
-main_key = "time"
+print(datas)
+
+# main_key = "time"
+main_key = "map_nb_vertices"
 params = [float(entry[main_key]) for entry in datas]
 
 fnaive = (lambda n: n ** 3, "~|S|^3")
@@ -35,12 +40,14 @@ asymps = {
     "time_opt1_full": fopt1,
     "time_naive_cache": fnaive,
     "time_opt1_cache": fopt1,
+    "time_naive_gpu": fnaive
 }
 colors = {
     "time_naive_full": "red",
     "time_opt1_full": "green",
     "time_naive_cache": "blue",
     "time_opt1_cache": "purple",
+    "time_naive_gpu": "turquoise",
     "rrt": "red",
     "rrt_shortcut": "purple",
     "rrt_star": "green",
@@ -53,6 +60,7 @@ labels = {
     "time_opt1_full": "Algo line sweep",
     "time_naive_cache": "Algo naif, lazy",
     "time_opt1_cache": "Algo line sweep, lazy",
+    "time_naive_gpu": "Algo naif, GPU (matrice d'adjacence)",
 
     "rrt": "RRT",
     "rrt_shortcut": "RRT avec shortcut",

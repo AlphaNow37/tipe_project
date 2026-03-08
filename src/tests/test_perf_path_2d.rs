@@ -1,20 +1,17 @@
 /// A benchmark for performances
 use rand::{distr::Distribution, Rng};
 
+use super::{giggle_coords, out_dir};
+use crate::parallel::vis_graphs::compute_vis_graph_gpu;
 use crate::{
-    geometry::{
-        polygon_map_generator::gen_pol_map_square,
-        shapes::Polygon,
-    },
-    workspace::cartesians::{EuclidianDistance, CartesianTopology},
+    geometry::{polygon_map_generator::gen_pol_map_square, shapes::Polygon},
     graphs::Graph,
     path_planning::visibility_graph::{
         compute_vis_graph_cachemap, compute_vis_graph_fullmap, vis_graph_naive, vis_graph_opt1,
     },
     utils::benchmark::{time_bench, Benchmark},
+    workspace::cartesians::{CartesianTopology, EuclidianDistance},
 };
-
-use super::{giggle_coords, out_dir};
 
 const WORKSPACE: CartesianTopology<2, EuclidianDistance> =
     CartesianTopology::new_borderless(EuclidianDistance);
@@ -58,20 +55,30 @@ fn run_opt1_cache(param: &Param) {
     );
 }
 
+fn run_naive_gpu(param: &Param) {
+    compute_vis_graph_gpu(&param.polys).a_star_with(
+        param.start,
+        param.end,
+        |(i, j)| param.polys[i].0[j],
+        &WORKSPACE,
+    );
+}
+
 pub fn test_perf() {
     let mut benchmark: Benchmark = Benchmark::new(out_dir().join("perf_benchmark.csv"));
 
     benchmark.add_row(vec![
         "map_width".to_string(),
         "map_nb_vertices".to_string(),
-        "time_naive_full".to_string(),
+        // "time_naive_full".to_string(),
         "time_opt1_full".to_string(),
-        "time_naive_cache".to_string(),
-        "time_opt1_cache".to_string(),
+        // "time_naive_cache".to_string(),
+        // "time_opt1_cache".to_string(),
+        "time_naive_gpu".to_string(),
     ]);
 
     let mut rng = rand::rng();
-    for n in 1..15 {
+    for n in 1..50 {
         dbg!(n);
         let nmerges = n * n * 12 / 10; // Gives nice maps
         let mut obs = gen_pol_map_square(n, 10000., nmerges);
@@ -98,10 +105,11 @@ pub fn test_perf() {
                 .to_string(),
         ];
         for f in [
-            run_naive_full,
+            // run_naive_full,
             run_opt1_full,
-            run_naive_cache,
-            run_opt1_cache,
+            // run_naive_cache,
+            // run_opt1_cache,
+            run_naive_gpu,
         ] {
             let time = time_bench(f)(&params);
             row.push(time.to_string());

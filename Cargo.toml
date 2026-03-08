@@ -3,11 +3,17 @@ name = "tipe_project"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+gpu=["dep:bytemuck", "dep:pollster", "dep:wgpu"]
+
 [profile.release]
 debug = true
 
 [dependencies]
 rand = "0.9.0"
+bytemuck = {optional = true, version = "1.25.0", features = ["derive"]}
+pollster = {optional = true, version = "0.4.0"}
+wgpu = {optional = true, version = "25.0.2"}
 
 [dependencies.space_animation]
 path = "../space_animation"

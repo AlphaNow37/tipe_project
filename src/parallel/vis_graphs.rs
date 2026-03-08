@@ -1,0 +1,171 @@
+use crate::geometry::shapes::Polygon;
+use crate::graphs::MapGraph;
+use crate::parallel::structs::{GpuPolyBounds, GpuPolyPos, GpuSeg};
+use crate::parallel::utils::{create_uniform, get_base_holder};
+use wgpu::include_wgsl;
+use wgpu::util::DeviceExt;
+
+fn to_segs_polypos(obstacles: &[Polygon]) -> (Vec<GpuSeg>, Vec<GpuPolyPos>, Vec<(usize, usize)>) {
+    let mut segs = Vec::new();
+    let mut polypos = Vec::new();
+    let mut coords = Vec::new();
+    for (i, p) in obstacles.iter().enumerate() {
+        for j in 0..p.len() {
+            let curr_idx = coords.len();
+            let idxg = if j == 0 {
+                curr_idx + p.len() - 1
+            } else {
+                curr_idx - 1
+            } as u32;
+            let idxd = if j == p.len() - 1 {
+                curr_idx + 1 - p.len()
+            } else {
+                curr_idx + 1
+            } as u32;
+            coords.push((i, j));
+            polypos.push(GpuPolyPos {
+                x: p.0[j][0] as f32,
+                y: p.0[j][1] as f32,
+                idxg,
+                idxd,
+            });
+        }
+        if p.len() > 1 {
+            for i in 0..p.len() {
+                let j = (i + 1) % p.len();
+                segs.push(GpuSeg {
+                    x1: p.0[i][0] as f32,
+                    y1: p.0[i][1] as f32,
+                    x2: p.0[j][0] as f32,
+                    y2: p.0[j][1] as f32,
+                })
+            }
+        }
+    }
+    (segs, polypos, coords)
+}
+
+pub fn compute_vis_graph_gpu(obstacles: &[Polygon]) -> MapGraph<(usize, usize)> {
+    let holder = get_base_holder();
+
+    let (segs, polypos, coords) = to_segs_polypos(obstacles);
+
+    let shader = holder
+        .device
+        .create_shader_module(include_wgsl!("shaders/naive_2d.wgsl"));
+
+    dbg!(&segs.len());
+
+    let uniform_buffer = create_uniform(
+        &holder,
+        GpuPolyBounds {
+            nb_pts: polypos.len() as u32,
+            nb_segs: segs.len() as u32,
+        },
+    );
+
+    let points_buffer = holder
+        .device
+        .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("PPoly points Buffer"),
+            contents: bytemuck::cast_slice(&polypos),
+            usage: wgpu::BufferUsages::STORAGE,
+        });
+    let segs_buffer = holder
+        .device
+        .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Segs points Buffer"),
+            contents: bytemuck::cast_slice(&segs),
+            usage: wgpu::BufferUsages::STORAGE,
+        });
+
+    let matrix_size = (polypos.len() * polypos.len() * size_of::<u32>()) as wgpu::BufferAddress;
+    let visibility_buffer = holder.device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("Visibility matrix Buffer"),
+        size: matrix_size,
+        usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+        mapped_at_creation: false,
+    });
+    let staging_buffer = holder.device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("Staging Buffer"),
+        size: matrix_size,
+        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+        mapped_at_creation: false,
+    });
+
+    let compute_pipeline =
+        holder
+            .device
+            .create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+                label: Some("Compute Pipeline"),
+                layout: None,
+                module: &shader,
+                entry_point: Some("naive_2d_mat"),
+                cache: None,
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+            });
+    let bind_group_layout = compute_pipeline.get_bind_group_layout(0);
+    let bind_group = holder.device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("Bind Group"),
+        layout: &bind_group_layout,
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: uniform_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: points_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 2,
+                resource: segs_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 3,
+                resource: visibility_buffer.as_entire_binding(),
+            },
+        ],
+    });
+
+    let mut encoder = holder
+        .device
+        .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+    {
+        let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+            label: None,
+            timestamp_writes: None,
+        });
+        compute_pass.set_pipeline(&compute_pipeline);
+        compute_pass.set_bind_group(0, &bind_group, &[]);
+
+        let workgroups_x = (polypos.len() + 15) / 16;
+        let workgroups_y = (polypos.len() + 15) / 16;
+        compute_pass.dispatch_workgroups(workgroups_x as u32, workgroups_y as u32, 1);
+    }
+    encoder.copy_buffer_to_buffer(&visibility_buffer, 0, &staging_buffer, 0, matrix_size);
+    holder.queue.submit(Some(encoder.finish()));
+
+    let buffer_slice = staging_buffer.slice(..);
+
+    let (sender, receiver) = std::sync::mpsc::channel();
+    buffer_slice.map_async(wgpu::MapMode::Read, move |v| sender.send(v.unwrap()).unwrap());
+    holder.device.poll(wgpu::PollType::Wait).unwrap();
+    receiver.recv().unwrap();
+
+    let mat_view = buffer_slice.get_mapped_range();
+    let mat: &[u32] = bytemuck::cast_slice(&mat_view);
+
+    let mut graph = MapGraph::default();
+    for i in 0..polypos.len() {
+        for j in 0..polypos.len() {
+            let k = i + polypos.len() * j;
+            if mat[k] == 1 {
+                graph.add_new_link(coords[i], coords[j]);
+                graph.add_new_link(coords[j], coords[i]);
+            }
+        }
+    }
+
+    graph
+}

@@ -54,8 +54,8 @@ pub fn giggle_coords(polys: &mut [Polygon]) {
 }
 
 pub fn tests() {
-    // test_complex::test_square_map();
-    // test_perf_path_2d::test_perf();
+    // test_path_complex_2d::test_square_map();
+    test_perf_path_2d::test_perf();
     // test_path_simple_2d::test_pretty_simple();
     // test_path_simple_2d::illustration_presentation();
     // background::generate_backgrounds();
@@ -63,7 +63,7 @@ pub fn tests() {
     // test_datastructures_3d::test_rtree()
     // test_datastructures_2d::test_rtree_2d()
     // test_datastructures_2d::test_grid_2d()
-    test_base_reeds_shepp::test_base_reeds_shepp();
+    // test_base_reeds_shepp::test_base_reeds_shepp();
     // test_path_reeds_shepp::test_path_reeds_shepp();
     // test_visibility_graph::illustration_lower_bound_visibility();
     // text_circuit_tetra::illustration_circuit_tetra();

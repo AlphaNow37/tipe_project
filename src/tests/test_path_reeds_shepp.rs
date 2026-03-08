@@ -1,7 +1,8 @@
+use rand::{rng, Rng};
 use std::{array::from_fn, collections::HashSet, marker::PhantomData};
 
-use rand::{rng, Rng};
-
+use super::out_dir;
+use crate::path_planning::graphs_heuristics::Goal;
 /// A very simple test for svg
 use crate::{
     datastructures::r_tree::RTree,
@@ -17,8 +18,6 @@ use crate::{
         workspace::WorkspaceTopology,
     },
 };
-use crate::path_planning::graphs_heuristics::Goal;
-use super::out_dir;
 
 pub fn test_path_reeds_shepp() {
     let mut svg = svg::SvgGroup::default();

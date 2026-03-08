@@ -63,7 +63,7 @@ pub fn tests() {
     // test_datastructures_3d::test_rtree()
     // test_datastructures_2d::test_rtree_2d()
     // test_datastructures_2d::test_grid_2d()
-    // test_base_reeds_shepp::test_base_reeds_shepp();
+    test_base_reeds_shepp::test_base_reeds_shepp();
     // test_path_reeds_shepp::test_path_reeds_shepp();
     // test_visibility_graph::illustration_lower_bound_visibility();
     // text_circuit_tetra::illustration_circuit_tetra();
@@ -71,5 +71,5 @@ pub fn tests() {
     // test_arms_simple::test_arms_simple();
     // test_3d_divers::test_3d_illustration_shortest_euclidian_path();
     // test_path_simple_2d::illustration_presentation_heuristics();
-    test_convergence_vitesse::test_convergence_straight();
+    // test_convergence_vitesse::test_convergence_straight();
 }

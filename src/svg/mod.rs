@@ -1,22 +1,22 @@
 /// This directory focuses on writing on svg files to visualize things
-
 use std::{io::Write, path::Path};
 
-use object::{Style, SvgObject};
 use crate::geometry::VecN;
+use object::{Style, SvgObject};
 
 use crate::utils::numbers::NotNanF64;
 
-pub mod graph;
-pub mod object;
-pub mod grid;
-pub mod rtree;
 pub mod curves;
+pub mod graph;
+pub mod grid;
+pub mod object;
+pub mod rtree;
 
 #[derive(Default)]
 pub struct SvgGroup {
     objects: Vec<(Box<dyn SvgObject>, f64, Style)>,
     background: String,
+    pub no_margin: bool,
 }
 
 impl SvgGroup {
@@ -35,15 +35,20 @@ impl SvgGroup {
             .reduce(|a, b| a.join(b))
             .unwrap_or_default();
         let VecN([w, h]) = area.size();
+        let (mx, my) = if !self.no_margin {
+            (w * 0.1, h * 0.1)
+        } else {
+            (0., 0.)
+        };
         writeln!(
             writer,
             r#"<svg width="{}" height="{}" viewBox="{},{},{},{}" xmlns="http://www.w3.org/2000/svg" style="background: {}">"#,
             w * 20.,
             h * 20.,
-            area.start[0] - w * 0.1,
-            area.start[1] - h * 0.1,
-            w * 1.2,
-            h * 1.2,
+            area.start[0] - mx,
+            area.start[1] - my,
+            w + 2. * mx,
+            h + 2. * my,
             &self.background,
         )?;
         for obj in &self.objects {

@@ -1,11 +1,10 @@
 use crate::datastructures::bsp::Bsp;
 use crate::datastructures::r_tree::RTree;
-use crate::geometry::angles::Angle;
 use crate::geometry::shapes::{Cube, Segment};
 use crate::geometry::VecN;
 use crate::graphs::IterableGraph;
 use crate::path_planning::graphs_heuristics::{
-    prm, rrt, rrt_star, ContinueUntil, Goal, GraphHeuristicParameters,
+    rrt_star, ContinueUntil, Goal, GraphHeuristicParameters,
 };
 use crate::render_3d::cubes::place_cubes;
 use crate::utils::numbers::Zero;
@@ -14,7 +13,7 @@ use crate::workspace::cartesians::{
 };
 use crate::workspace::obstacles::ObstaclesApprox;
 use crate::workspace::workspace::WorkspaceTopology;
-use lib_space_animation::math::{rotate_x, rotate_y, rotate_z, scale, trans, Transform, Vec3};
+use lib_space_animation::math::{rotate_y, rotate_z, scale, trans, Transform, Vec3};
 use lib_space_animation::world::primitives::color::Color;
 use lib_space_animation::world::visuals::{self, Pipe};
 use lib_space_animation::world::world::Worlds;
@@ -24,11 +23,6 @@ use std::f64::consts::PI;
 use std::marker::PhantomData;
 use std::time::{Duration, Instant};
 
-const NARMS: usize = 10;
-const NDIM: usize = NARMS * 2;
-const LENGTHS: [f64; NARMS] = [1.; 10];
-const CENTER: Transform = trans(10.75, 10.75, 10.75);
-const GOAL: VecN<3, f64> = VecN([11., 11., 11.]);
 const SPEED: f64 = 0.5;
 
 fn intermediate_position(angles: VecN<NDIM, f64>) -> VecN<{ NARMS + 1 }, VecN<3, f64>> {
@@ -49,18 +43,13 @@ fn intermediate_position(angles: VecN<NDIM, f64>) -> VecN<{ NARMS + 1 }, VecN<3,
     res
 }
 
-pub fn test_arms_simple() {
-    let mut cubes = vec![
-        // Cube::from_point(VecN([0., 0., 0.])).with_point(VecN([1., 1., 1.])),
-        // Cube::from_point(VecN([2., 0., 0.])).with_point(VecN([3., 1., 1.])),
-        // Cube::from_point(VecN([0., 2., 0.])).with_point(VecN([1., 3., 1.])),
-        // Cube::from_point(VecN([0., 0., 2.])).with_point(VecN([1., 1., 3.])),
-        // Cube::from_point(VecN([1., 1., 1.])).with_point(VecN([1.5, 1.5, 1.5])),
-        // Cube::from_point(VecN([0., 0., 0.])).with_point(VecN([2., 2., 2.])),
-        // Cube::from_point(VecN([0., 0., 0.])).with_point(VecN([2., 2., 2.])),
-        // Cube::from_point(VecN([0., 0., 0.])).with_point(VecN([2., 2., 2.])),
-        // Cube::from_point(VecN([0., 0., 0.])).with_point(VecN([2., 2., 2.])),
-    ];
+// const NARMS: usize = 10;
+// const CENTER: Transform = trans(10.75, 10.75, 10.75);
+// const LENGTHS: [f64; NARMS] = [1.; NARMS];
+// const GOAL: VecN<3, f64> = VecN([11., 11., 11.]);
+// const START: VecN<NDIM, f64> = VecN([0.; NDIM]);
+fn generate_obstacles_1() -> Vec<Cube<3>> {
+    let mut cubes = vec![];
     for i in 0..20 {
         for j in 0..20 {
             for k in 0..20 {
@@ -76,18 +65,37 @@ pub fn test_arms_simple() {
             }
         }
     }
+    cubes
+}
+
+const CENTER: Transform = trans(3.5, 3.5, 0.5);
+const NARMS: usize = 5;
+const LENGTHS: [f64; NARMS] = [1.5; NARMS];
+const GOAL: VecN<3, f64> = VecN([6., 6., 2.5]);
+const START: VecN<NDIM, f64> = VecN([0.; NDIM]);
+fn generate_obstacles_2() -> Vec<Cube<3>> {
+    let mut cubes = vec![
+        Cube::from_point(VecN([0., 0., 0.])).with_point(VecN([10., 10., -1.])),
+        Cube::from_point(VecN([5., 3., 0.])).with_point(VecN([5.5, 3.5, 12.])),
+        Cube::from_point(VecN([3., 5., 0.])).with_point(VecN([3.5, 5.5, 12.])),
+        Cube::from_point(VecN([2., 3., 0.])).with_point(VecN([2.5, 6., 3.])),
+        Cube::from_point(VecN([5., 3., 5.])).with_point(VecN([5.5, 6., 5.5])),
+        Cube::from_point(VecN([7., 3.5, 0.])).with_point(VecN([7.5, 8., 4.])),
+    ];
+    cubes
+}
+
+const NDIM: usize = NARMS * 2;
+
+pub fn test_arms_simple() {
+    let mut cubes = generate_obstacles_2();
 
     lib_space_animation::run(move || {
         let worlds = WorldsBuilder::default();
 
         let mut world = worlds.add_world(0);
         let obstacles_tr = trans(-2., 0., -2.);
-        let mut cubes2 = cubes.clone();
-        cubes2.clear();
-        cubes2.push(Cube::from_point(VecN([10., 10., 10.])).with_point(VecN([11., 11., 11.])));
         let obstacles = RTree::bulk_load(&mut cubes);
-
-        let start = VecN([0.; NDIM]);
 
         let workspace = LoopingCartesianTopology::<NDIM, _> {
             dist: TchebychevDistance,
@@ -112,7 +120,7 @@ pub fn test_arms_simple() {
         };
 
         let (path_opt, graph) = rrt_star(GraphHeuristicParameters {
-            start,
+            start: START,
             end: Goal::Predicate(
                 &(|angles| {
                     let pos = intermediate_position(angles);
@@ -121,9 +129,9 @@ pub fn test_arms_simple() {
             ),
             workspace,
             vertices: PhantomData::<(Bsp<NDIM>, LoopingCartesianTopology<NDIM, _>)>,
-            execution_manager: ContinueUntil(Instant::now() + Duration::from_secs_f64(50.)),
-            moving_radius: 0.5,
-            base_rewire_radius: 2.,
+            execution_manager: ContinueUntil(Instant::now() + Duration::from_secs_f64(10.)),
+            moving_radius: 0.7,
+            base_rewire_radius: 3.,
             obstacles: &ObstaclesApprox {
                 workspace,
                 contains_func: Box::new(is_in_obstacles),

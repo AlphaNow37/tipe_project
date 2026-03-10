@@ -23,4 +23,6 @@ pub struct GpuPolyPos {
 pub struct GpuPolyBounds {
     pub nb_segs: u32,
     pub nb_pts: u32,
+    pub nb_edges_estimated: u32,
+    pub _pad: u32,
 }

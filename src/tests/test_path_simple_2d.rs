@@ -16,7 +16,7 @@ use crate::{
 };
 use std::marker::PhantomData;
 use crate::datastructures::bsp::Bsp;
-use crate::parallel::vis_graphs::compute_vis_graph_gpu;
+use crate::parallel::vis_graphs::compute_vis_graph_gpu_adjacencymatrix;
 
 pub fn test_pretty_simple() {
     let workspace = CartesianTopology::new_borderless(EuclidianDistance);
@@ -49,7 +49,7 @@ pub fn test_pretty_simple() {
     giggle_coords(&mut obstacles);
 
     // let vis = compute_vis_graph_fullmap(&obstacles, vis_graph_opt1);
-    let vis = compute_vis_graph_gpu(&obstacles);
+    let vis = compute_vis_graph_gpu_adjacencymatrix(&obstacles);
     put_graph(
         &mut svg,
         &vis,

@@ -2,7 +2,9 @@
 use rand::{distr::Distribution, Rng};
 
 use super::{giggle_coords, out_dir};
-use crate::parallel::vis_graphs::compute_vis_graph_gpu;
+use crate::parallel::vis_graphs::{
+    compute_vis_graph_gpu_adjacencymatrix, compute_vis_graph_gpu_edgelist,
+};
 use crate::{
     geometry::{polygon_map_generator::gen_pol_map_square, shapes::Polygon},
     graphs::Graph,
@@ -20,6 +22,7 @@ struct Param {
     polys: Vec<Polygon>,
     start: (usize, usize),
     end: (usize, usize),
+    nb_pts: usize,
 }
 
 fn run_naive_full(param: &Param) {
@@ -55,8 +58,17 @@ fn run_opt1_cache(param: &Param) {
     );
 }
 
-fn run_naive_gpu(param: &Param) {
-    compute_vis_graph_gpu(&param.polys).a_star_with(
+fn run_naive_gpu_mat(param: &Param) {
+    compute_vis_graph_gpu_adjacencymatrix(&param.polys).a_star_with(
+        param.start,
+        param.end,
+        |(i, j)| param.polys[i].0[j],
+        &WORKSPACE,
+    );
+}
+
+fn run_naive_gpu_elist(param: &Param) {
+    compute_vis_graph_gpu_edgelist(&param.polys, param.nb_pts * 50).a_star_with(
         param.start,
         param.end,
         |(i, j)| param.polys[i].0[j],
@@ -71,10 +83,11 @@ pub fn test_perf() {
         "map_width".to_string(),
         "map_nb_vertices".to_string(),
         // "time_naive_full".to_string(),
-        "time_opt1_full".to_string(),
+        // "time_opt1_full".to_string(),
         // "time_naive_cache".to_string(),
         // "time_opt1_cache".to_string(),
-        "time_naive_gpu".to_string(),
+        "time_naive_gpu_mat".to_string(),
+        "time_naive_gpu_elist".to_string(),
     ]);
 
     let mut rng = rand::rng();
@@ -89,27 +102,21 @@ pub fn test_perf() {
         let start_j = rng.random_range(0..obs[start_i].0.len());
         let end_i = distr.sample(&mut rng);
         let end_j = rng.random_range(0..obs[end_i].0.len());
+        let npts = obs.iter().map(|p| p.0.len()).sum::<usize>();
         let params = Param {
             polys: obs,
             start: (start_i, start_j),
             end: (end_i, end_j),
+            nb_pts: npts,
         };
-
-        let mut row = vec![
-            n.to_string(),
-            params
-                .polys
-                .iter()
-                .map(|p| p.0.len())
-                .sum::<usize>()
-                .to_string(),
-        ];
+        let mut row = vec![n.to_string(), npts.to_string()];
         for f in [
             // run_naive_full,
-            run_opt1_full,
+            // run_opt1_full,
             // run_naive_cache,
             // run_opt1_cache,
-            run_naive_gpu,
+            run_naive_gpu_mat,
+            run_naive_gpu_elist,
         ] {
             let time = time_bench(f)(&params);
             row.push(time.to_string());

@@ -9,7 +9,7 @@ use crate::{
     tests::giggle_coords,
 };
 use rand::{distr::Distribution, rng, Rng};
-use crate::parallel::vis_graphs::compute_vis_graph_gpu;
+use crate::parallel::vis_graphs::{compute_vis_graph_gpu_adjacencymatrix, compute_vis_graph_gpu_edgelist};
 
 pub fn test_square_map() {
     let workspace = CartesianTopology::new_borderless(EuclidianDistance);
@@ -42,7 +42,8 @@ pub fn test_square_map() {
 
     println!("Computing the visibility graph");
     // let vis = compute_vis_graph_fullmap(&obstacles2, vis_graph_opt1);
-    let vis = compute_vis_graph_gpu(&obstacles2);
+    // let vis = compute_vis_graph_gpu_adjacencymatrix(&obstacles2);
+    let vis = compute_vis_graph_gpu_edgelist(&obstacles2, 1000000);
 
     println!("Writing the visibility graph");
     put_graph(

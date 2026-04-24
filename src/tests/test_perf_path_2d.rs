@@ -2,7 +2,7 @@
 use rand::{distr::Distribution, Rng};
 
 use super::{giggle_coords, out_dir};
-use crate::parallel::vis_graphs::{
+use crate::parallel::{
     compute_vis_graph_gpu_adjacencymatrix, compute_vis_graph_gpu_edgelist,
 };
 use crate::{
@@ -14,6 +14,7 @@ use crate::{
     utils::benchmark::{time_bench, Benchmark},
     workspace::cartesians::{CartesianTopology, EuclidianDistance},
 };
+use crate::libs::l_polyanya::shortest_path_polyanya;
 
 const WORKSPACE: CartesianTopology<2, EuclidianDistance> =
     CartesianTopology::new_borderless(EuclidianDistance);
@@ -76,6 +77,14 @@ fn run_naive_gpu_elist(param: &Param) {
     );
 }
 
+fn run_polyanya_lib(param: &Param) {
+    shortest_path_polyanya(
+        &param.polys,
+        param.polys[param.start.0].0[param.start.1],
+        param.polys[param.end.0].0[param.end.1],
+    );
+}
+
 pub fn test_perf() {
     let mut benchmark: Benchmark = Benchmark::new(out_dir().join("perf_benchmark.csv"));
 
@@ -86,12 +95,13 @@ pub fn test_perf() {
         // "time_opt1_full".to_string(),
         // "time_naive_cache".to_string(),
         // "time_opt1_cache".to_string(),
-        "time_naive_gpu_mat".to_string(),
-        "time_naive_gpu_elist".to_string(),
+        // "time_naive_gpu_mat".to_string(),
+        // "time_naive_gpu_elist".to_string(),
+        "time_polyanya_lib".to_string()
     ]);
 
     let mut rng = rand::rng();
-    for n in 1..50 {
+    for n in 1..100 {
         dbg!(n);
         let nmerges = n * n * 12 / 10; // Gives nice maps
         let mut obs = gen_pol_map_square(n, 10000., nmerges);
@@ -115,8 +125,9 @@ pub fn test_perf() {
             // run_opt1_full,
             // run_naive_cache,
             // run_opt1_cache,
-            run_naive_gpu_mat,
-            run_naive_gpu_elist,
+            // run_naive_gpu_mat,
+            // run_naive_gpu_elist,
+            run_polyanya_lib,
         ] {
             let time = time_bench(f)(&params);
             row.push(time.to_string());

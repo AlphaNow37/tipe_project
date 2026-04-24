@@ -3,6 +3,7 @@ use std::env::current_dir;
 use std::path::{Path, PathBuf};
 
 use crate::geometry::shapes::Polygon;
+use crate::tests::test_path_complex_2d::test_square_map_polyanya;
 
 mod background;
 mod test_base_reeds_shepp;
@@ -55,6 +56,7 @@ pub fn giggle_coords(polys: &mut [Polygon]) {
 
 pub fn tests() {
     // test_path_complex_2d::test_square_map();
+    // test_square_map_polyanya();
     test_perf_path_2d::test_perf();
     // test_path_simple_2d::test_pretty_simple();
     // test_path_simple_2d::illustration_presentation();

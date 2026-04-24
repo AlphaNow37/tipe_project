@@ -4,7 +4,6 @@ use std::{
     hash::Hash,
     ops::{Add, Deref, DerefMut, Div, Mul, Neg, Sub},
 };
-
 use crate::utils::numbers::{Zero, F64_EPSILON};
 
 /// N-dimensions point/vector
@@ -157,5 +156,18 @@ impl<const N: usize> Eq for VecN<N, f64> {}
 impl Into<lib_space_animation::math::Vec3> for VecN<3, f64> {
     fn into(self) -> lib_space_animation::math::Vec3 {
         lib_space_animation::math::Vec3::from_array(self.0.map(|c| c as f32))
+    }
+}
+
+#[cfg(feature = "polyanya")]
+impl Into<polyanya::geo::Coord<f32>> for VecN<2, f64> {
+    fn into(self) -> polyanya::geo::Coord<f32> {
+        polyanya::geo::Coord::from(self.0.map(|f| f as f32))
+    }
+}
+#[cfg(feature = "polyanya")]
+impl Into<polyanya::Coords> for VecN<2, f64> {
+    fn into(self) -> polyanya::Coords {
+        glam::f32::Vec2::from(self.0.map(|f| f as f32)).into()
     }
 }

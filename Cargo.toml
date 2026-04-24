@@ -5,6 +5,7 @@ edition = "2021"
 
 [features]
 gpu=["dep:bytemuck", "dep:pollster", "dep:wgpu"]
+polyanya=["dep:polyanya", "dep:glam"]
 
 [profile.release]
 debug = true
@@ -14,6 +15,8 @@ rand = "0.9.0"
 bytemuck = {optional = true, version = "1.25.0", features = ["derive"]}
 pollster = {optional = true, version = "0.4.0"}
 wgpu = {optional = true, version = "25.0.2"}
+polyanya = {optional = true, version = "0.16.1"}
+glam={optional = true, version = "0.30.8"}
 
 [dependencies.space_animation]
 path = "../space_animation"

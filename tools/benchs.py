@@ -18,6 +18,7 @@ graphed_items = [
     "time_opt1_cache",
     "time_naive_gpu_mat",
     "time_naive_gpu_elist",
+    "time_polyanya_lib",
 
     # "rrt",
     # "rrt_shortcut",
@@ -43,6 +44,7 @@ asymps = {
     "time_opt1_cache": fopt1,
     "time_naive_gpu_mat": fnaive,
     "time_naive_gpu_elist": fnaive,
+    "time_polyanya_lib": (lambda n: n*n, "square"),
 }
 colors = {
     "time_naive_full": "red",
@@ -51,12 +53,13 @@ colors = {
     "time_opt1_cache": "purple",
     "time_naive_gpu_mat": "turquoise",
     "time_naive_gpu_elist": "magenta",
+    "time_polyanya_lib": "red",
     "rrt": "red",
     "rrt_shortcut": "purple",
     "rrt_star": "green",
     "rrt_star_shortcut": "blue",
     "rrt_nobsp": "orange",
-    "rrt_star_nobsp": "turquoise"
+    "rrt_star_nobsp": "turquoise",
 }
 labels = {
     "time_naive_full": "Algo naif",
@@ -65,6 +68,7 @@ labels = {
     "time_opt1_cache": "Algo line sweep, lazy",
     "time_naive_gpu_mat": "Algo naif, GPU (matrice d'adjacence)",
     "time_naive_gpu_elist": "Algo naif, GPU (liste d'adjacence)",
+    "time_polyanya_lib": "Polyanya (lib externe)",
 
     "rrt": "RRT",
     "rrt_shortcut": "RRT avec shortcut",

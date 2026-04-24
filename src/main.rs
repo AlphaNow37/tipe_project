@@ -7,9 +7,8 @@ mod tests;
 pub mod utils;
 mod render_3d;
 pub mod workspace;
-
-#[cfg(feature = "gpu")]
 pub mod parallel;
+pub mod libs;
 
 fn main() {
     tests::tests();

@@ -22,6 +22,7 @@ mod test_line_sweep;
 mod test_arms_simple;
 mod test_3d_divers;
 mod test_convergence_vitesse;
+mod test_triangulation;
 
 fn dir(name: &str) -> PathBuf {
     let here = current_dir().expect("Expected a working directory");
@@ -57,7 +58,7 @@ pub fn giggle_coords(polys: &mut [Polygon]) {
 pub fn tests() {
     // test_path_complex_2d::test_square_map();
     // test_square_map_polyanya();
-    test_perf_path_2d::test_perf();
+    // test_perf_path_2d::test_perf();
     // test_path_simple_2d::test_pretty_simple();
     // test_path_simple_2d::illustration_presentation();
     // background::generate_backgrounds();
@@ -74,4 +75,5 @@ pub fn tests() {
     // test_3d_divers::test_3d_illustration_shortest_euclidian_path();
     // test_path_simple_2d::illustration_presentation_heuristics();
     // test_convergence_vitesse::test_convergence_straight();
+    test_triangulation::test_triangulation()
 }

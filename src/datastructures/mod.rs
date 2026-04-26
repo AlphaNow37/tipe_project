@@ -3,3 +3,4 @@ pub mod priority_queue;
 pub mod union_find;
 pub mod r_tree;
 pub mod bsp;
+pub mod skip_list;

@@ -87,6 +87,16 @@ impl<V: Hash + Eq + Copy, I: Copy + Into<V>> MapGraph<V, I> {
         }
     }
 }
+// impl<V: Hash + Eq + Copy> MapGraph<V> {
+//     // Assume the graph is not oriented
+//     pub fn remove_node(&mut self, node: V) {
+//
+//         for neighbor in self.neighbors(node) {
+//             self.remove_link(neighbor.into(), node);
+//         }
+//         self.nexts.remove(&node);
+//     }
+// }
 impl<V: Eq + Hash, I: Clone> Graph<V, I> for MapGraph<V, I> {
     fn neighbors<'s>(&'s self, vertex: V) -> impl Iterator<Item = I> {
         let empty: &'s [I] = &[];

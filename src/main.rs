@@ -1,3 +1,5 @@
+#![feature(btree_cursors)]
+
 pub mod datastructures;
 pub mod geometry;
 pub mod graphs;
@@ -9,6 +11,7 @@ mod render_3d;
 pub mod workspace;
 pub mod parallel;
 pub mod libs;
+pub mod triangulations;
 
 fn main() {
     tests::tests();

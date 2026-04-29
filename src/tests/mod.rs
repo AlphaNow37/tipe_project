@@ -75,5 +75,7 @@ pub fn tests() {
     // test_3d_divers::test_3d_illustration_shortest_euclidian_path();
     // test_path_simple_2d::illustration_presentation_heuristics();
     // test_convergence_vitesse::test_convergence_straight();
-    test_triangulation::test_triangulation()
+    // test_triangulation::test_triangulation_simple();
+    test_triangulation::test_triangulation_hard()
+    // test_triangulation::test_tri_manual();
 }

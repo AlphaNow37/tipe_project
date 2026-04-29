@@ -1,8 +1,8 @@
 use crate::datastructures::skip_list::{Cursor, Interval, IntervalSkipLists, SkipListAccess};
-use crate::geometry::shapes::{are_counter_clockwise, Polygon};
+use crate::geometry::shapes::{are_counter_clockwise, Cube, Polygon};
 use crate::geometry::VecN;
 use crate::triangulations::triangulation::{TriAdjacentEdge, Triangulation};
-use crate::utils::numbers::UsizeExt;
+use crate::utils::numbers::{UsizeExt, F64_EPSILON};
 use std::cmp::Ordering;
 
 // convention: up (algo) = left (skiplist)
@@ -176,12 +176,14 @@ fn propagate_up(
 }
 
 // Start (and end) on the area right below the new vertex
+// returns the id of the first triangle it creates, if such one exists
 fn propagate_down(
     mut cursor: &mut Cursor<AreaInterval>,
     triangulation: &mut Triangulation,
     new_i: usize,
-) {
+) -> Option<usize> {
     let pos = triangulation.vertex_poss[new_i];
+    let mut first = None;
     loop {
         debug_assert!(!cursor.get_interval().is_none());
         let &AreaInterval {
@@ -195,7 +197,7 @@ fn propagate_down(
         cursor.move_right();
         if cursor.is_full_right() {
             cursor.move_left();
-            return;
+            return first;
         }
         cursor.move_right();
         let &AreaInterval {
@@ -214,7 +216,7 @@ fn propagate_down(
             cursor.move_left();
             cursor.move_left();
             debug_assert!(!cursor.get_interval().is_none());
-            return;
+            return first;
         }
         cursor.remove_interval();
         cursor.move_left();
@@ -238,6 +240,8 @@ fn propagate_down(
                 other_tri: tri1,
             },
         ]);
+
+        first = first.or(Some(new_t_i));
 
         cursor.push_interval(AreaInterval {
             cover: AreaCover::from_poss(pos, p2),
@@ -288,6 +292,7 @@ fn insert_vertex_front<'a>(
         FrontContent::SegmentFront(area_access) => {
             let mut cursor = areas.cursor(area_access, curr_pos[1], ());
 
+            // adjacent of the cursor at the end of the block
             let mut hooked_vertex;
             if cursor.is_full_left() {
                 cursor.move_right();
@@ -319,20 +324,11 @@ fn insert_vertex_front<'a>(
             debug_assert!(cursor.get_interval().is_none());
 
             cursor.push_interval(AreaInterval {
-                cover: AreaCover::from_poss(hook_pos, curr_pos),
-                backed_tri: None,
-                vertices: [hooked_vertex, new_i],
-            });
-            cursor.move_right();
-            cursor.push_interval(AreaInterval {
                 cover: AreaCover::from_poss(curr_pos, hook_pos),
                 backed_tri: None,
                 vertices: [new_i, hooked_vertex],
             });
-
-            debug_assert!(!cursor.get_interval().is_none());
-
-            propagate_down(&mut cursor, triangulation, new_i);
+            let merge_tri = propagate_down(&mut cursor, triangulation, new_i);
 
             debug_assert!(!cursor.get_interval().is_none());
 
@@ -344,7 +340,11 @@ fn insert_vertex_front<'a>(
 
             debug_assert!(cursor.get_interval().is_none());
 
-            cursor.move_left();
+            cursor.push_interval(AreaInterval {
+                cover: AreaCover::from_poss(hook_pos, curr_pos),
+                backed_tri: merge_tri,
+                vertices: [hooked_vertex, new_i],
+            });
 
             debug_assert!(!cursor.get_interval().is_none());
 
@@ -365,33 +365,56 @@ fn insert_vertex_front<'a>(
     }
 }
 
+fn add_polygon(vertices: &mut Vec<Vertex>, poly: &Polygon) {
+    for i in 0..poly.len() {
+        let prev = poly.0[i.add_rem(-1, poly.len())];
+        let next = poly.0[i.add_rem(1, poly.len())];
+        let curr = poly.0[i];
+        let delta_prev = prev - curr;
+        let delta_next = next - curr;
+        vertices.push(Vertex {
+            pos: curr,
+            kind: match (
+                delta_prev[0] > 0.,
+                delta_next[0] > 0.,
+                delta_prev.dot(delta_next.rotate_left()) > 0.,
+            ) {
+                (false, false, false) => VertexKind::Sink,
+                (true, true, false) => VertexKind::Source([next, prev]),
+                (true, true, true) => VertexKind::Split([prev, next]),
+                (false, false, true) => VertexKind::Merge,
+                (true, false, _) => VertexKind::WallBot(prev),
+                (false, true, _) => VertexKind::WallTop(next),
+            },
+        });
+    }
+}
+
 // Assume that no two vertices have the same x or y coord
-pub fn triangulate_linear(polygons: &[Polygon]) -> Triangulation {
+pub fn triangulate_linear(polygons: &[Polygon], margin: f64) -> Triangulation {
     let mut vertices = Vec::new();
+
+    let mut enveloppe = None;
+
     for poly in polygons {
         for i in 0..poly.len() {
-            let prev = poly.0[i.add_rem(-1, poly.len())];
-            let next = poly.0[i.add_rem(1, poly.len())];
-            let curr = poly.0[i];
-            let delta_prev = prev - curr;
-            let delta_next = next - curr;
-            vertices.push(Vertex {
-                pos: curr,
-                kind: match (
-                    delta_prev[0] > 0.,
-                    delta_next[0] > 0.,
-                    delta_prev.dot(delta_next.rotate_left()) > 0.,
-                ) {
-                    (false, false, false) => VertexKind::Sink,
-                    (true, true, false) => VertexKind::Source([next, prev]),
-                    (true, true, true) => VertexKind::Split([prev, next]),
-                    (false, false, true) => VertexKind::Merge,
-                    (true, false, _) => VertexKind::WallBot(prev),
-                    (false, true, _) => VertexKind::WallTop(next),
-                },
-            })
+            enveloppe = match enveloppe {
+                None => Some(Cube::from_point(poly.0[i])),
+                Some(c) => Some(c.with_point(poly.0[i]))
+            }
         }
     }
+    let enveloppe = enveloppe.unwrap_or(Cube::default());
+
+    for poly in polygons {
+        add_polygon(&mut vertices, &poly);
+    }
+    add_polygon(&mut vertices, &Polygon(vec![
+        enveloppe.topleft() + VecN([-margin-F64_EPSILON, margin-F64_EPSILON]),
+        enveloppe.topright() + VecN([margin-F64_EPSILON, margin+F64_EPSILON]),
+        enveloppe.botright() + VecN([margin+F64_EPSILON, -margin-F64_EPSILON]),
+        enveloppe.botleft() + VecN([-margin+F64_EPSILON, -margin+F64_EPSILON]),
+    ]));
 
     vertices.sort_by(|v1, v2| v1.pos[0].total_cmp(&v2.pos[0]));
     let poss = vertices.iter().map(|v| v.pos).collect::<Vec<_>>();
@@ -403,12 +426,8 @@ pub fn triangulate_linear(polygons: &[Polygon]) -> Triangulation {
     let mut triangulation = Triangulation::new(poss);
 
     for (i, &v) in vertices.iter().enumerate() {
-        dbg!(v);
 
         let mut cursor_fronts = lists_fronts.cursor(&mut front_access, v.pos, ());
-
-        dbg!(&cursor_fronts);
-        dbg!(&lists_areas);
 
         match v.kind {
             VertexKind::Source([top, bot]) => {
@@ -523,7 +542,6 @@ pub fn triangulate_linear(polygons: &[Polygon]) -> Triangulation {
                 );
                 debug_assert!(cursor1.get_interval().is_none());
                 debug_assert_eq!(front_1.bot[1], v.pos);
-                dbg!(&cursor1);
                 debug_assert!(cursor1.is_full_right());
 
                 cursor1.concat_list(acc2);
@@ -532,6 +550,8 @@ pub fn triangulate_linear(polygons: &[Polygon]) -> Triangulation {
             }
         }
     }
+
+    debug_assert!(triangulation.verify_invariants() == ());
 
     triangulation
 }

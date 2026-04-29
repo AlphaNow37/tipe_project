@@ -87,6 +87,26 @@ impl<const N: usize> Cube<N> {
         VecN::from_fn(|i| rng.random_range(self.start[i]..self.end[i]))
     }
 }
+impl Cube<2> {
+    pub fn topleft(&self) -> VecN<2, f64> {
+        VecN([
+            self.start[0],
+            self.end[1],
+        ])
+    }
+    pub fn botleft(&self) -> VecN<2, f64> {
+        self.start
+    }
+    pub fn topright(&self) -> VecN<2, f64> {
+        self.end
+    }
+    pub fn botright(&self) -> VecN<2, f64> {
+        VecN([
+            self.end[0],
+            self.start[1],
+        ])
+    }
+}
 
 pub fn are_counter_clockwise(pts: &[VecN<2, f64>]) -> bool {
     let n = pts.len();

@@ -1,157 +1,155 @@
-//     use std::collections::HashSet;
-//     use crate::graphs::MapGraph;
-//     use crate::utils::numbers::NotNanF64;
-//     use super::*;
-//
-//     type Edge = [usize; 2];
-//
-//     const TOPLEFT_INF: usize = usize::MAX-1;
-//     const BOTLEFT_INF: usize = usize::MAX-2;
-//     const BOTRIGHT_INF: usize = usize::MAX-3;
-//     const TOPRIGHT_INF: usize = usize::MAX-4;
-//
-//     const TOP_INF_EDGE: Edge = [TOPLEFT_INF; TOPRIGHT_INF];
-//     const BOT_INF_EDGE: Edge = [BOTLEFT_INF; BOTRIGHT_INF];
-//     const LEFT_INF_EDGE: Edge = [TOPLEFT_INF; BOTLEFT_INF];
-//     const RIGHT_INF_EDGE: Edge = [BOTRIGHT_INF; TOPRIGHT_INF];
-//
-//     #[derive(Clone, Copy, Debug)]
-//     struct Region {
-//         bot_edge: Edge,
-//         top_edge: Edge,
-//         xleft: NotNanF64,
-//         xright: NotNanF64,
-//     }
-//     impl Region {
-//         fn topleft(self) -> GraphVertex {
-//             GraphVertex::RegionTopLeft(FakeVertex {x: self.xleft, edge: self.top_edge})
-//         }
-//         fn botleft(self) -> GraphVertex {
-//             GraphVertex::RegionTopLeft(FakeVertex {x: self.xleft, edge: self.bot_edge})
-//         }
-//         fn topright(self) -> GraphVertex {
-//             GraphVertex::RegionTopLeft(FakeVertex {x: self.xright, edge: self.top_edge})
-//         }
-//         fn botright(self) -> GraphVertex {
-//             GraphVertex::RegionTopLeft(FakeVertex {x: self.xright, edge: self.bot_edge})
-//         }
-//     }
-//
-//     #[derive(Default, Clone, Debug)]
-//     struct Stripe {
-//         regions: Vec<Region>,
-//     }
-//
-//     #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
-//     struct FakeVertex {
-//         edge: Edge,
-//         x: NotNanF64(f64),
-//     }
-//
-//     #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
-//     enum GraphVertex {
-//         RealVertex(usize),
-//         RegionTopLeft(FakeVertex),
-//         RegionTopRight(FakeVertex),
-//         RegionBotLeft(FakeVertex),
-//         RegionBotRight(FakeVertex),
-//     }
-//
-//     fn graph_add_new_link(graph: &mut MapGraph<GraphVertex>, v1: GraphVertex, v2: GraphVertex) {
-//         graph.add_new_link(v1, v2);
-//         graph.add_new_link(v2, v1);
-//     }
-//
-//     /// Returns an array containing, for each vertex, the next edge higher and lower (and not an edge of the vertex itself)
-//     /// (higher, lower)
-//     fn find_topbot_edges(sorted_indices: &[usize], positions: &[VecN<2, f64>], edges: &[Edge]) -> Vec<(Edge, Edge)> {
-//         todo!()
-//     }
-//
-//     /// Returns a list of stripes containing one region per vertex
-//     /// The leftmost stripe has x=-inf, the rightmost x=+inf
-//     /// Also return the initial graph
-//     /// There are links between the fake vertices too
-//     fn init_stripes_graph(vertices: &[VecN<2, f64>], edges: &[Edge]) -> (Vec<Stripe>, MapGraph<GraphVertex>) {
-//         let n = vertices.len();
-//         let mut indexes: Vec<usize> = (0..n).collect();
-//         indexes.sort_by_key(|&i| NotNanF64::new(vertices[i][0]));
-//         let topbot = find_topbot_edges(&indexes, vertices, edges);
-//         let stripes = vec![Stripe::default(); n];
-//         let mut graph = MapGraph::default();
-//         for sorted_i in 0..n {
-//             let idx = indexes[sorted_i];
-//             let x = vertices[idx][0];
-//             let xbef = if sorted_i == 0 {f64::NEG_INFINITY} else {vertices[indexes[sorted_i-1]][0]};
-//             let xaft = if sorted_i == n-1 {f64::INFINITY} else {vertices[indexes[sorted_i+1]][0]};
-//             let xleft = NotNanF64::new(xbef.midpoint(x));
-//             let xright = NotNanF64::new(x.midpoint(xaft));
-//             let (top_edge, bot_edge) = topbot[idx];
-//             let region = Region {
-//                 top_edge,
-//                 bot_edge,
-//                 xleft,
-//                 xright
-//             };
-//
-//             graph_add_new_link(&mut graph, GraphVertex::RealVertex(idx), region.botright());
-//             graph_add_new_link(&mut graph, GraphVertex::RealVertex(idx), region.topright());
-//             graph_add_new_link(&mut graph, GraphVertex::RealVertex(idx), region.botleft());
-//             graph_add_new_link(&mut graph, GraphVertex::RealVertex(idx), region.topleft());
-//             graph_add_new_link(&mut graph, topright, topleft);
-//             graph_add_new_link(&mut graph, botright, botleft);
-//             graph_add_new_link(&mut graph, botleft, topleft);
-//             graph_add_new_link(&mut graph, topright, botright);
-//
-//             stripes[idx] = Stripe {
-//                 regions: vec![
-//                     region
-//                 ]
-//             };
-//         }
-//         for [i, j] in edges {
-//             graph_add_new_link(&mut graph, GraphVertex::RealVertex(*i), GraphVertex::RealVertex(*j));
-//         }
-//         (stripes, graph)
-//     }
-//
-//     /// Merges two adjacent stripes
-//     fn merge_2_stripe(sleft: Stripe, sright: Stripe, graph: &mut MapGraph<GraphVertex>) -> Stripe {
-//         graph.remove_node()
-//
-//         todo!()
-//     }
-//     /// Merges stripes two-by-two, creating a new stripe
-//     fn merge_stripes_round(stripes: Vec<Stripe>, graph: &mut MapGraph<GraphVertex>) -> Vec<Stripe> {
-//         let mut new_stripes = Vec::new();
-//         let mut curr = None;
-//         for s in stripes {
-//             match curr {
-//                 None => curr = Some(s),
-//                 Some(s1) => {
-//                     curr = None;
-//                     new_stripes.push(merge_2_stripe(s1, s, graph))
-//                 }
-//             }
-//         }
-//         if let Some(s) = curr {
-//             new_stripes.push(s)
-//         }
-//         new_stripes
-//     }
-//
-//     fn graph_to_triangulation(graph: MapGraph<GraphVertex>) -> Triangulation {
-//         todo!()
-//     }
-//
-//     pub fn cdt_from_edges(vertices: Vec<VecN<2, f64>>, edges: Vec<Edge>) -> ConstrainedTriangulation {
-//         let mut cdt = ConstrainedTriangulation {
-//             obstacle_edge_tris: HashSet::new(),
-//             triangulation: Triangulation {
-//                 vertices,
-//                 triangles: Vec::new(),
-//             }
-//         };
-//
-//         todo!()
-//     }
+use crate::triangulations::triangulation::{TriAdjacentEdge, Triangulation};
+use std::collections::BTreeSet;
+use crate::geometry::shapes::are_counter_clockwise;
+use crate::geometry::VecN;
+use crate::utils::numbers::UsizeExt;
+
+fn sort([a, b]: [usize; 2]) -> [usize; 2] {
+    if a < b {[a, b]} else {[b, a]}
+}
+
+fn find_idx_other(t: &Triangulation, i: usize, other: usize) -> Option<usize> {
+    for k in 0..3 {
+        if t.triangles[i][k].other_tri == Some(other) {
+            return Some(k);
+        }
+    }
+    None
+}
+
+// fn last_pt_in_circle(vertices: [VecN<2, f64>; 4]) -> bool {
+//     let [VecN([xa, ya]), VecN([xb, yb]), VecN([xc, yc]), VecN([xd, yd])] = vertices;
+//     // I love geometry
+//     let y0 = ((xb-xc)*(xa-xc)*(xb-xa) + (yb-yc)*(xa-xc)*(yb+yc)-(ya-yc)*(xb-xc)*(ya+yc)) / ((ya-yc)*(xb-xc) - (yb-yc)*(xa-xc)) / 2.;
+//     let x0 = ((yb-yc) * (yb+yc-2.*y0) / (xb-xc) + xb + xc) / 2.;
+//     let d2 = (xc - x0) * (xc-x0) + (yc-y0) * (yc-y0);
+//     let dist_d = (xd - x0) * (xd-x0) + (yd-y0) * (yd-y0);
+//     d2 >= dist_d
+
+
+// suppose les pts counterclockwise
+// Méthode de Shewchuk
+fn last_pt_in_circle(vertices: [VecN<2, f64>; 4]) -> bool {
+    let [VecN([xa, ya]), VecN([xb, yb]), VecN([xc, yc]), VecN([xd, yd])] = vertices;
+
+    // Translation
+    let adx = xa - xd;
+    let ady = ya - yd;
+    let bdx = xb - xd;
+    let bdy = yb - yd;
+    let cdx = xc - xd;
+    let cdy = yc - yd;
+
+    // Coord sur la Paraboloïde
+    let alift = adx * adx + ady * ady;
+    let blift = bdx * bdx + bdy * bdy;
+    let clift = cdx * cdx + cdy * cdy;
+
+    // On regarde si l'origine est au dessus ou au dessous de l'origine via un calcul de déterminant
+    let det = alift * (bdx * cdy - cdx * bdy)
+        + blift * (cdx * ady - adx * cdy)
+        + clift * (adx * bdy - bdx * ady);
+
+    det > 0.0
+}
+
+pub fn make_delaynay(t: &mut Triangulation) -> usize {
+    let mut nb_changes = 0;
+
+    let mut edges_to_update = BTreeSet::new();
+    for i in 0..t.triangles.len() {
+        for k in 0..3 {
+            if let Some(other) = t.triangles[i][k].other_tri {
+                edges_to_update.insert(sort([i, other]));
+            }
+        }
+    }
+
+    debug_assert!(t.verify_invariants() == ());
+
+    while let Some([v1, v2]) = edges_to_update.pop_first() {
+        debug_assert!(t.verify_invariants() == ());
+        let Some(k1) = find_idx_other(t, v1, v2) else {continue};
+        let k2 = find_idx_other(t, v2, v1).expect("The other edge is there !");
+        let t1 = t.triangles[v1];
+        let t2 = t.triangles[v2];
+        debug_assert_eq!(t1[k1].verts[0], t2[k2].verts[1]);
+        debug_assert_eq!(t1[k1].verts[1], t2[k2].verts[0]);
+        debug_assert_eq!(t1[k1.add_rem(1, 3)].verts[1], t1[k1.add_rem(-1, 3)].verts[0]);
+        debug_assert_eq!(t2[k2.add_rem(1, 3)].verts[1], t2[k2.add_rem(-1, 3)].verts[0]);
+        let vertices = [
+            t1[k1].verts[0],
+            t2[k2.add_rem(1, 3)].verts[1],
+            t1[k1].verts[1],
+            t1[k1.add_rem(1, 3)].verts[1],
+        ];
+        let poss = vertices.map(|i| t.vertex_poss[i]);
+        debug_assert!(are_counter_clockwise(&poss));
+        if last_pt_in_circle(poss) {
+       //     println!("Flipping an edge !");
+            nb_changes += 1;
+            let new_t1 = [
+                t2[k2.add_rem(-1, 3)],
+                t1[k1.add_rem(1, 3)],
+                TriAdjacentEdge {
+                    verts: [vertices[3], vertices[1]],
+                    other_tri: Some(v2),
+                }
+            ];
+            let new_t2 = [
+                t1[k1.add_rem(-1, 3)],
+                t2[k2.add_rem(1, 3)],
+                TriAdjacentEdge {
+                    verts: [vertices[1], vertices[3]],
+                    other_tri: Some(v1),
+                }
+            ];
+            if let Some(other) = t2[k2.add_rem(-1, 3)].other_tri {
+                let k3 = find_idx_other(t, other, v2).expect("There is an edge on the other side !");
+                debug_assert_eq!(t.triangles[other][k3].other_tri, Some(v2));
+                t.triangles[other][k3].other_tri = Some(v1);
+            }
+            if let Some(other) = t1[k1.add_rem(-1, 3)].other_tri {
+                let k3 = find_idx_other(t, other, v1).expect("There is an edge on the other side !");
+                debug_assert_eq!(t.triangles[other][k3].other_tri, Some(v1));
+                t.triangles[other][k3].other_tri = Some(v2);
+            }
+            //dbg!(new_t1, new_t2);
+            t.triangles[v1] = new_t1;
+            t.triangles[v2] = new_t2;
+            t.verify_invariants();
+            for k in 0..3 {
+                for v in [v1, v2] {
+                    if let Some(other) = t.triangles[v][k].other_tri {
+                        if other != v1 && other != v2 {
+                            edges_to_update.insert(sort([v, other]));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    nb_changes
+}
+
+pub fn check_is_delaynay(t: &Triangulation) -> bool {
+    for i in 0..t.triangles.len() {
+        for k in 0..3 {
+            if let Some(i2) = t.triangles[i][k].other_tri {
+                let k2 = find_idx_other(t, i2, i).expect("There should be an other triangle there");
+                let t1 = t.triangles[i];
+                let t2 = t.triangles[i2];
+                let poss = [
+                    t.vertex_poss[t1[k].verts[0]],
+                    t.vertex_poss[t2[k2.add_rem(1, 3)].verts[1]],
+                    t.vertex_poss[t1[k].verts[1]],
+                    t.vertex_poss[t1[k.add_rem(1, 3)].verts[1]],
+                ];
+                if last_pt_in_circle(poss) {
+                    return false;
+                }
+            }
+        }
+    }
+    true
+}

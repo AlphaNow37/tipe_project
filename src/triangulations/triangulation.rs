@@ -1,6 +1,8 @@
 use std::collections::HashSet;
+use crate::geometry::shapes::are_counter_clockwise;
 use crate::geometry::VecN;
 use crate::graphs::LinkGraph;
+use crate::triangulations::delaunay::make_delaynay;
 
 #[derive(Copy, Clone, Debug, Hash)]
 pub struct TriAdjacentEdge {
@@ -16,7 +18,7 @@ pub struct VertexIndidentEdge {
 
 #[derive(Debug, Clone)]
 pub struct Triangulation {
-    pub triangles: Vec<[TriAdjacentEdge; 3]>,
+    pub triangles: Vec<[TriAdjacentEdge; 3]>, // counterclockwise
     pub vertex_poss: Vec<VecN<2, f64>>,
 }
 
@@ -84,36 +86,50 @@ impl Triangulation {
         }
         graph
     }
-}
 
-pub struct ConstrainedTriangulation {
-    pub triangulation: Triangulation,
-    pub obstacle_edge_tris: HashSet<[usize; 2]>
-}
+    pub fn get_tri_center(&self, i: usize) -> VecN<2, f64> {
+        let [a, b, c] = self.triangle_vertex(i).map(|j| self.vertex_poss[j]);
+        (a+b+c)/3.
+    }
 
-impl ConstrainedTriangulation {
-    /// Build a constrained delaunay triangulation
-    /// No two vertices should have the same x coordinate, and no three vertices should be aligned
-    // pub fn delaynay_from_edges(vertices: Vec<VecN<2, f64>>, edges: Vec<[usize; 2]>) -> Self {
-    //     delaunay::cdt_from_edges(vertices, edges)
-    // }
-    // pub fn delaynay_from_polygons(polygons: &[Polygon]) -> Self {
-    //     let mut vertices = Vec::new();
-    //     let mut edges = Vec::new();
-    //     for poly in polygons {
-    //         let start_i = vertices.len();
-    //         for i in 0..poly.len() {
-    //             vertices.push(poly.0[i]);
-    //             if i+1 == poly.len() {
-    //                 edges.push([start_i, start_i+i]);
-    //             } else {
-    //                 edges.push([start_i+i, start_i+i+1]);
-    //             }
-    //         }
-    //     }
-    //     Self::Self::delaynay_from_edges(vertices, edges)
-    // }
-    pub fn polyania(&self, start: VecN<2, f32>, goal: VecN<2, f32>) {
-        todo!()
+    pub fn make_delaunay(&mut self) {
+        make_delaynay(self);
+    }
+
+    pub fn verify_invariants(&self) {
+        for (i, t) in self.triangles.iter().enumerate() {
+            debug_assert_eq!(t[0].verts[1], t[1].verts[0]);
+            debug_assert_eq!(t[1].verts[1], t[2].verts[0]);
+            debug_assert_eq!(t[2].verts[1], t[0].verts[0]);
+
+            let poss = [
+                self.vertex_poss[t[0].verts[0]],
+                self.vertex_poss[t[1].verts[0]],
+                self.vertex_poss[t[2].verts[0]],
+            ];
+            debug_assert!(are_counter_clockwise(&poss));
+
+            for k in 0..3 {
+                if let Some(other) = t[k].other_tri {
+                    let mut count = 0;
+                    for k2 in 0..3 {
+                        if self.triangles[other][k2].other_tri == Some(i) {
+                            count += 1;
+                            debug_assert_eq!(self.triangles[other][k2].verts[0], t[k].verts[1]);
+                            debug_assert_eq!(self.triangles[other][k2].verts[1], t[k].verts[0]);
+                        }
+                    }
+                    debug_assert_eq!(count, 1);
+                }
+                // for (j, t2) in self.triangles.iter().enumerate() {
+                //     if i != j && t[k].other_tri != Some(j) {
+                //         for k2 in 0..3 {
+                //             debug_assert!(t2[k2].verts[0] != t[k].verts[0] || t2[k2].verts[1] != t[k].verts[0]);
+                //             debug_assert!(t2[k2].verts[1] != t[k].verts[0] || t2[k2].verts[0] != t[k].verts[0]);
+                //         }
+                //     }
+                // }
+            }
+        }
     }
 }

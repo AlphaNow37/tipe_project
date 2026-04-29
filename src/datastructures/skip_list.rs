@@ -2,7 +2,7 @@ use rand::{rng, Rng};
 use std::cmp::Ordering;
 use std::fmt::{Debug, Formatter};
 
-const SKIP_LIST_HEIGHT: usize = 1;
+const SKIP_LIST_HEIGHT: usize = 8;
 const FAKE_NODE: usize = usize::MAX - 1;
 const P: f64 = 0.5;
 

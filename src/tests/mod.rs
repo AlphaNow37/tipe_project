@@ -1,7 +1,7 @@
-use rand::{rng, Rng};
+use rand::{rng, Rng, SeedableRng};
 use std::env::current_dir;
 use std::path::{Path, PathBuf};
-
+use rand::rngs::ThreadRng;
 use crate::geometry::shapes::Polygon;
 use crate::tests::test_path_complex_2d::test_square_map_polyanya;
 
@@ -23,6 +23,7 @@ mod test_arms_simple;
 mod test_3d_divers;
 mod test_convergence_vitesse;
 mod test_triangulation;
+mod test_polyanya;
 
 fn dir(name: &str) -> PathBuf {
     let here = current_dir().expect("Expected a working directory");
@@ -46,7 +47,7 @@ const GIGGLE_INTENSITY: f64 = 0.001;
 
 /// Modifies each coordinate by a tiny factor not to have aligned vertices (to ensure the map is valid)
 pub fn giggle_coords(polys: &mut [Polygon]) {
-    let mut rng = rng();
+    let mut rng = rand::rngs::StdRng::seed_from_u64(1000);
     for p in polys.iter_mut() {
         for coord in &mut p.0 {
             coord[0] += GIGGLE_INTENSITY * rng.random_range(-1.0..1.0);
@@ -76,6 +77,7 @@ pub fn tests() {
     // test_path_simple_2d::illustration_presentation_heuristics();
     // test_convergence_vitesse::test_convergence_straight();
     // test_triangulation::test_triangulation_simple();
-    test_triangulation::test_triangulation_hard()
+    // test_triangulation::test_triangulation_hard()
     // test_triangulation::test_tri_manual();
+    test_polyanya::test_polyanya_simple()
 }

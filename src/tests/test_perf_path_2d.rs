@@ -14,7 +14,7 @@ use crate::{
     utils::benchmark::{time_bench, Benchmark},
     workspace::cartesians::{CartesianTopology, EuclidianDistance},
 };
-use crate::libs::l_polyanya::shortest_path_polyanya;
+use crate::libs::l_polyanya::shortest_path_polyanya_lib;
 
 const WORKSPACE: CartesianTopology<2, EuclidianDistance> =
     CartesianTopology::new_borderless(EuclidianDistance);
@@ -78,7 +78,7 @@ fn run_naive_gpu_elist(param: &Param) {
 }
 
 fn run_polyanya_lib(param: &Param) {
-    shortest_path_polyanya(
+    shortest_path_polyanya_lib(
         &param.polys,
         param.polys[param.start.0].0[param.start.1],
         param.polys[param.end.0].0[param.end.1],

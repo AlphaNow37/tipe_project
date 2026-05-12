@@ -11,6 +11,7 @@ pub mod graph;
 pub mod grid;
 pub mod object;
 pub mod rtree;
+pub mod polyanya_interval_map;
 
 #[derive(Default)]
 pub struct SvgGroup {

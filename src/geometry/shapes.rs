@@ -4,9 +4,9 @@ use rand::Rng;
 use crate::utils::numbers::{NotNanF64, UsizeExt, F64_EPSILON};
 use std::f64::consts::PI;
 
-use crate::geometry::angles::Angle;
-
 use super::VecN;
+use crate::geometry::angles::Angle;
+use crate::workspace::cartesians::{EuclidianDistance, Length};
 
 /// N-dimensions cube
 /// Invariant: start[i] <= end[i] forall i
@@ -89,10 +89,7 @@ impl<const N: usize> Cube<N> {
 }
 impl Cube<2> {
     pub fn topleft(&self) -> VecN<2, f64> {
-        VecN([
-            self.start[0],
-            self.end[1],
-        ])
+        VecN([self.start[0], self.end[1]])
     }
     pub fn botleft(&self) -> VecN<2, f64> {
         self.start
@@ -101,10 +98,7 @@ impl Cube<2> {
         self.end
     }
     pub fn botright(&self) -> VecN<2, f64> {
-        VecN([
-            self.end[0],
-            self.start[1],
-        ])
+        VecN([self.end[0], self.start[1]])
     }
 }
 
@@ -232,10 +226,19 @@ pub struct InfiniteLine<const N: usize> {
 }
 impl<const N: usize> InfiniteLine<N> {
     pub fn point_at_time(self, t: f64) -> VecN<N, f64> {
-        return self.start + (self.end - self.start) * t;
+        self.start * (1. - t) + self.end * t
+    }
+    pub fn project_time(self, pt: VecN<N, f64>) -> f64 {
+        if pt == self.start {
+            return 0.;
+        }
+        (self.end - self.start).dot(pt - self.start)
+            / EuclidianDistance.length(self.end - self.start)
+            / EuclidianDistance.length(pt - self.start)
     }
 }
 impl InfiniteLine<2> {
+    // the time of P on L is t any real number such that P = (1-t) (L.start) + t (L.end)
     pub fn intersection_time(self, other: Self) -> Option<(f64, f64)> {
         let delta_x = self.end[0] - self.start[0];
         let delta_y = self.end[1] - self.start[1];

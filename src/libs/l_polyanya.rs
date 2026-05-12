@@ -34,7 +34,7 @@ fn cube_to_linestring(c: Cube<2>) -> LineString<f32> {
     ])
 }
 
-pub fn shortest_path_polyanya(
+pub fn shortest_path_polyanya_lib(
     obstacles: &[Polygon],
     start: VecN<2, f64>,
     goal: VecN<2, f64>,

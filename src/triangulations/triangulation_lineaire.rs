@@ -4,7 +4,7 @@ use crate::geometry::VecN;
 use crate::triangulations::triangulation::{TriAdjacentEdge, Triangulation};
 use crate::utils::numbers::{UsizeExt, F64_EPSILON};
 use std::cmp::Ordering;
-
+use std::collections::HashMap;
 // convention: up (algo) = left (skiplist)
 
 #[derive(Copy, Clone, Debug)]
@@ -45,14 +45,13 @@ impl AreaCover {
 
 #[derive(Clone, Copy, Debug)]
 struct AreaInterval {
-    backed_tri: Option<usize>,
-    vertices: [usize; 2], // counterclockwise
+    vertices: [usize; 2], // counterclockwise from the point of vue of the empty space
     cover: AreaCover,
 }
+
 impl Interval for AreaInterval {
     type Value = f64;
-    type Ctx = ();
-    fn cmp_value(&self, value: &Self::Value, _: &Self::Ctx) -> Ordering {
+    fn cmp_value(&self, value: &Self::Value) -> Ordering {
         // returns greater iff the value is lower down
         match self.cover {
             AreaCover::NoneTop => Ordering::Greater,
@@ -84,8 +83,7 @@ struct FrontInterval {
 }
 impl Interval for FrontInterval {
     type Value = VecN<2, f64>;
-    type Ctx = ();
-    fn cmp_value(&self, value: &Self::Value, _: &Self::Ctx) -> Ordering {
+    fn cmp_value(&self, value: &Self::Value) -> Ordering {
         // returns greater iff the value is lower down
         if *value == self.top[1] || *value == self.bot[1] {
             return Ordering::Equal;
@@ -100,7 +98,7 @@ impl Interval for FrontInterval {
         if dir2.rotate_left().dot(delta2) < 0. {
             return Ordering::Greater;
         }
-        return Ordering::Equal;
+        Ordering::Equal
     }
 }
 
@@ -108,13 +106,14 @@ impl Interval for FrontInterval {
 fn propagate_up(
     mut cursor: &mut Cursor<AreaInterval>,
     triangulation: &mut Triangulation,
+    edge_to_tri: &mut HashMap<[usize; 2], usize>,
     new_i: usize,
 ) {
     let pos = triangulation.vertex_poss[new_i];
     loop {
         debug_assert!(!cursor.get_interval().is_none());
         let &AreaInterval {
-            backed_tri: tri1, vertices: [a, b], ..
+            vertices: [a, b], ..
         } = cursor
             .get_interval()
             .expect("The cursor was not on an area !");
@@ -128,7 +127,6 @@ fn propagate_up(
         }
         cursor.move_left();
         let &AreaInterval {
-            backed_tri: tri2,
             vertices: [v1, v2],
             ..
         } = cursor
@@ -155,11 +153,11 @@ fn propagate_up(
         let new_t_i = triangulation.add_triangle([
             TriAdjacentEdge {
                 verts: [v1, v2],
-                other_tri: tri2,
+                other_tri: edge_to_tri.remove(&[v1, v2]),
             },
             TriAdjacentEdge {
                 verts: [v2, new_i],
-                other_tri: tri1,
+                other_tri: edge_to_tri.remove(&[v2, new_i]),
             },
             TriAdjacentEdge {
                 verts: [new_i, v1],
@@ -167,27 +165,28 @@ fn propagate_up(
             },
         ]);
 
+        edge_to_tri.insert([v1, new_i], new_t_i);
+        edge_to_tri.insert([new_i, v2], new_t_i);
+
         cursor.push_interval(AreaInterval {
             cover: AreaCover::from_poss(p1, pos),
             vertices: [v1, new_i],
-            backed_tri: Some(new_t_i),
         })
     }
 }
 
 // Start (and end) on the area right below the new vertex
-// returns the id of the first triangle it creates, if such one exists
 fn propagate_down(
     mut cursor: &mut Cursor<AreaInterval>,
     triangulation: &mut Triangulation,
+    edge_to_tri: &mut HashMap<[usize; 2], usize>,
     new_i: usize,
-) -> Option<usize> {
+) {
     let pos = triangulation.vertex_poss[new_i];
-    let mut first = None;
     loop {
         debug_assert!(!cursor.get_interval().is_none());
         let &AreaInterval {
-            backed_tri: tri1, vertices: [a, b], ..
+            vertices: [a, b], ..
         } = cursor
             .get_interval()
             .expect("The cursor was not on an area !");
@@ -197,11 +196,10 @@ fn propagate_down(
         cursor.move_right();
         if cursor.is_full_right() {
             cursor.move_left();
-            return first;
+            return;
         }
         cursor.move_right();
         let &AreaInterval {
-            backed_tri: tri2,
             vertices: [v1, v2],
             ..
         } = cursor
@@ -216,7 +214,7 @@ fn propagate_down(
             cursor.move_left();
             cursor.move_left();
             debug_assert!(!cursor.get_interval().is_none());
-            return first;
+            return;
         }
         cursor.remove_interval();
         cursor.move_left();
@@ -229,7 +227,7 @@ fn propagate_down(
         let new_t_i = triangulation.add_triangle([
             TriAdjacentEdge {
                 verts: [v1, v2],
-                other_tri: tri2,
+                other_tri: edge_to_tri.remove(&[v1, v2]),
             },
             TriAdjacentEdge {
                 verts: [v2, new_i],
@@ -237,16 +235,16 @@ fn propagate_down(
             },
             TriAdjacentEdge {
                 verts: [new_i, v1],
-                other_tri: tri1,
+                other_tri: edge_to_tri.remove(&[new_i, v1]),
             },
         ]);
 
-        first = first.or(Some(new_t_i));
+        edge_to_tri.insert([new_i, v2], new_t_i);
+        edge_to_tri.insert([v1, new_i], new_t_i);
 
         cursor.push_interval(AreaInterval {
             cover: AreaCover::from_poss(pos, p2),
             vertices: [new_i, v2],
-            backed_tri: Some(new_t_i),
         })
     }
 }
@@ -257,6 +255,7 @@ fn insert_vertex_front<'a>(
     new_i: usize,
     areas: &'a mut IntervalSkipLists<AreaInterval>,
     triangulation: &mut Triangulation,
+    edge_to_tri: &mut HashMap<[usize; 2], usize>,
     add_area_top: bool,
     add_area_bot: bool,
 ) -> Cursor<'a, AreaInterval> {
@@ -274,7 +273,6 @@ fn insert_vertex_front<'a>(
                 cursor.push_interval(AreaInterval {
                     vertices: [new_i, i],
                     cover: AreaCover::from_poss(curr_pos, pos),
-                    backed_tri: None,
                 });
                 cursor.move_left();
             }
@@ -282,7 +280,6 @@ fn insert_vertex_front<'a>(
                 cursor.push_interval(AreaInterval {
                     vertices: [i, new_i],
                     cover: AreaCover::from_poss(pos, curr_pos),
-                    backed_tri: None,
                 });
                 cursor.move_right();
             }
@@ -290,7 +287,7 @@ fn insert_vertex_front<'a>(
             cursor
         }
         FrontContent::SegmentFront(area_access) => {
-            let mut cursor = areas.cursor(area_access, curr_pos[1], ());
+            let mut cursor = areas.cursor(area_access, curr_pos[1]);
 
             // adjacent of the cursor at the end of the block
             let mut hooked_vertex;
@@ -325,10 +322,9 @@ fn insert_vertex_front<'a>(
 
             cursor.push_interval(AreaInterval {
                 cover: AreaCover::from_poss(curr_pos, hook_pos),
-                backed_tri: None,
                 vertices: [new_i, hooked_vertex],
             });
-            let merge_tri = propagate_down(&mut cursor, triangulation, new_i);
+            propagate_down(&mut cursor, triangulation, edge_to_tri, new_i);
 
             debug_assert!(!cursor.get_interval().is_none());
 
@@ -342,13 +338,12 @@ fn insert_vertex_front<'a>(
 
             cursor.push_interval(AreaInterval {
                 cover: AreaCover::from_poss(hook_pos, curr_pos),
-                backed_tri: merge_tri,
                 vertices: [hooked_vertex, new_i],
             });
 
             debug_assert!(!cursor.get_interval().is_none());
 
-            propagate_up(&mut cursor, triangulation, new_i);
+            propagate_up(&mut cursor, triangulation, edge_to_tri, new_i);
 
             debug_assert!(!cursor.get_interval().is_none());
 
@@ -423,11 +418,13 @@ pub fn triangulate_linear(polygons: &[Polygon], margin: f64) -> Triangulation {
     let mut lists_areas = IntervalSkipLists::new();
     let mut front_access = SkipListAccess::new();
 
+    // counterclockwise from the point of vue of the empty space
+    let mut edge_to_tri: HashMap<[usize; 2], usize> = HashMap::new();
+
     let mut triangulation = Triangulation::new(poss);
 
     for (i, &v) in vertices.iter().enumerate() {
-
-        let mut cursor_fronts = lists_fronts.cursor(&mut front_access, v.pos, ());
+        let mut cursor_fronts = lists_fronts.cursor(&mut front_access, v.pos);
 
         match v.kind {
             VertexKind::Source([top, bot]) => {
@@ -449,6 +446,7 @@ pub fn triangulate_linear(polygons: &[Polygon], margin: f64) -> Triangulation {
                     i,
                     &mut lists_areas,
                     &mut triangulation,
+                    &mut edge_to_tri,
                     false,
                     true,
                 );
@@ -464,6 +462,7 @@ pub fn triangulate_linear(polygons: &[Polygon], margin: f64) -> Triangulation {
                     i,
                     &mut lists_areas,
                     &mut triangulation,
+                    &mut edge_to_tri,
                     true,
                     false,
                 );
@@ -480,6 +479,7 @@ pub fn triangulate_linear(polygons: &[Polygon], margin: f64) -> Triangulation {
                     i,
                     &mut lists_areas,
                     &mut triangulation,
+                    &mut edge_to_tri,
                     false,
                     false,
                 );
@@ -497,6 +497,7 @@ pub fn triangulate_linear(polygons: &[Polygon], margin: f64) -> Triangulation {
                     i,
                     &mut lists_areas,
                     &mut triangulation,
+                    &mut edge_to_tri,
                     true,
                     true,
                 );
@@ -520,6 +521,7 @@ pub fn triangulate_linear(polygons: &[Polygon], margin: f64) -> Triangulation {
                     i,
                     &mut lists_areas,
                     &mut triangulation,
+                    &mut edge_to_tri,
                     false,
                     true,
                 );
@@ -537,6 +539,7 @@ pub fn triangulate_linear(polygons: &[Polygon], margin: f64) -> Triangulation {
                     i,
                     &mut lists_areas,
                     &mut triangulation,
+                    &mut edge_to_tri,
                     true,
                     false,
                 );

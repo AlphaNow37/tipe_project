@@ -2,7 +2,7 @@ use rand::{rng, Rng};
 use std::cmp::Ordering;
 use std::fmt::{Debug, Formatter};
 
-const SKIP_LIST_HEIGHT: usize = 8;
+const SKIP_LIST_HEIGHT: usize = 1;
 const FAKE_NODE: usize = usize::MAX - 1;
 const P: f64 = 0.5;
 
@@ -12,13 +12,13 @@ fn random_height() -> usize {
     while rng.random_bool(P) && i < SKIP_LIST_HEIGHT {
         i += 1;
     }
+    debug_assert!(1 <= i && i <= SKIP_LIST_HEIGHT);
     i
 }
 
 pub trait Interval {
     type Value;
-    type Ctx;
-    fn cmp_value(&self, value: &Self::Value, ctx: &Self::Ctx) -> Ordering;
+    fn cmp_value(&self, value: &Self::Value) -> Ordering;
 }
 
 #[derive(Debug, Clone)]
@@ -55,12 +55,12 @@ impl<I> SkipListNode<I> {
 
 #[derive(Debug, Clone, Copy)]
 pub struct SkipListAccess {
-    first_node: [usize; SKIP_LIST_HEIGHT],
+    first_nodes: [usize; SKIP_LIST_HEIGHT],
 }
 impl SkipListAccess {
     pub fn new() -> Self {
         Self {
-            first_node: [FAKE_NODE; SKIP_LIST_HEIGHT]
+            first_nodes: [FAKE_NODE; SKIP_LIST_HEIGHT]
         }
     }
 }
@@ -110,11 +110,13 @@ impl<I> IntervalSkipLists<I> {
             let p = self.nodes[id].preds[i];
             let s = self.nodes[id].succs[i];
             if p == FAKE_NODE {
-                access.first_node[i] = id;
+                access.first_nodes[i] = id;
             } else {
+                debug_assert!(self.nodes[p].height > i);
                 self.nodes[p].succs[i] = id;
             }
             if s != FAKE_NODE {
+                debug_assert!(self.nodes[s].height > i);
                 self.nodes[s].preds[i] = id;
             }
         }
@@ -126,11 +128,13 @@ impl<I> IntervalSkipLists<I> {
             let p = self.nodes[id].preds[i];
             let s = self.nodes[id].succs[i];
             if p == FAKE_NODE {
-                access.first_node[i] = s;
+                access.first_nodes[i] = s;
             } else {
+                debug_assert!(self.nodes[p].height > i);
                 self.nodes[p].succs[i] = s;
             }
             if s != FAKE_NODE {
+                debug_assert!(self.nodes[s].height > i);
                 self.nodes[s].preds[i] = p;
             }
         }
@@ -140,41 +144,47 @@ impl<I> IntervalSkipLists<I> {
             let s = succs[i];
             let p = preds[i];
             if p == FAKE_NODE {
-                access.first_node[i] = FAKE_NODE;
+                access.first_nodes[i] = FAKE_NODE;
             } else {
+                debug_assert!(self.nodes[p].height > i);
                 self.nodes[p].succs[i] = FAKE_NODE;
             }
             if s != FAKE_NODE {
+                debug_assert!(self.nodes[s].height > i);
                 self.nodes[s].preds[i] = FAKE_NODE;
             }
         }
-        SkipListAccess {first_node: succs}
+        SkipListAccess {first_nodes: succs}
     }
-    /// values must be sorted
+    /// intervals must be sorted
     pub fn bulk_load(&mut self, intervals: Vec<I>) -> SkipListAccess {
-        let mut front = [FAKE_NODE; SKIP_LIST_HEIGHT];
+        let mut preds = [FAKE_NODE; SKIP_LIST_HEIGHT];
         let mut access = SkipListAccess::new();
         for interval in intervals {
-            let id = self.add_node(&mut access, interval, front, [FAKE_NODE; SKIP_LIST_HEIGHT]);
-            self.nodes[id].use_as_preds(&mut front);
+            let id = self.add_node(&mut access, interval, preds, [FAKE_NODE; SKIP_LIST_HEIGHT]);
+            self.nodes[id].use_as_preds(&mut preds);
         }
         access
     }
 }
 impl<I: Interval> IntervalSkipLists<I> {
-    pub fn cursor<'a>(&'a mut self, access: &'a mut SkipListAccess, value: I::Value, ctx: I::Ctx) -> Cursor<'a, I> {
+    pub fn cursor<'a>(&'a mut self, access: &'a mut SkipListAccess, value: I::Value) -> Cursor<'a, I> {
+        // Invariant:
+        // - prec, succs forment un curseur entre deux intervalles
+        // - Les valeurs avant ce curseur sont de valeur strictement inférieure
         let mut curr_i = SKIP_LIST_HEIGHT - 1;
         let mut preds = [FAKE_NODE; SKIP_LIST_HEIGHT];
-        let mut succs = access.first_node;
+        let mut succs = access.first_nodes;
         loop {
             let s_id = succs[curr_i];
             if s_id == FAKE_NODE {
                 if curr_i == 0 {
+                    debug_assert!(succs == [FAKE_NODE; SKIP_LIST_HEIGHT]);
                     return Cursor {
                         idx: None,
                         list: self,
                         preds,
-                        succs,
+                        succs: [FAKE_NODE; SKIP_LIST_HEIGHT],
                         access
                     };
                 }
@@ -183,7 +193,7 @@ impl<I: Interval> IntervalSkipLists<I> {
             }
             let node = &self.nodes[s_id];
             debug_assert!(node.height > curr_i);
-            match node.interval.cmp_value(&value, &ctx) {
+            match node.interval.cmp_value(&value) {
                 Ordering::Equal => {
                     if curr_i == 0 {
                         node.put_succs(&mut succs);
@@ -221,7 +231,7 @@ impl<I: Interval> IntervalSkipLists<I> {
     pub fn cursor_left<'a>(&'a mut self, access: &'a mut SkipListAccess) -> Cursor<'a, I> {
         Cursor {
             idx: None,
-            succs: access.first_node,
+            succs: access.first_nodes,
             preds: [FAKE_NODE; SKIP_LIST_HEIGHT],
             access,
             list: self,
@@ -246,6 +256,14 @@ impl<'a, I: Interval> Cursor<'a, I> {
     }
     pub fn remove_interval(&mut self) {
         let id = self.idx.expect("Expected an interval to remove");
+        #[cfg(debug_assertions)]
+        {
+            let node = &self.list.nodes[id];
+            for i in 0..node.height {
+                debug_assert!(node.preds[i] == self.preds[i]);
+                debug_assert!(node.succs[i] == self.succs[i]);
+            }
+        };
         self.list.remove_node(self.access, id);
         self.idx = None;
     }
@@ -304,14 +322,18 @@ impl<'a, I: Interval> Cursor<'a, I> {
         debug_assert!(self.is_full_right());
         for i in 0..SKIP_LIST_HEIGHT {
             let p = self.preds[i];
-            let s = other.first_node[i];
+            let s = other.first_nodes[i];
             if s != FAKE_NODE {
+                debug_assert!(self.list.nodes[s].height > i);
                 self.list.nodes[s].preds[i] = p;
             }
             if p != FAKE_NODE {
+                debug_assert!(self.list.nodes[p].height > i);
                 self.list.nodes[p].succs[i] = s;
+            } else {
+                self.access.first_nodes[i] = s;
             }
         }
-        self.succs = other.first_node;
+        self.succs = other.first_nodes;
     }
 }

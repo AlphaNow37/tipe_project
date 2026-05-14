@@ -1,5 +1,5 @@
 use crate::datastructures::priority_queue::PriorityQueue;
-use crate::geometry::shapes::{Polygon, Ray, Segment};
+use crate::geometry::shapes::{InfiniteLine, Polygon, Ray, Segment};
 use crate::geometry::VecN;
 use crate::graphs::ParentTree;
 use crate::triangulations::delaunay::make_delaynay;
@@ -9,6 +9,13 @@ use crate::utils::numbers::{NotNanF64, Zero, F64_EPSILON};
 use crate::workspace::cartesians::{EuclidianDistance, Length};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum PolyanyaMode {
+    DijkstraExhaustive,
+    Dijkstra,
+    AStar,
+}
 
 fn sort([a, b]: [usize; 2]) -> [usize; 2] {
     if a < b {
@@ -27,6 +34,12 @@ pub fn generate_id() -> usize {
     NEXT_ID.fetch_add(1, Ordering::Relaxed)
 }
 
+struct Context<'a> {
+    pqueue: Pqueue,
+    dist_fun: Box<dyn Fn(InfiniteLine<2>, [f64; 2], VecN<2, f64>) -> f64 + 'a>,
+    vposs: &'a [VecN<2, f64>],
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct Interval {
     extrs_vertex_i: [Option<usize>; 2], // when the interval touches an extremity of the interval
@@ -42,7 +55,7 @@ impl Interval {
         self,
         intervals: &mut Intervals,
         edge_segment: Segment<2>,
-        pqueue: &mut Pqueue,
+        ctx: &mut Context,
         from_tri: usize,
     ) {
         debug_assert!(self.check_invariants(None) == ());
@@ -57,7 +70,7 @@ impl Interval {
                     source: self.source,
                     times: [0., 1.],
                 },
-                pqueue,
+                ctx,
                 from_tri,
             );
             return;
@@ -140,7 +153,7 @@ impl Interval {
                     source: intervals.extrs_vertex_i[side],
                     times: [0., 1.],
                 },
-                pqueue,
+                ctx,
                 from_tri,
             );
             return;
@@ -197,7 +210,7 @@ impl Interval {
                     source: extr1.unwrap(),
                     times: [0., t1],
                 },
-                pqueue,
+                ctx,
                 from_tri,
             )
         }
@@ -210,7 +223,7 @@ impl Interval {
                 source: self.source,
                 times: [t1, t2],
             },
-            pqueue,
+            ctx,
             from_tri,
         );
         if t2 < 1. && extr2.is_some() {
@@ -227,7 +240,7 @@ impl Interval {
                     source: extr2.unwrap(),
                     times: [t2, 1.],
                 },
-                pqueue,
+                ctx,
                 from_tri,
             )
         }
@@ -247,13 +260,15 @@ impl Interval {
     //         },
     //     ]
     // }
-    fn min_dist(self, edge_segment: Segment<2>) -> f64 {
-        let t = edge_segment
-            .to_line()
-            .project_time(self.source_pos)
-            .clamp(0., 1.);
-        EuclidianDistance.length(edge_segment.to_line().point_at_time(t) - self.source_pos)
-            + self.lag
+    fn min_dist(self, edge_segment: Segment<2>, ctx: &Context) -> f64 {
+        self.lag + (ctx.dist_fun)(edge_segment.to_line(), self.times, self.source_pos)
+
+        // let t = edge_segment
+        //     .to_line()
+        //     .project_time(self.source_pos)
+        //     .clamp(0., 1.);
+        // EuclidianDistance.length(edge_segment.to_line().point_at_time(t) - self.source_pos)
+        //     + self.lag
     }
     fn check_invariants(&self, vposs: Option<&[VecN<2, f64>]>) {
         debug_assert!(self.lag >= 0.);
@@ -439,11 +454,11 @@ impl Intervals {
             adj_tris,
         }
     }
-    fn add_interval_to_pqueue(&self, interval: Interval, pqueue: &mut Pqueue, from_tri: usize) {
+    fn add_interval_to_pqueue(&self, interval: Interval, ctx: &mut Context, from_tri: usize) {
         debug_assert!(self.adj_tris.contains(&Some(from_tri)));
-        debug_assert!(interval.check_invariants(None) == ());
-        pqueue.push(
-            NotNanF64::new_debug_checked(interval.min_dist(self.segment)),
+        debug_assert!(interval.check_invariants(Some(ctx.vposs)) == ());
+        ctx.pqueue.push(
+            NotNanF64::new_debug_checked(interval.min_dist(self.segment, ctx)),
             (
                 interval.id,
                 if self.adj_tris[0] == Some(from_tri) {
@@ -456,9 +471,12 @@ impl Intervals {
         )
     }
     // add an interval onto the list, merging them
-    fn insert_interval(&mut self, mut interval: Interval, pqueue: &mut Pqueue, from_tri: usize) {
-        debug_assert!(interval.check_invariants(None) == ());
-        debug_assert!(self.check_invariants(None) == ());
+    fn insert_interval(&mut self, mut interval: Interval, ctx: &mut Context, from_tri: usize) {
+        debug_assert!(interval.check_invariants(Some(ctx.vposs)) == ());
+        debug_assert!(self.check_invariants(Some(ctx.vposs)) == ());
+
+        // dbg!(&self, &interval);
+
         let mut i = 0;
         loop {
             if interval.times[1] <= interval.times[0] + F64_EPSILON {
@@ -466,19 +484,23 @@ impl Intervals {
             }
             if i >= self.intervals.len() {
                 self.intervals.push(interval);
-                self.add_interval_to_pqueue(interval, pqueue, from_tri);
+                self.add_interval_to_pqueue(interval, ctx, from_tri);
                 return;
             }
             let mut curr = self.intervals[i];
             if curr.times[0] + F64_EPSILON >= interval.times[1] {
-                interval.times[1] = curr.times[0];
+                if curr.times[0] < interval.times[1] {
+                    interval.times[1] = curr.times[0]
+                }
                 debug_assert!(interval.check_invariants(None) == ());
                 self.intervals.insert(i, interval);
-                self.add_interval_to_pqueue(interval, pqueue, from_tri);
+                self.add_interval_to_pqueue(interval, ctx, from_tri);
                 return;
             }
             if curr.times[1] <= interval.times[0] + F64_EPSILON {
-                interval.times[0] = curr.times[1];
+                if curr.times[1] > interval.times[0] {
+                    interval.times[0] = curr.times[1]
+                }
                 i += 1;
                 continue;
             }
@@ -525,7 +547,7 @@ impl Intervals {
                             id: generate_id(),
                             ..interval
                         };
-                        self.add_interval_to_pqueue(int, pqueue, from_tri);
+                        self.add_interval_to_pqueue(int, ctx, from_tri);
                         self.intervals.insert(i, int);
                         i += 1;
                         curr.times[0] = t;
@@ -592,40 +614,82 @@ fn check_map_invariants(map: &HashMap<Edge, Intervals>, vposs: &[VecN<2, f64>]) 
     }
 }
 
-fn build_parent_tree(interval_map: &HashMap<Edge, Intervals>) -> ParentTree<usize, usize> {
+fn build_parent_tree(
+    interval_map: &HashMap<Edge, Intervals>,
+    goal: usize,
+    vposs: &[VecN<2, f64>],
+) -> (ParentTree<usize, usize>, f64) {
     let mut ptree = ParentTree::new();
-    for (edge, ints) in interval_map.iter() {
+    let mut best_goal_dist = f64::INFINITY;
+
+    for ints in interval_map.values() {
         if ints.intervals.len() == 0 {
             continue;
         }
-        if let Some(i) = ints.intervals[0].extrs_vertex_i[0] {
-            let p = ints.intervals[0].source;
-            if i != p {
-                ptree.set_parent(i, p)
-            }
-        }
-        if let Some(i) = ints.intervals[ints.intervals.len() - 1].extrs_vertex_i[1] {
-            let p = ints.intervals[ints.intervals.len() - 1].source;
-            if i != p {
-                ptree.set_parent(i, p)
+        for (int, j) in [
+            (ints.intervals[0], 0),
+            (ints.intervals[ints.intervals.len() - 1], 1),
+        ] {
+            if let Some(i) = int.extrs_vertex_i[j] {
+                let p = int.source;
+                if i == goal && p != goal {
+                    let d = int.lag + EuclidianDistance.length(vposs[goal] - int.source_pos);
+                    if d < best_goal_dist {
+                        ptree.set_parent(goal, p);
+                        best_goal_dist = d;
+                    }
+                } else if i != p {
+                    ptree.set_parent(i, p)
+                }
             }
         }
     }
     // dbg!(&ptree);
-    ptree
+    (ptree, best_goal_dist)
 }
 
 pub fn polyanya(
     t: &Triangulation,
     start: usize,
     goal: usize,
+    mode: PolyanyaMode,
 ) -> (Option<(Vec<usize>, f64)>, HashMap<Edge, Intervals>) {
-    // 1: create the hashmap for intervals, a min heap for node ids, the interval map
+    // 1: create the hashmap for intervals, a min heap for node ids, the interval map, a buffer, the context
 
     // (usize, usize, usize): (interval id, tri to expand to, edge. the weight is the closest distance on the interval
     let mut pqueue: Pqueue = PriorityQueue::default();
     // edge ([usize; 2] sorted) to intervals
     let mut intervals_map: HashMap<Edge, Intervals> = HashMap::new();
+    // A pre-allocated buffer
+    let mut ints_with_right_id = Vec::with_capacity(4);
+
+    let goal_pos = t.vertex_poss[goal];
+    let mut context = Context {
+        dist_fun: match mode {
+            PolyanyaMode::Dijkstra | PolyanyaMode::DijkstraExhaustive => {
+                Box::new(|line, times, source_pos| {
+                    let time = line.project_time(source_pos).clamp(times[0], times[1]);
+                    EuclidianDistance.length(line.point_at_time(time) - source_pos)
+                })
+            }
+            PolyanyaMode::AStar => Box::new(|line, times, source_pos| {
+                let t1 = line.project_time(source_pos);
+                let t2 = line.project_time(goal_pos);
+                let p1 = line.point_at_time(t1);
+                let p2 = line.point_at_time(t2);
+                let d1 = EuclidianDistance.length(p1 - source_pos);
+                let d2 = EuclidianDistance.length(p2 - goal_pos);
+                if d1 + d2 < F64_EPSILON {
+                    return 0.;
+                }
+                let time = ((t1 * d2 + t2 * d1) / (d1 + d2)).clamp(times[0], times[1]);
+                EuclidianDistance.length(line.point_at_time(time) - source_pos)
+                    + EuclidianDistance.length(line.point_at_time(time) - goal_pos)
+            }),
+        },
+        pqueue,
+        vposs: &t.vertex_poss,
+    };
 
     // 2: find a first interval to add
     'a: {
@@ -652,8 +716,12 @@ pub fn polyanya(
                         }],
                     };
                     intervals_map.insert(sort(verts), ints);
-                    pqueue.push(NotNanF64::ZERO, (id, Some(i), sort(verts)));
-                    pqueue.push(NotNanF64::ZERO, (id, tri[k].other_tri, sort(verts)));
+                    context
+                        .pqueue
+                        .push(NotNanF64::ZERO, (id, Some(i), sort(verts)));
+                    context
+                        .pqueue
+                        .push(NotNanF64::ZERO, (id, tri[k].other_tri, sort(verts)));
                     break 'a;
                 }
             }
@@ -665,19 +733,20 @@ pub fn polyanya(
 
     let mut curr_best = f64::INFINITY;
 
-    'a: while let Some((min_dist, (id, to_tri_i, edge))) = pqueue.pop_min() {
+    'a: while let Some((min_dist, (id, to_tri_i, edge))) = context.pqueue.pop_min() {
         debug_assert!(check_map_invariants(&intervals_map, &t.vertex_poss) == ());
 
-        // dbg!(min_dist);
+        dbg!(min_dist);
 
-        if *min_dist > curr_best + 500. {
+        if *min_dist > curr_best && mode != PolyanyaMode::DijkstraExhaustive {
             // dbg!(&intervals_map);
 
             dbg!("Building the parent tree !");
-            let ptree = build_parent_tree(&intervals_map);
+            let (ptree, dist) = build_parent_tree(&intervals_map, goal, &t.vertex_poss);
             dbg!("Finding a path !");
             let mut path = ptree.path_to(goal);
             path.push(goal);
+            dbg!(dist, curr_best);
             return (Some((path, curr_best)), intervals_map);
         }
 
@@ -689,13 +758,13 @@ pub fn polyanya(
         let segment = ints.segment;
         debug_assert_eq!(edge, ints.extrs_vertex_i);
 
-        let ints_with_right_id = ints
-            .intervals
+        ints_with_right_id.clear();
+        ints.intervals
             .iter()
             .filter(|int| int.id == id)
             .copied()
-            .collect::<Vec<_>>();
-        for int in ints_with_right_id {
+            .collect_into(&mut ints_with_right_id);
+        for &int in &ints_with_right_id {
             if int.extrs_vertex_i[0] == Some(goal) || int.extrs_vertex_i[1] == Some(goal) {
                 let new_dist =
                     int.lag + EuclidianDistance.length(int.source_pos - t.vertex_poss[goal]);
@@ -720,25 +789,31 @@ pub fn polyanya(
                         };
                         Intervals::new(segment, new_edge, [Some(to_tri_i), tri[k].other_tri])
                     });
-                    int.project_onto(new_ints, segment, &mut pqueue, to_tri_i);
+                    int.project_onto(new_ints, segment, &mut context, to_tri_i);
                 }
             }
         }
     }
 
-    (None, intervals_map)
+    if curr_best == f64::INFINITY {
+        (None, intervals_map)
+    } else {
+        dbg!("Building the parent tree !");
+        let (ptree, dist) = build_parent_tree(&intervals_map, goal, &t.vertex_poss);
+        dbg!("Finding a path !");
+        let mut path = ptree.path_to(goal);
+        path.push(goal);
+        dbg!(dist, curr_best);
+        return (Some((path, curr_best)), intervals_map);
+    }
 }
 
-pub fn shortest_path_polyanya(
-    obstacles: &[Polygon],
+pub fn find_start_goal_idx(
     start: (usize, usize),
     goal: (usize, usize),
-) -> (
-    Triangulation,
-    Option<(Vec<VecN<2, f64>>, f64)>,
-    HashMap<Edge, Intervals>,
-) {
-    let mut tri = triangulate_linear(obstacles, 100.);
+    obstacles: &[Polygon],
+    tri: &Triangulation,
+) -> (usize, usize) {
     let mut new_start = None;
     let mut new_goal = None;
     for j in 0..tri.vertex_poss.len() {
@@ -749,8 +824,23 @@ pub fn shortest_path_polyanya(
             new_goal = Some(j);
         }
     }
+    (new_start.unwrap(), new_goal.unwrap())
+}
+
+pub fn shortest_path_polyanya(
+    obstacles: &[Polygon],
+    start: (usize, usize),
+    goal: (usize, usize),
+    mode: PolyanyaMode,
+) -> (
+    Triangulation,
+    Option<(Vec<VecN<2, f64>>, f64)>,
+    HashMap<Edge, Intervals>,
+) {
+    let mut tri = triangulate_linear(obstacles, 100.);
+    let (new_start, new_goal) = find_start_goal_idx(start, goal, obstacles, &tri);
     make_delaynay(&mut tri);
-    let (opt, map) = polyanya(&tri, dbg!(new_start.unwrap()), dbg!(new_goal.unwrap()));
+    let (opt, map) = polyanya(&tri, new_start, new_goal, mode);
     let opt2 = opt.map(|(path, length)| {
         let path2 = path.iter().map(|i| tri.vertex_poss[*i]).collect::<Vec<_>>();
         // debug_assert!(
@@ -762,6 +852,10 @@ pub fn shortest_path_polyanya(
         //         .abs()
         //         < F64_EPSILON
         // );
+        dbg!(path2
+            .iter()
+            .map_windows(|[a, b]| EuclidianDistance.length(**b - **a))
+            .sum::<f64>());
         (path2, length)
     });
     (tri, opt2, map)

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use rand::{rng, Rng};
 use crate::geometry::shapes::Polygon;
 use crate::geometry::VecN;
-use crate::path_planning::polyanya::{polyanya, shortest_path_polyanya};
+use crate::path_planning::polyanya::{polyanya, PolyanyaMode, shortest_path_polyanya};
 use crate::svg;
 use crate::svg::graph::put_graph;
 use crate::svg::object::Style;
@@ -27,13 +27,13 @@ pub fn test_polyanya_simple() {
         // VecN([-0.5, 0.7]),
 
         VecN([1., 0.]),
-        VecN([0.7, 0.7]),
+        VecN([0.8, 0.8]),
         VecN([0., 1.]),
-        VecN([-0.7, 0.7]),
+        VecN([-0.8, 0.6]),
         VecN([-1., 0.]),
-        VecN([-0.7, -0.7]),
+        VecN([-0.6, -0.8]),
         VecN([0., -1.]),
-        VecN([0.7, -0.7]),
+        VecN([0.6, -0.6]),
     ]);
     let p2 = Polygon::new(vec![
         // VecN([0.9, 2.]),
@@ -80,7 +80,7 @@ pub fn test_polyanya_simple() {
     //     Style::stroke("green", 0.04),
     // );
 
-    let (tri, opt, map) = shortest_path_polyanya(&obstacles, (0, 0), (0, 4));
+    let (tri, opt, map) = shortest_path_polyanya(&obstacles, (0, 0), (0, 4), PolyanyaMode::DijkstraExhaustive);
     put_graph(
         &mut svg,
         &tri.to_vertex_graph(),

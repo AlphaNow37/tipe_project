@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 // use crate::libs::l_polyanya::shortest_path_polyanya_lib;
 use crate::parallel::{compute_vis_graph_gpu_adjacencymatrix, compute_vis_graph_gpu_edgelist};
-use crate::path_planning::polyanya::shortest_path_polyanya;
+use crate::path_planning::polyanya::{PolyanyaMode, shortest_path_polyanya};
 use crate::svg::polyanya_interval_map::put_map;
 use crate::tests::out_dir;
 use crate::workspace::cartesians::{CartesianTopology, EuclidianDistance};
@@ -104,7 +104,7 @@ pub fn test_square_map_polyanya() {
     let mut rng = rng();
 
     println!("Computing the map..");
-    let mut obstacles = gen_pol_map_square(10, 500.0, 120);
+    let mut obstacles = gen_pol_map_square(10, 500.0, 100);
 
     // println!("Computing margins");
     // let mut obstacles2 = obstacles
@@ -134,6 +134,7 @@ pub fn test_square_map_polyanya() {
         // obstacles[end_i].0[end_j],
         (start_i, start_j),
         (end_i, end_j),
+        PolyanyaMode::AStar,
     );
     put_graph(
         &mut svg,

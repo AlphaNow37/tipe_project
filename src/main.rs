@@ -1,5 +1,6 @@
 #![feature(btree_cursors)]
 #![feature(iter_map_windows)]
+#![feature(iter_collect_into)]
 
 pub mod datastructures;
 pub mod geometry;

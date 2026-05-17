@@ -736,17 +736,17 @@ pub fn polyanya(
     'a: while let Some((min_dist, (id, to_tri_i, edge))) = context.pqueue.pop_min() {
         debug_assert!(check_map_invariants(&intervals_map, &t.vertex_poss) == ());
 
-        dbg!(min_dist);
+        // dbg!(min_dist);
 
         if *min_dist > curr_best && mode != PolyanyaMode::DijkstraExhaustive {
             // dbg!(&intervals_map);
 
-            dbg!("Building the parent tree !");
+            // dbg!("Building the parent tree !");
             let (ptree, dist) = build_parent_tree(&intervals_map, goal, &t.vertex_poss);
-            dbg!("Finding a path !");
+            // dbg!("Finding a path !");
             let mut path = ptree.path_to(goal);
             path.push(goal);
-            dbg!(dist, curr_best);
+            // dbg!(dist, curr_best);
             return (Some((path, curr_best)), intervals_map);
         }
 
@@ -798,12 +798,12 @@ pub fn polyanya(
     if curr_best == f64::INFINITY {
         (None, intervals_map)
     } else {
-        dbg!("Building the parent tree !");
+        // dbg!("Building the parent tree !");
         let (ptree, dist) = build_parent_tree(&intervals_map, goal, &t.vertex_poss);
-        dbg!("Finding a path !");
+        // dbg!("Finding a path !");
         let mut path = ptree.path_to(goal);
         path.push(goal);
-        dbg!(dist, curr_best);
+        // dbg!(dist, curr_best);
         return (Some((path, curr_best)), intervals_map);
     }
 }
@@ -852,10 +852,10 @@ pub fn shortest_path_polyanya(
         //         .abs()
         //         < F64_EPSILON
         // );
-        dbg!(path2
-            .iter()
-            .map_windows(|[a, b]| EuclidianDistance.length(**b - **a))
-            .sum::<f64>());
+        // dbg!(path2
+        //     .iter()
+        //     .map_windows(|[a, b]| EuclidianDistance.length(**b - **a))
+        //     .sum::<f64>());
         (path2, length)
     });
     (tri, opt2, map)

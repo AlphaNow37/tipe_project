@@ -1,12 +1,9 @@
 use crate::triangulations::triangulation::{TriAdjacentEdge, Triangulation};
 use std::collections::BTreeSet;
+use rand::prelude::SliceRandom;
 use crate::geometry::shapes::are_counter_clockwise;
 use crate::geometry::VecN;
 use crate::utils::numbers::UsizeExt;
-
-fn sort([a, b]: [usize; 2]) -> [usize; 2] {
-    if a < b {[a, b]} else {[b, a]}
-}
 
 fn find_idx_other(t: &Triangulation, i: usize, other: usize) -> Option<usize> {
     for k in 0..3 {
@@ -56,18 +53,25 @@ fn last_pt_in_circle(vertices: [VecN<2, f64>; 4]) -> bool {
 pub fn make_delaynay(t: &mut Triangulation) -> usize {
     let mut nb_changes = 0;
 
-    let mut edges_to_update = BTreeSet::new();
+    let mut edges_to_update = Vec::new();
     for i in 0..t.triangles.len() {
         for k in 0..3 {
             if let Some(other) = t.triangles[i][k].other_tri {
-                edges_to_update.insert(sort([i, other]));
+                if i < other {
+                    edges_to_update.push([i, other]);
+                }
             }
         }
     }
 
+    dbg!(edges_to_update.len());
+
+    let mut rng = rand::rng();
+    edges_to_update.shuffle(&mut rng);
+
     debug_assert!(t.verify_invariants() == ());
 
-    while let Some([v1, v2]) = edges_to_update.pop_first() {
+    while let Some([v1, v2]) = edges_to_update.pop() {
         debug_assert!(t.verify_invariants() == ());
         let Some(k1) = find_idx_other(t, v1, v2) else {continue};
         let k2 = find_idx_other(t, v2, v1).expect("The other edge is there !");
@@ -122,7 +126,7 @@ pub fn make_delaynay(t: &mut Triangulation) -> usize {
                 for v in [v1, v2] {
                     if let Some(other) = t.triangles[v][k].other_tri {
                         if other != v1 && other != v2 {
-                            edges_to_update.insert(sort([v, other]));
+                            edges_to_update.push([v, other]);
                         }
                     }
                 }

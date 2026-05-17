@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 // use crate::libs::l_polyanya::shortest_path_polyanya_lib;
 use crate::parallel::{compute_vis_graph_gpu_adjacencymatrix, compute_vis_graph_gpu_edgelist};
-use crate::path_planning::polyanya::{PolyanyaMode, shortest_path_polyanya};
+use crate::path_planning::polyanya::{find_start_goal_idx, PolyanyaMode, shortest_path_polyanya};
 use crate::svg::polyanya_interval_map::put_map;
 use crate::tests::out_dir;
-use crate::workspace::cartesians::{CartesianTopology, EuclidianDistance};
+use crate::workspace::cartesians::{CartesianTopology, DiscreteCartesianTopology, EuclidianDistance};
 /// Generates a large map and test the algorithms
 use crate::{
     geometry::polygon_map_generator::gen_pol_map_square,
@@ -14,6 +14,8 @@ use crate::{
     tests::giggle_coords,
 };
 use rand::{distr::Distribution, rng, Rng};
+use crate::triangulations::delaunay::make_delaynay;
+use crate::triangulations::triangulation_lineaire::triangulate_linear;
 
 pub fn test_square_map() {
     let workspace = CartesianTopology::new_borderless(EuclidianDistance);
@@ -186,4 +188,95 @@ pub fn test_square_map_polyanya() {
 
     println!("Saving file");
     svg.write_to_file(&out_dir().join("test_square_map_polyanya.svg"));
+}
+
+pub fn test_square_map_theta_star() {
+    let mut rng = rng();
+
+    println!("Computing the map..");
+    let mut obstacles = gen_pol_map_square(20, 500.0, 200);
+
+    println!("Giggling");
+    giggle_coords(&mut obstacles);
+
+    dbg!(obstacles.len());
+
+    let mut svg = svg::SvgGroup::default();
+
+    println!("Writing obstacles");
+    for p in &obstacles {
+        svg.push(
+            p.clone(),
+            0.,
+            Style::fill(format!("#{:0x}", rng.random_range(0..256 * 256 * 256))),
+        );
+    }
+
+    println!("Finding path");
+    let distr =
+        rand::distr::weighted::WeightedIndex::new(obstacles.iter().map(|p| p.0.len().pow(2)))
+            .unwrap();
+    let start_i = distr.sample(&mut rng);
+    let start_j = rng.random_range(0..obstacles[start_i].0.len());
+    let end_i = distr.sample(&mut rng);
+    let end_j = rng.random_range(0..obstacles[end_i].0.len());
+
+    println!("Creating the triangulation");
+    let mut tri = triangulate_linear(
+        &obstacles,
+        20.,
+    );
+    // println!("Making it delaunay");
+    // dbg!(make_delaynay(&mut tri));
+    tri.build_vertex_to_adj_tris();
+
+    let (new_start, new_end) = find_start_goal_idx((start_i, start_j), (end_i, end_j), &obstacles, &tri);
+
+    dbg!(new_start, new_end);
+
+    println!("Writing the triangulation");
+    put_graph(
+        &mut svg,
+        &tri.to_vertex_graph(),
+        |i| tri.vertex_poss[i],
+        1.,
+        Style::stroke("white", 0.15),
+    );
+    put_graph(
+        &mut svg,
+        &tri.to_triangle_graph(),
+        |i| tri.get_tri_center(i),
+        0.7,
+        Style::stroke("green", 0.05),
+    );
+
+    println!("Computing the path using theta star");
+
+    let g = tri.to_vertex_graph();
+    let opt = g.theta_star_with(
+        new_start,
+        new_end,
+        |i| i,
+        &DiscreteCartesianTopology {
+            positions: &tri.vertex_poss,
+            dist: EuclidianDistance,
+        },
+        &tri,
+    );
+
+    if let Some((path, _)) = opt {
+        println!("Writing path");
+        svg.push(
+            path.iter()
+                .map(|i| tri.vertex_poss[*i])
+                .collect::<Vec<_>>(),
+            2.,
+            Style::stroke("red", 1.).with_fill("none"),
+        );
+    } else {
+        println!("No path found !");
+    }
+
+    println!("Saving file");
+    svg.write_to_file(&out_dir().join("test_square_map_theta_star.svg"));
 }

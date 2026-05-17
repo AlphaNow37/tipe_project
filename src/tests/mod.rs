@@ -58,8 +58,9 @@ pub fn giggle_coords(polys: &mut [Polygon]) {
 
 pub fn tests() {
     // test_path_complex_2d::test_square_map();
-    test_square_map_polyanya();
+    // test_square_map_polyanya();
     // test_perf_path_2d::test_perf();
+    test_path_complex_2d::test_square_map_theta_star();
     // test_path_simple_2d::test_pretty_simple();
     // test_path_simple_2d::illustration_presentation();
     // background::generate_backgrounds();

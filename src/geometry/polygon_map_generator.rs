@@ -1,9 +1,12 @@
 /// Generate random, valid maps
-use crate::{datastructures::union_find::UnionFind, geometry::shapes::Segment, utils::numbers::UsizeExt};
+use crate::{
+    datastructures::union_find::UnionFind, geometry::shapes::Segment, utils::numbers::UsizeExt,
+};
 
 use super::{shapes::Polygon, VecN};
-use rand::{rng, seq::SliceRandom, Rng};
+use crate::geometry::angles::Angle;
 use crate::geometry::shapes::are_counter_clockwise;
+use rand::{rng, seq::SliceRandom, Rng};
 
 /// Algorithm:
 /// - Generate a lot of verteces
@@ -70,12 +73,11 @@ pub fn gen_pol_map_luck(n: usize, map_size: f64) -> Vec<Polygon> {
     polygons
 }
 
-
 #[derive(Default)]
 struct GridVertex {
-    has_neigh: [bool; 4],  // Top, Right, Bottom, Left
-    verteces: [VecN<2, f64>; 4],  // TL, TR, BR, BL
-    seen_times: usize,  // How many times this vertex has been seen on the final step (debugging)
+    has_neigh: [bool; 4],        // Top, Right, Bottom, Left
+    verteces: [VecN<2, f64>; 4], // TL, TR, BR, BL
+    seen_times: usize, // How many times this vertex has been seen on the final step (debugging)
 }
 
 const OFFSETS: [(isize, isize); 4] = [(0, -1), (1, 0), (0, 1), (-1, 0)];
@@ -152,8 +154,8 @@ pub fn gen_pol_map_square(width: usize, map_size: f64, nmerges: usize) -> Vec<Po
         }
         groups.union(i, new_i);
         grid[y][x].has_neigh[ni] = true;
-        assert!(!grid[new_y][new_x].has_neigh[(ni+2)%4]);
-        grid[new_y][new_x].has_neigh[(ni+2)%4] = true;
+        assert!(!grid[new_y][new_x].has_neigh[(ni + 2) % 4]);
+        grid[new_y][new_x].has_neigh[(ni + 2) % 4] = true;
     }
 
     let mut polygons = Vec::new();
@@ -188,10 +190,16 @@ pub fn gen_pol_map_square(width: usize, map_size: f64, nmerges: usize) -> Vec<Po
         }
     }
 
-    debug_assert!(
-        polygons.iter()
-            .all(|p| are_counter_clockwise(&p.0))
-    );
+    debug_assert!(polygons.iter().all(|p| are_counter_clockwise(&p.0)));
 
     polygons
+}
+
+pub fn gen_pol_map_global(k: usize, map_size: f64) -> Vec<Polygon> {
+    vec![Polygon::new(
+        (0..k)
+            .map(|i| Angle::from_degrees(360. / (k as f64) * (i as f64)))
+            .map(|a| a.to_vec() * map_size * ((a * 4.).cos() + 1.5))
+            .collect(),
+    )]
 }

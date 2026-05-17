@@ -2,6 +2,7 @@ use std::fmt::Debug;
 
 use rand::Rng;
 
+use crate::triangulations::triangulation::Triangulation;
 use crate::{
     geometry::{
         shapes::{Cube, Segment},
@@ -181,6 +182,53 @@ impl<const N: usize, D: Length<N>> WorkspaceTopology for LoopingCartesianTopolog
         } else {
             (start, self.lerp((start, end), radius / dist))
         }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct DiscreteSegment(pub usize, pub usize);
+impl Into<usize> for DiscreteSegment {
+    fn into(self) -> usize {
+        self.0
+    }
+}
+#[derive(Clone, Debug)]
+pub struct DiscreteCartesianTopology<'a, const N: usize, D> {
+    pub dist: D,
+    pub positions: &'a [VecN<N, f64>],
+}
+impl<'a, const N: usize, D: Length<N>> WorkspaceTopology for DiscreteCartesianTopology<'a, N, D> {
+    type Vertex = usize;
+    type Segment = DiscreteSegment;
+    const NB_DIMENSIONS: usize = N;
+
+    fn is_distance_symetric(&self) -> bool {
+        true
+    }
+    fn segment(&self, start: Self::Vertex, end: Self::Vertex) -> Self::Segment {
+        DiscreteSegment(start, end)
+    }
+    fn segment_start(&self, segment: Self::Segment) -> Self::Vertex {
+        segment.0
+    }
+    fn segment_end(&self, segment: Self::Segment) -> Self::Vertex {
+        segment.1
+    }
+    fn segment_reverse(&self, segment: Self::Segment) -> Self::Segment {
+        DiscreteSegment(segment.1, segment.0)
+    }
+    fn length(&self, segment: Self::Segment) -> f64 {
+        self.dist
+            .length(self.positions[segment.0] - self.positions[segment.1])
+    }
+    fn lerp(&self, _segment: Self::Segment, _time: f64) -> Self::Vertex {
+        unimplemented!()
+    }
+    fn sample_random(&self, rng: &mut impl Rng) -> Self::Vertex {
+        rng.random_range(0..self.positions.len())
+    }
+    fn steer_in_disc(&self, _segment: Self::Segment, _radius: f64) -> Self::Segment {
+        unimplemented!()
     }
 }
 

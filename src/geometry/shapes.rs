@@ -285,7 +285,6 @@ impl Segment<2> {
             .map(|(t1, _)| 0. <= t1 && t1 <= 1.)
             .unwrap_or(false)
     }
-    // TODO optimize this
     pub fn intersect_segment(self, segment: Segment<2>) -> bool {
         self.to_line()
             .intersection_time(segment.to_line())

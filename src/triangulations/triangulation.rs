@@ -20,6 +20,7 @@ pub struct VertexIndidentEdge {
 pub struct Triangulation {
     pub triangles: Vec<[TriAdjacentEdge; 3]>, // counterclockwise
     pub vertex_poss: Vec<VecN<2, f64>>,
+    pub vertex_to_adj_tris: Vec<Vec<usize>>,
 }
 
 impl Triangulation {
@@ -27,6 +28,7 @@ impl Triangulation {
         Self {
             triangles: Vec::new(),
             vertex_poss: vertices,
+            vertex_to_adj_tris: Vec::new(),
         }
     }
     pub fn triangle_vertex(&self, i: usize) -> [usize; 3] {
@@ -70,7 +72,8 @@ impl Triangulation {
         let mut graph = LinkGraph::default();
         for tri in &self.triangles {
             for edge in tri {
-                graph.add_new_link(edge.verts[0], edge.verts[1]);
+                graph.add_link(edge.verts[0], edge.verts[1]);
+                graph.add_link(edge.verts[1], edge.verts[0]);
             }
         }
         graph
@@ -94,6 +97,15 @@ impl Triangulation {
 
     pub fn make_delaunay(&mut self) {
         make_delaynay(self);
+    }
+
+    pub fn build_vertex_to_adj_tris(&mut self) {
+        self.vertex_to_adj_tris = (0..self.vertex_poss.len()).map(|_| Vec::new()).collect();
+        for i in 0..self.triangles.len() {
+            for u in self.triangle_vertex(i) {
+                self.vertex_to_adj_tris[u].push(i)
+            }
+        }
     }
 
     pub fn verify_invariants(&self) {

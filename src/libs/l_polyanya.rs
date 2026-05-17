@@ -1,7 +1,7 @@
 use crate::geometry::shapes::{Cube, Polygon};
 use crate::geometry::VecN;
 use polyanya::geo::LineString;
-use polyanya::Triangulation;
+use polyanya::{Mesh, Triangulation};
 
 fn bounding_box(obstacles: &[Polygon]) -> Cube<2> {
     let mut c = None;
@@ -34,11 +34,7 @@ fn cube_to_linestring(c: Cube<2>) -> LineString<f32> {
     ])
 }
 
-pub fn shortest_path_polyanya_lib(
-    obstacles: &[Polygon],
-    start: VecN<2, f64>,
-    goal: VecN<2, f64>,
-) -> Option<(Vec<VecN<2, f64>>, f64)> {
+pub fn precompute_polyanya_lib(obstacles: &[Polygon]) -> Mesh {
     let bbox = bounding_box(obstacles);
     let polygon = polyanya::geo::Polygon::new(
         cube_to_linestring(bbox),
@@ -46,6 +42,14 @@ pub fn shortest_path_polyanya_lib(
     );
     let triangulation = Triangulation::from_geo_polygon(polygon);
     let mesh = triangulation.as_navmesh();
+    mesh
+}
+
+pub fn find_path_polyanya_lib(
+    start: VecN<2, f64>,
+    goal: VecN<2, f64>,
+    mesh: Mesh,
+) -> Option<(Vec<VecN<2, f64>>, f64)> {
     let path = mesh.path(start, goal);
     match path {
         None => None,
@@ -57,4 +61,13 @@ pub fn shortest_path_polyanya_lib(
             p.length as f64,
         )),
     }
+}
+
+pub fn shortest_path_polyanya_lib(
+    obstacles: &[Polygon],
+    start: VecN<2, f64>,
+    goal: VecN<2, f64>,
+) -> Option<(Vec<VecN<2, f64>>, f64)> {
+    let mesh = precompute_polyanya_lib(obstacles);
+    find_path_polyanya_lib(start, goal, mesh)
 }

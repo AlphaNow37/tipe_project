@@ -33,7 +33,7 @@ pub trait Graph<Vertex, Info = Vertex> {
         should_shortcut: impl Fn(Vertex, Vertex) -> bool,
     ) -> Option<(Vec<Vertex>, W)>
     where
-        Vertex: Hash + Eq + Copy,
+        Vertex: Hash + Eq + Copy + Debug,
         Info: Into<Vertex>,
     {
         let mut parent_cost = HashMap::new();
@@ -48,6 +48,7 @@ pub trait Graph<Vertex, Info = Vertex> {
             if best_cost < cost {
                 continue;
             }
+            // dbg!(&vertex, &parent, &best_cost);
             if end_predicate(vertex) {
                 let mut path = vec![vertex];
                 let mut v = vertex;
@@ -92,7 +93,7 @@ pub trait Graph<Vertex, Info = Vertex> {
         workspace: &W,
     ) -> Option<(Vec<Vertex>, f64)>
     where
-        Vertex: Hash + Eq + Copy,
+        Vertex: Hash + Eq + Copy + Debug,
         Info: Into<Vertex>,
     {
         let pos_end = pos_fn(end);
@@ -114,7 +115,7 @@ pub trait Graph<Vertex, Info = Vertex> {
         obstacles: &impl ObstaclesEnv<W>,
     ) -> Option<(Vec<Vertex>, f64)>
     where
-        Vertex: Hash + Eq + Copy,
+        Vertex: Hash + Eq + Copy + Debug,
         Info: Into<Vertex>,
     {
         let pos_end = pos_fn(end);
@@ -136,7 +137,7 @@ pub trait Graph<Vertex, Info = Vertex> {
         obstacles: &impl ObstaclesEnv<W>,
     ) -> Option<(Vec<Vertex>, f64)>
     where
-        Vertex: Hash + Eq + Copy,
+        Vertex: Hash + Eq + Copy + Debug,
         Info: Into<Vertex>,
     {
         self.dijkstra_with(

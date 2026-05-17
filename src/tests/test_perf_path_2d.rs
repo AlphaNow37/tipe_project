@@ -32,7 +32,7 @@ const MAX_TIME: f64 = 10.;
 const NB_RETRY: usize = 1;
 
 fn estimate_nb_edges_vis_g(npts: usize) -> usize {
-    npts * 50
+    npts * 30
 }
 
 struct Param {
@@ -287,7 +287,7 @@ pub fn test_perf() {
         let mut sums = vec![0.; fns.len()];
 
         for _ in 0..NB_RETRY {
-            std::thread::sleep(Duration::from_secs_f32(2.));
+            // std::thread::sleep(Duration::from_secs_f32(2.));
             let nmerges = n * n * 12 / 10; // Gives nice maps
             let mut obs = gen_pol_map_square(n, 10000., nmerges);
             // let mut obs = gen_pol_map_global(npts, 10000.);

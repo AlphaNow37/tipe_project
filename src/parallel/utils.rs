@@ -13,7 +13,7 @@ async fn get_base_holder_async() -> WgpuHolder {
 
     let adapter = instance
         .request_adapter(&wgpu::RequestAdapterOptions {
-            power_preference: wgpu::PowerPreference::HighPerformance,
+            power_preference: wgpu::PowerPreference::LowPower,
             ..Default::default()
         })
         .await

@@ -12,7 +12,10 @@ async fn get_base_holder_async() -> WgpuHolder {
     let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
 
     let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
+        .request_adapter(&wgpu::RequestAdapterOptions {
+            power_preference: wgpu::PowerPreference::HighPerformance,
+            ..Default::default()
+        })
         .await
         .expect("There should be an available adapter");
 

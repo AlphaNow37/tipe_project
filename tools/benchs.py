@@ -147,8 +147,11 @@ points_par_item = {}
 for d in datas:
     points_par_item.setdefault(d["name"], []).append(d)
 
+print(points_par_item)
+
 for key in graphed_items:
     if key not in points_par_item:
+        print(f"Key {key} not found")
         continue
     values = [entry["y"] for entry in points_par_item[key]]
     params = [entry["x"] for entry in points_par_item[key]]

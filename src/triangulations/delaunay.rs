@@ -64,7 +64,7 @@ pub fn make_delaynay(t: &mut Triangulation) -> usize {
         }
     }
 
-    dbg!(edges_to_update.len());
+   // dbg!(edges_to_update.len());
 
     let mut rng = rand::rng();
     edges_to_update.shuffle(&mut rng);

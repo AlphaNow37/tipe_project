@@ -19,39 +19,39 @@ pub fn test_polyanya_simple() {
         // VecN([1., -1.]),
         // VecN([2., -0.5]),
 
-        // VecN([0., 0.]),
-        // VecN([1., 1.]),
-        // VecN([3., -1.5]),
-        // VecN([5.9, -4.]),
-        // VecN([-0.75, -1.9]),
-        // VecN([-0.5, 0.7]),
+        VecN([0., 0.]),
+        VecN([1., 1.]),
+        VecN([3., -1.5]),
+        VecN([5.9, -4.]),
+        VecN([-0.75, -1.9]),
+        VecN([-0.5, 0.7]),
 
-        VecN([1., 0.]),
-        VecN([0.8, 0.8]),
-        VecN([0., 1.]),
-        VecN([-0.8, 0.6]),
-        VecN([-1., 0.]),
-        VecN([-0.6, -0.8]),
-        VecN([0., -1.]),
-        VecN([0.6, -0.6]),
+        // VecN([1., 0.]),
+        // VecN([0.8, 0.8]),
+        // VecN([0., 1.]),
+        // VecN([-0.8, 0.6]),
+        // VecN([-1., 0.]),
+        // VecN([-0.6, -0.8]),
+        // VecN([0., -1.]),
+        // VecN([0.6, -0.6]),
     ]);
     let p2 = Polygon::new(vec![
         // VecN([0.9, 2.]),
         // VecN([1.6, 1.3]),
         // VecN([1.05, -0.1]),
 
-        // VecN([0.1, 0.3]),
-        // VecN([1.1, 1.3]),
-        // VecN([8., 0.]),
-        // VecN([6.5, 2.]),
-        // VecN([-2.2, 2.5]),
+        VecN([0.1, 0.3]),
+        VecN([1.1, 1.3]),
+        VecN([8., 0.]),
+        VecN([6.5, 2.]),
+        VecN([-2.2, 2.5]),
     ]);
     let p3 = Polygon::new(vec![
-        // VecN([-1., 0.]),
-        // VecN([-1.5, -2.]),
-        // VecN([0.5, -3.]),
-        // VecN([-4.2, -5.]),
-        // VecN([-7., -2.]),
+        VecN([-1., 0.]),
+        VecN([-1.5, -2.]),
+        VecN([0.5, -3.]),
+        VecN([-4.2, -5.]),
+        VecN([-7., -2.]),
     ]);
 
     let mut svg = svg::SvgGroup::default();
@@ -119,7 +119,7 @@ pub fn test_polyanya_simple() {
         println!("No path found !");
     }
 
-    svg.write_to_file(&out_dir().join("test_polyanya_simple.svg"));
+    svg.write_to_file(&out_dir().join("test_polyanya_simple2.svg"));
 }
 
 // pub fn test_polyanya_complex() {

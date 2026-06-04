@@ -9,8 +9,10 @@ mod background;
 mod test_base_reeds_shepp;
 mod test_conv_path;
 mod test_datastructures_2d;
+#[cfg(feature = "gpu_vis")]
 mod test_datastructures_3d;
 mod test_graph_2d;
+#[cfg(feature = "gpu_vis")]
 mod test_path_3d;
 mod test_path_complex_2d;
 mod test_path_reeds_shepp;
@@ -19,7 +21,9 @@ mod test_perf_path_2d;
 mod test_visibility_graph;
 mod text_circuit_tetra;
 mod test_line_sweep;
+#[cfg(feature = "gpu_vis")]
 mod test_arms_simple;
+#[cfg(feature = "gpu_vis")]
 mod test_3d_divers;
 mod test_convergence_vitesse;
 mod test_triangulation;
@@ -57,14 +61,16 @@ pub fn giggle_coords(polys: &mut [Polygon]) {
 }
 
 pub fn tests() {
-    // test_path_complex_2d::test_square_map();
+    // test_path_complex_2d::test_square_map_duo();
+    test_path_complex_2d::test_square_map();
     // test_square_map_polyanya();
-    test_perf_path_2d::test_perf();
+    // test_perf_path_2d::test_perf();
     // test_path_complex_2d::test_square_map_theta_star();
     // test_path_simple_2d::test_pretty_simple();
     // test_path_simple_2d::illustration_presentation();
     // background::generate_backgrounds();
     // test_path_3d::test_3d()
+    // test_path_simple_2d::illustration_presentation_polyanya();
     // test_datastructures_3d::test_rtree()
     // test_datastructures_2d::test_rtree_2d()
     // test_datastructures_2d::test_grid_2d()

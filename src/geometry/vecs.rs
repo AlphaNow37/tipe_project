@@ -153,6 +153,7 @@ impl<const N: usize> Hash for VecN<N, f64> {
 }
 impl<const N: usize> Eq for VecN<N, f64> {}
 
+#[cfg(feature = "gpu_vis")]
 impl Into<lib_space_animation::math::Vec3> for VecN<3, f64> {
     fn into(self) -> lib_space_animation::math::Vec3 {
         lib_space_animation::math::Vec3::from_array(self.0.map(|c| c as f32))

@@ -32,7 +32,7 @@ const MAX_TIME: f64 = 10.;
 const NB_RETRY: usize = 1;
 
 fn estimate_nb_edges_vis_g(npts: usize) -> usize {
-    npts * 30
+    npts * npts / 4
 }
 
 struct Param {
@@ -242,7 +242,7 @@ fn run_theta_star_tri(param: &Param) -> f64 {
 }
 
 pub fn test_perf() {
-    let mut benchmark: Benchmark = Benchmark::new(out_dir().join("perf_benchmark.json"));
+    let mut benchmark: Benchmark = Benchmark::new(out_dir().join("perf_benchmark_12.json"));
 
     let mut fns = vec![
         // ("naive_full", run_naive_full as (fn(&Param) -> f64)),
@@ -250,59 +250,59 @@ pub fn test_perf() {
         // ("naive_cache", run_naive_cache),
         // ("opt1_cache", run_opt1_cache),
         // ("naive_gpu_matrix", run_naive_gpu_mat),
-        ("naive_gpu_elist", run_naive_gpu_elist as fn(&Param) -> f64),
+        // ("naive_gpu_elist", run_naive_gpu_elist as fn(&Param) -> f64),
         // ("graph_astar_only", run_astar_only),
-        // ("polyanya_lib", run_polyanya_lib as(fn(&Param) -> f64)),
-        // (
-        //     "polyanya_lib_astar_only",
-        //     run_polyanya_lib_astar_only as fn(&Param) -> f64,
-        // ),
-        // ("polyanya_me_astar", run_polyanya_me_astar),
-        // ("polyanya_me_dijstra", run_polyanya_me_dijkstra),
-        // (
-        //     "polyanya_me_dijstra_exhaustive",
-        //     run_polyanya_me_dijkstra_exhaustive,
-        // ),
-        // ("polyanya_me_astar_only", run_polyanya_me_astar_only),
-        // (
-        //     "polyanya_me_astar_nodelaunay",
-        //     run_polyanya_me_astar_nodelaunay as fn(&Param) -> f64,
-        // ),
-        // (
-        //     "polyanya_me_astar_only_nodelaunay",
-        //     run_polyanya_me_astar_only_nodelaunay,
-        // ),
-        // ("tri_me", tri_me as fn(&Param) -> f64),
-        // ("tri_delaunay_me", tri_delaunay_me),
-        // ("theta_star", run_theta_star_tri),
+        ("polyanya_lib", run_polyanya_lib as(fn(&Param) -> f64)),
+        (
+            "polyanya_lib_astar_only",
+            run_polyanya_lib_astar_only as fn(&Param) -> f64,
+        ),
+        ("polyanya_me_astar", run_polyanya_me_astar),
+        ("polyanya_me_dijstra", run_polyanya_me_dijkstra),
+        (
+            "polyanya_me_dijstra_exhaustive",
+            run_polyanya_me_dijkstra_exhaustive,
+        ),
+        ("polyanya_me_astar_only", run_polyanya_me_astar_only),
+        (
+            "polyanya_me_astar_nodelaunay",
+            run_polyanya_me_astar_nodelaunay as fn(&Param) -> f64,
+        ),
+        (
+            "polyanya_me_astar_only_nodelaunay",
+            run_polyanya_me_astar_only_nodelaunay,
+        ),
+        ("tri_me", tri_me as fn(&Param) -> f64),
+        ("tri_delaunay_me", tri_delaunay_me),
+        ("theta_star", run_theta_star_tri),
     ];
 
     let mut rng = rand::rng();
-    for n in 1..100 {
-        // let npts = n * 100;
-        let npts = n*n*4;
+    for n in 17..100 {
+        let npts = n * 500;
+        // let npts = n*n*4;
 
         dbg!(n);
 
         let mut sums = vec![0.; fns.len()];
 
         for _ in 0..NB_RETRY {
-            // std::thread::sleep(Duration::from_secs_f32(2.));
-            let nmerges = n * n * 12 / 10; // Gives nice maps
-            let mut obs = gen_pol_map_square(n, 10000., nmerges);
-            // let mut obs = gen_pol_map_global(npts, 10000.);
+            std::thread::sleep(Duration::from_secs_f32(0.2));
+            // let nmerges = n * n * 12 / 10; // Gives nice maps
+            // let mut obs = gen_pol_map_square(n, 10000., nmerges);
+            let mut obs = gen_pol_map_global(npts, 10000.);
             giggle_coords(&mut obs);
-            let distr =
-                rand::distr::weighted::WeightedIndex::new(obs.iter().map(|p| p.0.len().pow(2)))
-                    .unwrap();
-            // let start_i = 0;
-            // let end_i = 0;
-            // let start_j = npts / 8;
-            // let end_j = (5 * npts) / 8;
-            let start_i = distr.sample(&mut rng);
-            let start_j = rng.random_range(0..obs[start_i].0.len());
-            let end_i = distr.sample(&mut rng);
-            let end_j = rng.random_range(0..obs[end_i].0.len());
+            // let distr =
+            //     rand::distr::weighted::WeightedIndex::new(obs.iter().map(|p| p.0.len().pow(2)))
+            //         .unwrap();
+            let start_i = 0;
+            let end_i = 0;
+            let start_j = npts / 8;
+            let end_j = (5 * npts) / 8;
+            // let start_i = distr.sample(&mut rng);
+            // let start_j = rng.random_range(0..obs[start_i].0.len());
+            // let end_i = distr.sample(&mut rng);
+            // let end_j = rng.random_range(0..obs[end_i].0.len());
             let params = Param {
                 polys: obs,
                 start: (start_i, start_j),

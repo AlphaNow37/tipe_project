@@ -79,7 +79,7 @@ fn using_graph_heuristic<D: Length<3>>(
         }
         Heuristic::RrtStar => {
             let (path, graph) = rrt_star(params);
-            // place_graph(world, &graph, pos, color, width, obstacles_tr);
+            place_graph(world, &graph, pos, color, width, obstacles_tr);
             dbg!(graph.nb_links());
             path
         }

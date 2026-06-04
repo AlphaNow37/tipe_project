@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::iter::RepeatN;
 use super::{giggle_coords, out_dir};
 use crate::datastructures::r_tree::RTree;
@@ -15,8 +16,13 @@ use crate::{
     workspace::cartesians::{CartesianTopology, EuclidianDistance},
 };
 use std::marker::PhantomData;
+use rand::{rng, Rng};
+use rand::prelude::SliceRandom;
 use crate::datastructures::bsp::Bsp;
 use crate::parallel::compute_vis_graph_gpu_adjacencymatrix;
+use crate::path_planning::polyanya::{find_start_goal_idx, polyanya, shortest_path_polyanya, PolyanyaMode};
+use crate::svg::polyanya_interval_map::put_map;
+use crate::triangulations::triangulation_lineaire::triangulate_linear;
 
 pub fn test_pretty_simple() {
     let workspace = CartesianTopology::new_borderless(EuclidianDistance);
@@ -281,4 +287,109 @@ pub fn illustration_presentation_heuristics() {
     }
 
     svg.write_to_file(&out_dir().join("illustration_prm.svg"));
+}
+
+pub fn illustration_presentation_polyanya() {
+    let mut rng = rng();
+
+    let ([p1, p2, p3], [start, end]) = obstacles_presentation();
+
+    let pstart = Polygon::new(vec![start]);
+    let pend = Polygon::new(vec![end]);
+
+    let mut svg = svg::SvgGroup::default();
+    svg.set_background("#FFFFFF".to_string());
+
+    let mut obstacles = vec![p1, p2, p3, pstart, pend];
+    giggle_coords(&mut obstacles);
+
+    for p in obstacles.iter() {
+        svg.push(p.clone(), 0., Style::fill("#777777"));
+    }
+
+    for pos in [start, end] {
+        svg.push(
+            Cube::from_point(pos + VecN([-0.02, -0.02])).with_point(pos + VecN([0.02, 0.02])),
+            20.,
+            Style::fill("black"),
+        );
+    }
+
+    svg.push(
+        Text {
+            content: "xstart".into(),
+            position: start + VecN([-0.4, 0.]),
+            font_size: 0.2,
+        },
+        20.,
+        Style::fill("black"),
+    );
+    svg.push(
+        Text {
+            content: "xgoal".into(),
+            position: end + VecN([0.05, 0.]),
+            font_size: 0.2,
+        },
+        20.,
+        Style::fill("black"),
+    );
+    // test_path_simple_2d::test_pretty_simple();
+
+    let mut tri = triangulate_linear(&obstacles, 1.);
+    tri.make_delaunay();
+
+    let (start, goal) = find_start_goal_idx((3, 0), (4, 0), &obstacles, &tri);
+
+    // let (path, map) = polyanya(&tri, start, goal, PolyanyaMode::DijkstraExhaustive);
+
+    // if let Some((path, _)) = path
+    // {
+    //     svg.push(
+    //         path.iter()
+    //             .map(|i| tri.vertex_poss[*i])
+    //             .collect::<Vec<_>>(),
+    //         2.,
+    //         Style::stroke("red", 0.05).with_fill("none"),
+    //     );
+    // } else {
+    //     println!("No path found !");
+    // }
+
+    put_graph(
+        &mut svg,
+        &tri.to_vertex_graph(),
+        |i| tri.vertex_poss[i],
+        1.,
+        Style::stroke("black", 0.02),
+    );
+    put_graph(
+        &mut svg,
+        &tri.to_triangle_graph(),
+        |i| tri.get_tri_center(i),
+        0.7,
+        Style::stroke("green", 0.02),
+    );
+
+    // let mut colors = HashMap::new();
+    // put_map(&mut svg, &map, 0.5, |src| {
+    //     colors
+    //         .entry(src)
+    //         .or_insert_with(|| {
+    //             let mut cols = [
+    //                 rng.random_range(200..=255),
+    //                 rng.random_range(20..=100),
+    //                 rng.random_range(20..=255),
+    //             ];
+    //             cols.shuffle(&mut rng);
+    //             format!(
+    //                 "#{:02X}{:02X}{:02X}FF",
+    //                 cols[0],
+    //                 cols[1],
+    //                 cols[2]
+    //             )
+    //         })
+    //         .clone()
+    // });
+
+    svg.write_to_file(&out_dir().join("illustration_triangulation.svg"));
 }

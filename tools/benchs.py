@@ -1,13 +1,15 @@
+import math
+
 import matplotlib.pyplot as plt
 # import csv
-import json
 from math import log
 import scipy
 
 # fname = "cvg_benchmark_straight"
-fname = "perf_benchmark"
+fname = "perf_benchmark_aggregate_2"
+# fname = "perf_benchmark_10"
 
-with open(f"out/{fname}.json") as f:
+with open(f"../out/{fname}.json") as f:
     datas = eval(f.read())
 
 # Configuration
@@ -20,15 +22,16 @@ graphed_items = [
     "naive_gpu_elist",
     "graph_astar_only",
     "polyanya_lib",
-    "polyanya_lib_astar_only",
+    # "polyanya_lib_astar_only",
     "polyanya_me_astar",
-    "polyanya_me_dijstra",
-    "polyanya_me_dijstra_exhaustive",
+    # "polyanya_me_dijstra",
+    # "polyanya_me_dijstra_exhaustive",
     "polyanya_me_astar_only",
     "polyanya_me_astar_nodelaunay",
-    "polyanya_me_astar_only_nodelaunay",
-    "tri_me",
-    "tri_delaunay_me",
+    # "polyanya_me_astar_only_nodelaunay",
+    # "tri_me",
+    # "tri_delaunay_me",
+    "theta_star",
 
     # "rrt",
     # "rrt_shortcut",
@@ -70,25 +73,27 @@ asymps = {
     "polyanya_me_astar_only_nodelaunay": fpolyanya,
     "tri_me": ftri,
     "tri_delaunay_me": fopt1,
+    "theta_star": fastar,
 }
 colors_linestyle = {
-    "naive_full": ("#FF7777", "-"),
-    "opt1_full": ("#FF44FF", "-"),
+    "naive_full": ("#FF9999", "-"),
+    "opt1_full": ("#AA00AA", "-"),
     "naive_cache": ("#AA0000", "-"),
     "opt1_cache": ("#AA00AA", "-"),
     "naive_gpu_matrix": ("#FFFF33", "-"),
     "naive_gpu_elist": ("#AAAA00", "-"),
-    "graph_astar_only": ("#FF0000", ":"),
+    "graph_astar_only": ("#FF0000", "--"),
     "polyanya_lib": ("#00FF00", "-"),
-    "polyanya_lib_astar_only": ("#00FF00", ":"),
-    "polyanya_me_astar": ("#2222FF", "-"),
+    "polyanya_lib_astar_only": ("#00FF00", "--"),
+    "polyanya_me_astar": ("#2222AA", "-"),
     "polyanya_me_dijstra": ("#22FFFF", "-"),
     "polyanya_me_dijstra_exhaustive": ("#00AAAA", "-"),
-    "polyanya_me_astar_only": ("#2222FF", ":"),
-    "polyanya_me_astar_nodelaunay": ("#000077", "-"),
-    "polyanya_me_astar_only_nodelaunay": ("#000077", ":"),
+    "polyanya_me_astar_only": ("#2222FF", "--"),
+    "polyanya_me_astar_nodelaunay": ("#00FFAA", "-"),
+    "polyanya_me_astar_only_nodelaunay": ("#000077", "--"),
     "tri_me": ("#BB77FF", "-"),
     "tri_delaunay_me": ("#BB0088", "-"),
+    "theta_star": ("#999900", "--")
 
     # "time_naive_full": "red",
     # "time_opt1_full": "green",
@@ -106,22 +111,23 @@ colors_linestyle = {
 }
 labels = {
     "naive_full": "Algo naïf",
-    "opt1_full": "Algo line sweep",
+    "opt1_full": "Algo Lee",
     "naive_cache": "Algo naïf, lazy",
     "opt1_cache": "Algo line sweep, lazy",
-    "naive_gpu_matrix": "Algo naïf, GPU (matrice d'adjacence)",
-    "naive_gpu_elist": "Algo naïf, GPU (liste d'adjacence)",
-    "graph_astar_only": "A* sur G_vis uniquement",
-    "polyanya_lib": "Polyanya (lib externe rust)",
-    "polyanya_lib_astar_only": "Polyanya (lib externe rust), query uniquement",
-    "polyanya_me_astar": "Polyanya, mode a*",
+    "naive_gpu_matrix": "Algo naïf, GPU",
+    "naive_gpu_elist": "Algo naïf, GPU",
+    "graph_astar_only": "A* sur G_vis",
+    "polyanya_lib": "Polyanya (lib rust)",
+    "polyanya_lib_astar_only": "Polyanya (lib rust), query",
+    "polyanya_me_astar": "Polyanya",
     "polyanya_me_dijstra": "Polyanya, mode dijkstra",
     "polyanya_me_dijstra_exhaustive": "Polyanya, sans early return",
-    "polyanya_me_astar_only": "Polyanya, query uniquement",
+    "polyanya_me_astar_only": "Polyanya, query",
     "polyanya_me_astar_nodelaunay": "Polyanya, sans delaunay",
-    "polyanya_me_astar_only_nodelaunay": "Polyanya, sans delaunay, query uniquement",
+    "polyanya_me_astar_only_nodelaunay": "Polyanya, sans delaunay, query",
     "tri_me": "Triangulation line sweep",
     "tri_delaunay_me": "Triangulation + delaunay flips",
+    "theta_star": "Theta*",
 
     "rrt": "RRT",
     "rrt_shortcut": "RRT avec shortcut",
@@ -145,7 +151,8 @@ def binsearch(f, y, xmin, xmax):
 
 points_par_item = {}
 for d in datas:
-    points_par_item.setdefault(d["name"], []).append(d)
+    if d["x"] > 20:
+        points_par_item.setdefault(d["name"], []).append(d)
 
 print(points_par_item)
 
@@ -155,8 +162,21 @@ for key in graphed_items:
         continue
     values = [entry["y"] for entry in points_par_item[key]]
     params = [entry["x"] for entry in points_par_item[key]]
+
+    imin = len(params)//2
+    reg = scipy.stats.linregress([log(p, 10) for p in params[imin:]], [log(v, 10) for v in values[imin:]])
+    print(f"{key:<30}: T={10**reg.intercept:.2} n^{reg.slope:.2}")
+    cst = 10**reg.intercept
+    lg = math.floor(log(cst, 10))
+    frac = cst / (10**lg)
+    # print(f"\n{labels[key].replace(" ", " \\; ")} \n {int(round(frac))}*10^{{{lg}}} |S|^{{{reg.slope:.2}}}\n")
+
     (color, linestyle) = colors_linestyle[key]
-    plt.loglog(params, values, label=labels[key], color=color, linestyle=linestyle)
+    plt.loglog(params, values, label=f"{labels[key]}: T={10**reg.intercept:.2}*|S|^{reg.slope:.2}", color=color, linestyle=linestyle)
+
+
+    # plt.loglog(params, [10**(log(p, 10) * reg.slope + reg.intercept) for p in params], label=labels[key], color=color, linestyle="--")
+
     # if key in asymps:
     #     (f, label) = asymps[key]
     #     vals_normalized = [binsearch(f, v, 0, 1000000000) for v in values]

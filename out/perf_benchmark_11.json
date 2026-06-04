@@ -1,0 +1,15 @@
+[
+    {"name": "naive_gpu_elist", "x": 8000, "y": 2.172832213 },
+    {"name": "graph_astar_only", "x": 8000, "y": 0.090752862 },
+    {"name": "polyanya_lib", "x": 8000, "y": 4.955654564 },
+    {"name": "polyanya_lib_astar_only", "x": 8000, "y": 4.743178516 },
+    {"name": "polyanya_me_astar", "x": 8000, "y": 9.781110711 },
+    {"name": "polyanya_me_dijstra", "x": 8000, "y": 10.670439696 },
+    {"name": "polyanya_me_dijstra_exhaustive", "x": 8000, "y": 10.582156859 },
+    {"name": "polyanya_me_astar_only", "x": 8000, "y": 4.070884181 },
+    {"name": "polyanya_me_astar_nodelaunay", "x": 8000, "y": 9.074888654 },
+    {"name": "polyanya_me_astar_only_nodelaunay", "x": 8000, "y": 8.973178094 },
+    {"name": "tri_me", "x": 8000, "y": 0.003479608 },
+    {"name": "tri_delaunay_me", "x": 8000, "y": 5.633325907 },
+    {"name": "theta_star", "x": 8000, "y": 0.983908206 },
+]

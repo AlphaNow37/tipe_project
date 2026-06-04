@@ -9,6 +9,7 @@ use std::collections::HashMap;
 
 #[derive(Copy, Clone, Debug)]
 enum VertexKind {
+    Alone,
     WallTop(VecN<2, f64>),
     WallBot(VecN<2, f64>),
     Source([VecN<2, f64>; 2]), // top-down
@@ -361,6 +362,16 @@ fn insert_vertex_front<'a>(
 }
 
 fn add_polygon(vertices: &mut Vec<Vertex>, poly: &Polygon) {
+    if poly.len() == 0 {
+        return;
+    }
+    if poly.len() == 1 {
+        vertices.push(Vertex {
+            pos: poly.0[0],
+            kind: VertexKind::Alone,
+        });
+        return;
+    }
     for i in 0..poly.len() {
         let prev = poly.0[i.add_rem(-1, poly.len())];
         let next = poly.0[i.add_rem(1, poly.len())];
@@ -414,7 +425,7 @@ pub fn triangulate_linear(polygons: &[Polygon], margin: f64) -> Triangulation {
     vertices.sort_by(|v1, v2| v1.pos[0].total_cmp(&v2.pos[0]));
     let poss = vertices.iter().map(|v| v.pos).collect::<Vec<_>>();
 
-    let mut lists_fronts = IntervalSkipLists::new();
+    let mut lists_fronts: IntervalSkipLists<FrontInterval> = IntervalSkipLists::new();
     let mut lists_areas = IntervalSkipLists::new();
     let mut front_access = SkipListAccess::new();
 
@@ -427,6 +438,21 @@ pub fn triangulate_linear(polygons: &[Polygon], margin: f64) -> Triangulation {
         let mut cursor_fronts = lists_fronts.cursor(&mut front_access, v.pos);
 
         match v.kind {
+            VertexKind::Alone => {
+                let front_interval = cursor_fronts
+                    .get_interval_mut()
+                    .expect("Expected to be in a front");
+                insert_vertex_front(
+                    &mut front_interval.content,
+                    i,
+                    &mut lists_areas,
+                    &mut triangulation,
+                    &mut edge_to_tri,
+                    true,
+                    true,
+                );
+            }
+
             VertexKind::Source([top, bot]) => {
                 debug_assert!(cursor_fronts.get_interval().is_none());
                 cursor_fronts.push_interval(FrontInterval {

@@ -22,7 +22,7 @@ use crate::datastructures::bsp::Bsp;
 use crate::parallel::compute_vis_graph_gpu_adjacencymatrix;
 use crate::path_planning::polyanya::{find_start_goal_idx, polyanya, shortest_path_polyanya, PolyanyaMode};
 use crate::svg::polyanya_interval_map::put_map;
-use crate::triangulations::triangulation_lineaire::triangulate_linear;
+use crate::triangulations::triangulation_line_sweep::triangulate_line_sweep;
 
 pub fn test_pretty_simple() {
     let workspace = CartesianTopology::new_borderless(EuclidianDistance);
@@ -335,7 +335,7 @@ pub fn illustration_presentation_polyanya() {
     );
     // test_path_simple_2d::test_pretty_simple();
 
-    let mut tri = triangulate_linear(&obstacles, 1.);
+    let mut tri = triangulate_line_sweep(&obstacles, 1.);
     tri.make_delaunay();
 
     let (start, goal) = find_start_goal_idx((3, 0), (4, 0), &obstacles, &tri);

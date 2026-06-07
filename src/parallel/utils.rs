@@ -1,6 +1,8 @@
 use std::borrow::Cow;
 use wgpu::util::DeviceExt;
 
+/// Boilerplate wgpu
+
 pub struct WgpuHolder {
     pub instance: wgpu::Instance,
     pub adapter: wgpu::Adapter,

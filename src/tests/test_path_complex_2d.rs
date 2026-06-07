@@ -6,7 +6,7 @@ use crate::path_planning::polyanya::{find_start_goal_idx, shortest_path_polyanya
 use crate::svg::polyanya_interval_map::put_map;
 use crate::tests::out_dir;
 use crate::triangulations::delaunay::make_delaynay;
-use crate::triangulations::triangulation_lineaire::triangulate_linear;
+use crate::triangulations::triangulation_line_sweep::triangulate_line_sweep;
 use crate::workspace::cartesians::{
     CartesianTopology, DiscreteCartesianTopology, EuclidianDistance,
 };
@@ -237,7 +237,7 @@ pub fn test_square_map_theta_star() {
     let end_j = rng.random_range(0..obstacles[end_i].0.len());
 
     println!("Creating the triangulation");
-    let mut tri = triangulate_linear(&obstacles, 20.);
+    let mut tri = triangulate_line_sweep(&obstacles, 20.);
     // println!("Making it delaunay");
     // dbg!(make_delaynay(&mut tri));
     tri.build_vertex_to_adj_tris();

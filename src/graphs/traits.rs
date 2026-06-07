@@ -11,6 +11,8 @@ use crate::utils::traits::Weight;
 use crate::workspace::obstacles::ObstaclesEnv;
 use crate::workspace::workspace::WorkspaceTopology;
 
+/// Ce fichier implémente dijkstra, a*, theta*
+
 fn dist_heuristic<W: WorkspaceTopology>(
     workspace: &W,
     end: W::Vertex,
@@ -25,6 +27,8 @@ fn dist_heuristic<W: WorkspaceTopology>(
 /// A graph interface
 pub trait Graph<Vertex, Info = Vertex> {
     fn neighbors(&self, vertex: Vertex) -> impl Iterator<Item = Info>;
+
+    /// Implémentation générique de dijkstra, adaptable pour a* et theta* (avec heuristique monotone)
     fn dijkstra_with<W: Weight>(
         &self,
         start: Vertex,
@@ -85,6 +89,8 @@ pub trait Graph<Vertex, Info = Vertex> {
             }
         }
     }
+
+    // implémentation de a* où l'heuristique est basé sur la position dans l'espace de travail
     fn a_star_with<W: WorkspaceTopology>(
         &self,
         start: Vertex,
@@ -106,6 +112,7 @@ pub trait Graph<Vertex, Info = Vertex> {
         .map(|(path, weight)| (path, *weight + workspace.distance(pos_fn(start), pos_end)))
     }
 
+    // Implémentation de theta*
     fn theta_star_with<W: WorkspaceTopology>(
         &self,
         start: Vertex,
@@ -128,6 +135,7 @@ pub trait Graph<Vertex, Info = Vertex> {
         .map(|(path, weight)| (path, *weight + workspace.distance(pos_fn(start), pos_end)))
     }
 
+    // Theta* mais où on n'utilise pas d'heuristique, mais où plusieurs sommets d'arrivé sont possibles
     fn theta_with<W: WorkspaceTopology>(
         &self,
         start: Vertex,

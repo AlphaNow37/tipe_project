@@ -2,6 +2,7 @@ use crate::datastructures::r_tree::{RTree, RTreeLeaf};
 use crate::svg::object::Style;
 use crate::svg::SvgGroup;
 
+/// ajoute un rtree sur le svg
 pub fn put_rtree<T: RTreeLeaf<2>>(
     svg: &mut SvgGroup,
     rtree: &RTree<2, T>,

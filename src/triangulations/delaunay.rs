@@ -5,6 +5,8 @@ use crate::geometry::shapes::are_counter_clockwise;
 use crate::geometry::VecN;
 use crate::utils::numbers::UsizeExt;
 
+/// Rend une triangulation Delaunay en utilisant des edge flips
+
 fn find_idx_other(t: &Triangulation, i: usize, other: usize) -> Option<usize> {
     for k in 0..3 {
         if t.triangles[i][k].other_tri == Some(other) {
@@ -50,6 +52,7 @@ fn last_pt_in_circle(vertices: [VecN<2, f64>; 4]) -> bool {
     det > 0.0
 }
 
+/// Méthode: on fait des edge flips, en ajoutant les voisins à une liste lorsque on réussit à flip une arête
 pub fn make_delaynay(t: &mut Triangulation) -> usize {
     let mut nb_changes = 0;
 

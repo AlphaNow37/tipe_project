@@ -6,6 +6,7 @@ use crate::utils::numbers::F64_EPSILON;
 use crate::workspace::cartesians::{CartesianTopology, Length};
 
 /// A N-dimensionnal graph using a grid
+/// The grid manages the conversions usize<->coords
 pub struct AccesibilityGrid<const N: usize> {
     pub grid: Grid<N>,
     pub accessible: Vec<bool>,
@@ -38,6 +39,7 @@ impl<const N: usize> AccesibilityGrid<N> {
 
         res
     }
+    /// Crée une grille depuis un r-tree d'obstacles
     pub fn new_with_rtree(
         tree: &RTree<N, Cube<N>>,
         resolution: f64,
@@ -67,6 +69,8 @@ impl<const N: usize> AccesibilityGrid<N> {
 
         res
     }
+    
+    /// Crée une grille en "peignant" des obstacles
     pub fn new_with_painting(
         cubes: &[Cube<N>],
         resolution: f64,
@@ -125,7 +129,8 @@ impl<const N: usize> AccesibilityGrid<N> {
         let index = self.grid.index(coords);
         !self.accessible[index]
     }
-
+    
+    /// Calcule le chemin le plus court via a*
     pub fn shortest_path(
         &self,
         start: VecN<N, f64>,

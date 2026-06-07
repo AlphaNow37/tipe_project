@@ -5,6 +5,10 @@ import matplotlib.pyplot as plt
 from math import log
 import scipy
 
+"""
+Ce fichier sert à afficher les benchmarks de utils/benchmarks.rs
+"""
+
 # fname = "cvg_benchmark_straight"
 fname = "perf_benchmark_aggregate_2"
 # fname = "perf_benchmark_10"

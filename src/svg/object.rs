@@ -8,6 +8,7 @@ use crate::geometry::{
     VecN,
 };
 
+
 #[derive(Default, Clone, Debug)]
 pub struct Style {
     stroke: Option<(Arc<String>, f64)>,
@@ -47,6 +48,7 @@ impl Display for Style {
     }
 }
 
+/// Un objet qui peut être posé sur un svg
 pub trait SvgObject {
     fn write(&self, writer: &mut dyn Write, style: &Style) -> std::io::Result<()>;
     fn collide_box(&self) -> Cube<2>;

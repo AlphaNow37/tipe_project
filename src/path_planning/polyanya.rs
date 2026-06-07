@@ -4,17 +4,19 @@ use crate::geometry::VecN;
 use crate::graphs::ParentTree;
 use crate::triangulations::delaunay::make_delaynay;
 use crate::triangulations::triangulation::Triangulation;
-use crate::triangulations::triangulation_lineaire::triangulate_linear;
+use crate::triangulations::triangulation_line_sweep::triangulate_line_sweep;
 use crate::utils::numbers::{NotNanF64, Zero, F64_EPSILON};
 use crate::workspace::cartesians::{EuclidianDistance, Length};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
+/// Ce fichier implémente l'algorithme Polyanya
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum PolyanyaMode {
-    DijkstraExhaustive,
-    Dijkstra,
-    AStar,
+    DijkstraExhaustive,  // Dijkstra sans early return, explore tout l'environnement
+    Dijkstra,  // Dijkstra, s'arrête lorsque il trouve l'objectif
+    AStar,  // Utilise une heuristique
 }
 
 fn sort([a, b]: [usize; 2]) -> [usize; 2] {
@@ -29,24 +31,30 @@ type Edge = [usize; 2];
 // interval id, to tri, edge
 type Pqueue = PriorityQueue<NotNanF64, (usize, Option<usize>, [usize; 2])>;
 
+// Sert à générer des identifiants uniques
 static NEXT_ID: AtomicUsize = AtomicUsize::new(0);
 pub fn generate_id() -> usize {
     NEXT_ID.fetch_add(1, Ordering::Relaxed)
 }
 
+// Structure servant à réduire le nombre de paramètre aux fonctions
 struct Context<'a> {
+    /// La file de prio des cônes
     pqueue: Pqueue,
+    /// Fonction de distance, potentiellement avec une heuristique dedans
     dist_fun: Box<dyn Fn(InfiniteLine<2>, [f64; 2], VecN<2, f64>) -> f64 + 'a>,
+    /// Position de touts les sommets S'
     vposs: &'a [VecN<2, f64>],
 }
 
+/// Un cône (appellé interval partout dans le code)
 #[derive(Clone, Copy, Debug)]
 pub struct Interval {
     extrs_vertex_i: [Option<usize>; 2], // when the interval touches an extremity of the interval
     pub times: [f64; 2],                // times on the edge: times[0] < times[1]
-    pub source: usize,
+    pub source: usize,  // xroot
     pub source_pos: VecN<2, f64>,
-    lag: f64,  // the distance between the global start of polyanya and the source
+    lag: f64,  // the distance between the global start of polyanya and the source, D(xroot)
     id: usize, // unique id for each interval
 }
 impl Interval {
@@ -59,7 +67,8 @@ impl Interval {
         from_tri: usize,
     ) {
         debug_assert!(self.check_invariants(None) == ());
-
+        
+        // edge case: xroot in [x_1; x_2]
         if self.source_pos == edge_segment.start || self.source_pos == edge_segment.end {
             intervals.insert_interval(
                 Interval {
@@ -79,7 +88,7 @@ impl Interval {
             EuclidianDistance.length(self.source_pos - edge_segment.start) >= F64_EPSILON
         );
         debug_assert!(EuclidianDistance.length(self.source_pos - edge_segment.end) >= F64_EPSILON);
-
+    
         let i_segment = Segment {
             start: if self.times[0] == 0. {
                 edge_segment.start
@@ -131,7 +140,8 @@ impl Interval {
                 }
             }
         });
-
+        
+        // Cas où aucun point de l'arête n'est visible, tout est diffracté
         if (t1 == 0. && t2 == 0.) || (t1 == 1. && t2 == 1.) {
             let side = (t1 == 1.) as usize;
             let common_pos = if self.extrs_vertex_i[0] == Some(intervals.extrs_vertex_i[side]) {
@@ -165,7 +175,7 @@ impl Interval {
             "{self:?}, {t1}, {t2} {edge_segment:?} {:?}",
             intervals.segment
         );
-
+        
         // reversing if necessary
         let (t1, t2, extr1, extr2, p1, p2) = if t1 < t2 {
             (
@@ -195,7 +205,8 @@ impl Interval {
 
         let proj_vertex_i_1 = (t1 == 0.).then_some(intervals.extrs_vertex_i[0]);
         let proj_vertex_i_2 = (t2 == 1.).then_some(intervals.extrs_vertex_i[1]);
-
+        
+        // partie diffractée
         if t1 > 0. && extr1.is_some() {
             intervals.insert_interval(
                 Interval {
@@ -214,6 +225,7 @@ impl Interval {
                 from_tri,
             )
         }
+        // Partie projetée
         intervals.insert_interval(
             Interval {
                 id: generate_id(),
@@ -226,6 +238,7 @@ impl Interval {
             ctx,
             from_tri,
         );
+        // Partie diffractée
         if t2 < 1. && extr2.is_some() {
             intervals.insert_interval(
                 Interval {
@@ -302,6 +315,7 @@ impl Interval {
     }
 }
 
+/// Sert à décider des dominations
 #[derive(Clone, Copy, Debug)]
 enum BattleResult {
     /// The first interval wins completely
@@ -355,6 +369,9 @@ impl BattleResult {
         }
     }
 }
+
+// Décide des dominations enre cônes
+// On cherche l'intersection entre une branche d'hyperbole et une droite ici
 fn interval_battle(i1: Interval, i2: Interval, segment: Segment<2>) -> BattleResult {
     if i1.source == i2.source {
         return if i1.lag <= i2.lag {
@@ -438,6 +455,7 @@ fn interval_battle(i1: Interval, i2: Interval, segment: Segment<2>) -> BattleRes
     }
 }
 
+/// Liste de cônes, sur une arête de la triangulation
 #[derive(Clone, Debug)]
 pub struct Intervals {
     pub intervals: Vec<Interval>, // Invariant: sorted, int[i+1].start = int[i].end
@@ -614,6 +632,7 @@ fn check_map_invariants(map: &HashMap<Edge, Intervals>, vposs: &[VecN<2, f64>]) 
     }
 }
 
+/// trouve l'arbre sommet->parent
 fn build_parent_tree(
     interval_map: &HashMap<Edge, Intervals>,
     goal: usize,
@@ -648,6 +667,7 @@ fn build_parent_tree(
     (ptree, best_goal_dist)
 }
 
+/// Algorithme polyanya
 pub fn polyanya(
     t: &Triangulation,
     start: usize,
@@ -808,6 +828,8 @@ pub fn polyanya(
     }
 }
 
+
+/// Fait la conversion (identifiant parmis les polygones) -> (identifiant parmis la triangulation)
 pub fn find_start_goal_idx(
     start: (usize, usize),
     goal: (usize, usize),
@@ -827,6 +849,8 @@ pub fn find_start_goal_idx(
     (new_start.unwrap(), new_goal.unwrap())
 }
 
+
+// Trouve le chemin le plus court en utilisant l'algo Polyanya
 pub fn shortest_path_polyanya(
     obstacles: &[Polygon],
     start: (usize, usize),
@@ -837,7 +861,7 @@ pub fn shortest_path_polyanya(
     Option<(Vec<VecN<2, f64>>, f64)>,
     HashMap<Edge, Intervals>,
 ) {
-    let mut tri = triangulate_linear(obstacles, 100.);
+    let mut tri = triangulate_line_sweep(obstacles, 100.);
     let (new_start, new_goal) = find_start_goal_idx(start, goal, obstacles, &tri);
     make_delaynay(&mut tri);
     let (opt, map) = polyanya(&tri, new_start, new_goal, mode);

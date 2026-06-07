@@ -12,7 +12,7 @@ use crate::path_planning::polyanya::{
     find_start_goal_idx, polyanya, shortest_path_polyanya, PolyanyaMode,
 };
 use crate::triangulations::delaunay::make_delaynay;
-use crate::triangulations::triangulation_lineaire::triangulate_linear;
+use crate::triangulations::triangulation_line_sweep::triangulate_line_sweep;
 use crate::workspace::cartesians::DiscreteCartesianTopology;
 use crate::{
     geometry::{polygon_map_generator::gen_pol_map_square, shapes::Polygon},
@@ -184,7 +184,7 @@ fn run_polyanya_me_dijkstra_exhaustive(param: &Param) -> f64 {
 }
 
 fn run_polyanya_me_astar_only_nodelaunay(param: &Param) -> f64 {
-    let tri = triangulate_linear(&param.polys, 50.);
+    let tri = triangulate_line_sweep(&param.polys, 50.);
     time_bench(|| {
         let (new_start, new_goal) = find_start_goal_idx(param.start, param.end, &param.polys, &tri);
         black_box(polyanya(&tri, new_start, new_goal, PolyanyaMode::AStar));
@@ -192,7 +192,7 @@ fn run_polyanya_me_astar_only_nodelaunay(param: &Param) -> f64 {
 }
 
 fn run_polyanya_me_astar_only(param: &Param) -> f64 {
-    let mut tri = triangulate_linear(&param.polys, 50.);
+    let mut tri = triangulate_line_sweep(&param.polys, 50.);
     make_delaynay(&mut tri);
     time_bench(|| {
         let (new_start, new_goal) = find_start_goal_idx(param.start, param.end, &param.polys, &tri);
@@ -202,7 +202,7 @@ fn run_polyanya_me_astar_only(param: &Param) -> f64 {
 
 fn run_polyanya_me_astar_nodelaunay(param: &Param) -> f64 {
     time_bench(|| {
-        let tri = triangulate_linear(&param.polys, 50.);
+        let tri = triangulate_line_sweep(&param.polys, 50.);
         let (new_start, new_goal) = find_start_goal_idx(param.start, param.end, &param.polys, &tri);
         black_box(polyanya(&tri, new_start, new_goal, PolyanyaMode::AStar));
     })
@@ -210,13 +210,13 @@ fn run_polyanya_me_astar_nodelaunay(param: &Param) -> f64 {
 
 fn tri_me(param: &Param) -> f64 {
     time_bench(|| {
-        black_box(triangulate_linear(&param.polys, 50.));
+        black_box(triangulate_line_sweep(&param.polys, 50.));
     })
 }
 
 fn tri_delaunay_me(param: &Param) -> f64 {
     time_bench(|| {
-        let mut tri = triangulate_linear(&param.polys, 50.);
+        let mut tri = triangulate_line_sweep(&param.polys, 50.);
         make_delaynay(&mut tri);
         black_box(tri);
     })
@@ -224,7 +224,7 @@ fn tri_delaunay_me(param: &Param) -> f64 {
 
 fn run_theta_star_tri(param: &Param) -> f64 {
     time_bench(|| {
-        let mut tri = triangulate_linear(&param.polys, 50.);
+        let mut tri = triangulate_line_sweep(&param.polys, 50.);
         tri.build_vertex_to_adj_tris();
         let (new_start, new_goal) = find_start_goal_idx(param.start, param.end, &param.polys, &tri);
         let g = tri.to_vertex_graph();

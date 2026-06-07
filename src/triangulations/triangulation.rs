@@ -1,8 +1,10 @@
-use std::collections::HashSet;
 use crate::geometry::shapes::are_counter_clockwise;
 use crate::geometry::VecN;
 use crate::graphs::LinkGraph;
 use crate::triangulations::delaunay::make_delaynay;
+
+/// Implémente les triangulations, via des tableaux
+/// Utilise des invariants géométriques pour simplifier les codes
 
 #[derive(Copy, Clone, Debug, Hash)]
 pub struct TriAdjacentEdge {
@@ -68,6 +70,8 @@ impl Triangulation {
         }
         None
     }
+    
+    /// Détermine le graphe de la triangulation
     pub fn to_vertex_graph(&self) -> LinkGraph {
         let mut graph = LinkGraph::default();
         for tri in &self.triangles {
@@ -78,6 +82,8 @@ impl Triangulation {
         }
         graph
     }
+    
+    /// Détermine le graphe dual de la triangulation
     pub fn to_triangle_graph(&self) -> LinkGraph {
         let mut graph = LinkGraph::default();
         for (i, tri) in self.triangles.iter().enumerate() {

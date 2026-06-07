@@ -8,6 +8,8 @@ use lib_space_animation::world::world_builder::WorldBuilder;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 
+
+/// Place un graphe sur le monde
 pub fn place_graph<V: Hash + Eq + Copy, I: Into<V>, G: IterableGraph<V, I>>(
     world: &mut WorldBuilder,
     graph: &G,

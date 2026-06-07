@@ -3,6 +3,9 @@ pub mod l_polyanya;
 
 #[cfg(not(feature = "polyanya"))]
 pub mod l_polyanya {
+    /// Ce fichier est là pour que l'ensemble compile sans avoir à compiler la librairie polyanya
+
+
     use crate::geometry::shapes::Polygon;
     use crate::geometry::VecN;
     use crate::triangulations::triangulation::Triangulation;

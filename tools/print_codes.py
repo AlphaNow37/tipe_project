@@ -1,5 +1,7 @@
 import pathlib
 
+"""Permet d'avoir tout les codes dans le diapo pour le tétraconcours"""
+
 p = pathlib.Path("/home/alpha_now/Desktop/progs/tipe_project/src")
 print("hey")
 

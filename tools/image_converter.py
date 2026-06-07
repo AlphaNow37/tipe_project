@@ -1,6 +1,10 @@
 from PIL.Image import open
 import pathlib
 
+"""
+Ce fichier sert à convertir une image noir/blanc en grille d'accessibilité qui peut être ouverte coté rust
+"""
+
 print("opening")
 
 input_folder = pathlib.Path(__file__).parent.parent / "inputs"

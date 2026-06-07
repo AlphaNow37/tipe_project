@@ -2,6 +2,8 @@ use crate::geometry::shapes::{Cube, Polygon, Segment};
 use crate::geometry::VecN;
 use crate::utils::numbers::NotNanF64;
 
+/// Ce fichier implémente les R-Tree et STR (Sort-Tile-Recursive) pour optimiser les collisions de RRT
+
 /// Taille avant laquelle les feuilles sont aplaties directement
 const FINAL_SIZE_THRESHOLD: usize = 8;
 

@@ -3,6 +3,9 @@ use crate::geometry::VecN;
 use polyanya::geo::LineString;
 use polyanya::{Mesh, Triangulation};
 
+/// Ce fichier utilise la librairie rust polyanya pour tester les performances
+
+
 fn bounding_box(obstacles: &[Polygon]) -> Cube<2> {
     let mut c = None;
     for p in obstacles {

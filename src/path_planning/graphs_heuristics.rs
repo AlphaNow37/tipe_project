@@ -13,6 +13,10 @@ use crate::{
     },
 };
 
+
+/// Ce fichier implémente RRT, RRT*, PRM
+
+/// Ce trait sert à récuperer des infos sur l'exécution et à terminer l'algorithme au moment qu'on veut
 pub trait ExecutionManager<V, I, W: WorkspaceTopology> {
     fn logs(
         &mut self,
@@ -39,6 +43,7 @@ impl<V, I, W: WorkspaceTopology> ExecutionManager<V, I, W> for SampleNTimes {
     }
 }
 
+/// Objectif recherché
 #[derive(Copy, Clone)]
 pub enum Goal<'a, W: WorkspaceTopology> {
     Vertex(W::Vertex),

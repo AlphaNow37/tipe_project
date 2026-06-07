@@ -69,6 +69,8 @@ impl<'a, W: WorkspaceTopology> ObstaclesEnv<W> for ObstaclesApprox<'a, W> {
     }
 }
 
+
+/// Pour theta*, on peut déterminer relativement efficacement si deux sommets d'une triangulation se voient en marchant dessus
 impl<'a, D: Length<2>> ObstaclesEnv<DiscreteCartesianTopology<'a, 2, D>> for Triangulation {
     fn collide_vertex(&self, _: usize) -> bool {
         false

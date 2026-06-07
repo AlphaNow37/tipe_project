@@ -3,6 +3,13 @@ use std::{fmt::Debug, hash::Hash};
 
 use rand::Rng;
 
+/// Un espace de travail définit:
+/// - Quel type utiliser pour les positions, pour les géodésiques
+/// - Quel type utiliser pour modéliser l'environnement, les obstacles
+/// - Comment echantilloner un point au hasard
+/// - Quel fonction de distance utiliser
+/// - Quel type utiliser pour les requêtes type R-nearest neighbors
+
 /// Représente la "forme" de l'espace de travail ainsi que le système de coordonnées
 /// Ces noms sont sujets à changement
 pub trait WorkspaceTopology: Clone {

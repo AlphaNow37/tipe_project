@@ -77,7 +77,10 @@ fn get_input_buffers(
     (uniform_buffer, points_buffer, segs_buffer)
 }
 
+
+/// Calcule le graphe de visiblité via des matrices d'adjacence sur gpu
 pub fn compute_vis_graph_gpu_adjacencymatrix(obstacles: &[Polygon]) -> MapGraph<(usize, usize)> {
+    // 1- initialisation
     let holder = get_base_holder();
 
     let (segs, polypos, coords) = to_segs_polypos(obstacles);
@@ -103,7 +106,7 @@ pub fn compute_vis_graph_gpu_adjacencymatrix(obstacles: &[Polygon]) -> MapGraph<
         usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
         mapped_at_creation: false,
     });
-
+    
     let compute_pipeline =
         holder
             .device
@@ -156,9 +159,10 @@ pub fn compute_vis_graph_gpu_adjacencymatrix(obstacles: &[Polygon]) -> MapGraph<
     }
     encoder.copy_buffer_to_buffer(&visibility_buffer, 0, &staging_buffer, 0, matrix_size);
     holder.queue.submit(Some(encoder.finish()));
-
+    
+    // 2- on récupère le résultat
     let buffer_slice = staging_buffer.slice(..);
-
+    
     let (sender, receiver) = std::sync::mpsc::channel();
     buffer_slice.map_async(wgpu::MapMode::Read, move |v| {
         sender.send(v.unwrap()).unwrap()
@@ -184,10 +188,12 @@ pub fn compute_vis_graph_gpu_adjacencymatrix(obstacles: &[Polygon]) -> MapGraph<
     graph
 }
 
+/// Calcule le graphe de visiblité via des listes d'adjacence sur gpu
 pub fn compute_vis_graph_gpu_edgelist(
     obstacles: &[Polygon],
     nb_edges_estimated: usize,
 ) -> MapGraph<(usize, usize)> {
+    // 1- initialisation
     let holder = get_base_holder();
 
     let (segs, polypos, coords) = to_segs_polypos(obstacles);
@@ -286,6 +292,8 @@ pub fn compute_vis_graph_gpu_edgelist(
     encoder.copy_buffer_to_buffer(&visibility_buffer, 0, &vis_staging_buffer, 0, list_max_size);
     encoder.copy_buffer_to_buffer(&count_buffer, 0, &count_staging_buffer, 0, 4);
     holder.queue.submit(Some(encoder.finish()));
+    
+    // 2- on récupère le graphe
 
     let buffer_staging_slice = vis_staging_buffer.slice(..);
     let buffer_count_slice = count_staging_buffer.slice(..);

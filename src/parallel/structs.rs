@@ -1,5 +1,7 @@
 use bytemuck::{Pod, Zeroable};
 
+/// Quelque structures dont le layout est commun avec les shaders
+
 #[derive(Pod, Copy, Clone, Debug, Zeroable)]
 #[repr(C)]
 pub struct GpuSeg {

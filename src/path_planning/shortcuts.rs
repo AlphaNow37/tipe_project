@@ -2,7 +2,7 @@ use crate::workspace::obstacles::ObstaclesEnv;
 use crate::workspace::workspace::{path_length, WorkspaceTopology};
 use rand::{rng, Rng};
 
-
+/// Sert à réduire la longueur d'un chemin en cherhant à couper
 pub fn shortcut<W: WorkspaceTopology>(
     workspace: &W,
     mut path: Vec<W::Segment>,

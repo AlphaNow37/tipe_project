@@ -1,131 +1,49 @@
-
 Projet de Simon Palade pour son TIPE
 
-# Objectifs
-Ce TIPE explore la thématique du path planning: trouver le chemin le plus court allant d'un point A à un point B
+# Objectif
 
-## En 2D
-On se donne une liste de polygones, ainsi que deux points
+On implémente ici des algorithme pour résoudre le problème du plus court chemin euclidien
 
-On renvoie une liste de positions, le chemin le plus court
+Certains algorithmes (graphes de visibilité, polyanya) sont exacts, d'autres (RRT, RRT*, PRM, Theta*, grilles) sont des approximations.
 
-On supposeras que:
-- Les obstacles sont strictement disjoints
-- Il n'y a pas trois points alignés
-- Il n'y a pas deux points alignés avec les axes X et Y
+# Codes intéressants
+## Algorithmes
+| Nom                                                                                                                                                                                                                                                                                      | Résumé                                                                       | Lien |
+|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------|------|
+| [Algorithme naïf](https://github.com/AlphaNow37/tipe_project/blob/b96f0af05bd3bd582f303d3ef394e76d9a5b1540/src/path_planning/visibility_graph.rs#L132)                                                                                                                                   | On trouve le graphe de visibilité en O(n^3)                                  |      |
+| [Algorithme de Lee](https://github.com/AlphaNow37/tipe_project/blob/b96f0af05bd3bd582f303d3ef394e76d9a5b1540/src/path_planning/visibility_graph.rs#L198)                                                                                                                                 | On utilise un balayage pour trouver le graphe de visibilité en O(n^2 log )   |      |
+| Algo naïf (GPU) [shader](https://github.com/AlphaNow37/tipe_project/blob/b96f0af05bd3bd582f303d3ef394e76d9a5b1540/src/parallel/shaders/naive_2d.wgsl#L1) [rust](https://github.com/AlphaNow37/tipe_project/blob/b96f0af05bd3bd582f303d3ef394e76d9a5b1540/src/parallel/vis_graphs.rs#L80) | On implémente l'algo naïf sur le GPU via wgpu                                |      |
+| [Triangulation](https://github.com/AlphaNow37/tipe_project/blob/b96f0af05bd3bd582f303d3ef394e76d9a5b1540/src/triangulations/triangulation_line_sweep.rs#L400)                                                                                                                            | On trouve une triangulation en O(n log n)                                    |      |
+| [Delaunay](https://github.com/AlphaNow37/tipe_project/blob/b96f0af05bd3bd582f303d3ef394e76d9a5b1540/src/triangulations/delaunay.rs#L53)                                                                                                                                                  | On transforme une triangulation en triangulation de Delaunay                 |      |
+| [Polyanya](https://github.com/AlphaNow37/tipe_project/blob/b96f0af05bd3bd582f303d3ef394e76d9a5b1540/src/path_planning/polyanya.rs#L651)                                                                                                                                                  | On trouve le chemin le plus court par une sorte de Dijkstra continu          |      |
+| [RRT](https://github.com/AlphaNow37/tipe_project/blob/b96f0af05bd3bd582f303d3ef394e76d9a5b1540/src/path_planning/graphs_heuristics.rs#L76)                                                                                                                                               | On trouve un chemin entre deux points de façon rapide mais pas trop mauvaise |      |
+| [RRT*](https://github.com/AlphaNow37/tipe_project/blob/b96f0af05bd3bd582f303d3ef394e76d9a5b1540/src/path_planning/graphs_heuristics.rs#L143)                                                                                                                                             | On raffine l'arbre de RRT pour le rendre asymptotiquement optimal            |      |
+| [PRM](https://github.com/AlphaNow37/tipe_project/blob/b96f0af05bd3bd582f303d3ef394e76d9a5b1540/src/path_planning/graphs_heuristics.rs#L304)                                                                                                                                              | On crée un graphe et non un arbre                                            |      |
+| [Reeds Shepp](https://github.com/AlphaNow37/tipe_project/blob/b96f0af05bd3bd582f303d3ef394e76d9a5b1540/src/workspace/reeds_shepp/mod.rs#L155)                                                                                                                                            | On utilise la topologie pour un objet au rayon de braquage limité            |      |
+| [Theta*](https://github.com/AlphaNow37/tipe_project/blob/b96f0af05bd3bd582f303d3ef394e76d9a5b1540/src/graphs/traits.rs#L109)                                                                                                                                                             | On affine le résultat de A* pour prendre des raccourcis                      |      |
+| [Grille d'accessibilité](https://github.com/AlphaNow37/tipe_project/blob/b96f0af05bd3bd582f303d3ef394e76d9a5b1540/src/path_planning/accessibility_grid.rs#L9)                                                                                                                            | On se base sur une grille de 0 et 1 pour trouver un chemin                   |      |
 
-## En 3D (et N-D de façon générale)
-Le problème devient alors NP-difficile
-On utilise alors des heuristiques intéressantes
+## Structures de données
+| Nom                                                                                                                                 | Résumé                                                                  |
+|-------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------|
+| [RTree](https://github.com/AlphaNow37/tipe_project/blob/b96f0af05bd3bd582f303d3ef394e76d9a5b1540/src/datastructures/r_tree.rs#L45)  | Un arbre de rectangles imbriqués pour avoir des collisions rapides         |
+| [Arbre BSP](https://github.com/AlphaNow37/tipe_project/blob/b96f0af05bd3bd582f303d3ef394e76d9a5b1540/src/datastructures/bsp.rs#L92) | Un arbre servant à optimiser les requêtes R-voisins                     |
+| [Skip Lists](https://github.com/AlphaNow37/tipe_project/blob/main/src/datastructures/skip_list.rs)                                                                                                                      | Une structure de donnée servant ici de liste chainée avec random access |
 
-On se donne une liste de boites alignées avec les axes (AABB) avec potentiellement des intersections
+## Benchmarks
 
-## Questions diverses
-Que se passe il:
-- Si l'objet à une taille non nulle ? On utilise des sommes de Minkovski pour modifier la map
-- Sur une sphère ? Je pense qu'on peut adapter l'algo 2D avec les graphes de visibilités
-- En partant/arrivant sur une ligne ou autre forme ? A voir
-- Si les obstacles forment un seul polygone ? O(n) avec un algo plus optimisé mais frenchement compliqué
-- Avec la distance de Manathan ? A voir
-- Si les obstacles bougent ? NP-diff je crois
-- En N dimensions ? Comme en 3D, utile pour des bras de robots, ..
-- Si le rayon de courbure est non nul (voiture, ..) ? A voir
-- En prenant en compte l'acceleration ? A voir
-
-# Organisation pour les concours
-## Tetraconcours
-On considère un circuit de course de drone
-
-On cherche alors à terminer la course le plus rapidement possible
-
-On ferait alors:
-- Présentation du problème de la course de drone
-- Introduction de l'algo naïf en O(n^3), critique
-- Introduction de l'algo en O(n^2 log n), preuve des invariants
-- Critique de la modélisation, qui est trop stricte (suppose de connaitre les obstacles, être en 2D)
-- Introduction de RRT et RRT*, preuve de l'optimalité asymptotique si il y a le temps
-
-## ENS
-On fait un peu tout: (tout ne sera pas fait faute de temps à l'oral)
-- Présentation du problème
-- Introduction de l'algo naïf en O(n^3), critique
-- Introduction de l'algo en O(n^2 log n), preuve des invariants
-- Introduction de l'algo en O(n log n), preuve si c'est pas trop long/chiant, si j'ai le temps de l'implémenter
-- Comparaison des performances
-- Critique de la modélisation, qui est trop stricte (suppose de connaitre les obstacles, être en 2D)
-- Preuve de la NP-difficulté du problème en 3D et supérieur
-- Introduction de l'algo se basant sur une grille, critique
-- Introduction de RRT et RRT*, preuve de l'optimalité asymptotique
-- Introduction de PRM ou RRT FN
-- Comparaison des algos, de leur vitesse de convergence, de leur consommation mémoire
-- Application à un bras robotique en haute dimension
-
-# Algorithmes
-
-## 2D naif
-Pour chaque paire de sommet, ils sont visibles si aucune arête n'est entre les deux points
-
-En O(n^3), pas génial
-
-## 2D un peu optimisé
-Pour chaque sommet, on fait tourner un rayon qui avec un tri et un arbre permet de faire moins de calculs
-
-En O(n^2 log n), améliorable en O(n^2)
-
-## 2D optimisé
-En O(n log n), c'est un des buts du TIPE
-
-## 3D RRT*
-Algorithme:
-On génère un arbre partant du point de départ
-On tente pendant un certain temps:
-- On prend un point au hasard
-- On prend le sommet le plus proche, et on rapproche le nouveau point vers celui-ci
-- On prend le sommet proche visible minimisant la distance avec la racine (on repart au début s'il n'existe pas)
-- On prend des points proches et on change leur parent en ce nouveau point si cela diminue leur distance
-Puis on voit si on a trouvé un chemin
-
-Cela demande:
-- Une structure pour trouver les voisins dans un rayon R variable, et trouver le sommet le plus proche
-
-## 3D PRM (Probabilistic RoadMaps)
-On ajoute des points au hasard, on détermine les sommets proches, on relie ceux qui sont visibles
-
-Demande de pouvoir trouver les points proches rapidement
-
-## Grille de résolution fixe
-On génère un graphe en forme de grille
-
-Est simple à coder mais très gourmande en mémoire surtout en haute dimensions, O(Largeur^Dimension)
-
-## Grille de taille dynamique ?
-L'idée serait de faire une grille de résolution plus élevée près des obstacles
-
-# Structures de données
-
-## RTree
-Un arbre où un noeud est un rectangle contenant touts ses fils
-
-En utilisant STR (Sort-Tile-Recursive) on peut construire rapidement un arbre avec peu d'overlaps et atteindre des complexités en O(log n) pour les tests de collisions (n est le nombre d'obstacles)
-
-Utile pour les tests de collisions
-
-## BSP (Binary Space Partition) (nom générique, j'ai rien trouvé de plus spécifique)
-Un peu comme un Quadtree / Octree mais ne sépare l'espace qu'en 2, une dimension après l'autre
-
-Utile pour trouver les R plus proches voisins et le plus proche voisin
+| Nom                                                                                              | Résumé                                           |
+|--------------------------------------------------------------------------------------------------|--------------------------------------------------|
+| [Benchmark](https://github.com/AlphaNow37/tipe_project/blob/main/src/tests/test_perf_path_2d.rs) | On mésure la vitesse des algorithmes en pratique |
+| [Génération de cartes](https://github.com/AlphaNow37/tipe_project/blob/b96f0af05bd3bd582f303d3ef394e76d9a5b1540/src/geometry/polygon_map_generator.rs#L91)                                                                         | On génère les cartes pour le benchmark           |
 
 # Lancer le code:
+
 Def façon générale, les étapes sont:
+
 - Installer rust, via les instructions du site web
 - Aller dans tests/mod.rs, décommenter le test voulu
 - Lancer `cargo run`, ou `cargo run --release` pour optimiser le binaire
-
-Pour les algos 2d, que je ne change pour le moment pas, voir la branche pre_3d, qui est plus simple à installer
-
-Pour la dernière versions!
-- installer le repos space_animation
-- le mettre dans le dossier à coté de tipe_project
-- lancer tipe_project normalement
-
-Contactez moi en cas de difficultée
+- Pour faire des visualisations 3d, ajouter `-feature gpu_vis` et installer mon repo `space_animation` qui sert de moteur 3D
+- Pour utiliser la librairie externe polyanya, ajouter `-feature polyanya`
+- Pour les compute shaders, `-feature gpu`

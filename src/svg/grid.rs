@@ -3,6 +3,7 @@ use crate::path_planning::accessibility_grid::AccesibilityGrid;
 use crate::svg::object::Style;
 use crate::svg::SvgGroup;
 
+/// Draws an accessibility grid on the svg
 pub fn put_grid(
     svg: &mut SvgGroup,
     grid: &AccesibilityGrid<2>,

@@ -7,6 +7,17 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 // convention: up (algo) = left (skiplist)
 
+
+/// Ce fichier sert à créer des triangulation, en O(n log n)
+/// Pour cela, on fait un line sweep
+/// Etapes:
+/// - 1: classifier les sommets par VerttexKind
+/// - 2: Créer une liste de Fronts
+///     Un front est une zone, délimitée par deux arêtes de polygones, dans laquelle se trouve des arêtes de triangulation, qui forment un chemin continue et concave
+/// - 3: ajouter un par un tout les sommets, par ordre croissant du line sweep
+
+
+/// Type d'un sommet
 #[derive(Copy, Clone, Debug)]
 enum VertexKind {
     Alone,
@@ -24,6 +35,7 @@ struct Vertex {
     kind: VertexKind,
 }
 
+// Interval couvert par une arête sur un front
 #[derive(Clone, Copy, Debug)]
 enum AreaCover {
     NoneTop,            // the face faces left-top
@@ -72,10 +84,11 @@ impl Interval for AreaInterval {
 
 #[derive(Clone, Copy, Debug)]
 enum FrontContent {
-    SingleVertex(usize),
-    SegmentFront(SkipListAccess),
+    SingleVertex(usize),  // Il contient un seul sommet (une source)
+    SegmentFront(SkipListAccess),  // Il contient plusieurs commets
 }
 
+/// Un front
 #[derive(Copy, Clone, Debug)]
 struct FrontInterval {
     top: [VecN<2, f64>; 2], // left-right
@@ -250,6 +263,7 @@ fn propagate_down(
     }
 }
 
+/// Ajoute un sommet sur un front
 /// the returned cursor is on the position of the vertex, not on an interval
 fn insert_vertex_front<'a>(
     interval: &'a mut FrontContent,
@@ -361,6 +375,7 @@ fn insert_vertex_front<'a>(
     }
 }
 
+/// Ajoute un polygone sur le vecteur de sommets
 fn add_polygon(vertices: &mut Vec<Vertex>, poly: &Polygon) {
     if poly.len() == 0 {
         return;
@@ -396,8 +411,11 @@ fn add_polygon(vertices: &mut Vec<Vertex>, poly: &Polygon) {
     }
 }
 
+/// Fait une triangulation en O(n log n)
 // Assume that no two vertices have the same x or y coord
-pub fn triangulate_linear(polygons: &[Polygon], margin: f64) -> Triangulation {
+pub fn triangulate_line_sweep(polygons: &[Polygon], margin: f64) -> Triangulation {
+
+    // 1- détermine les types des sommets
     let mut vertices = Vec::new();
 
     let mut enveloppe = None;
@@ -425,6 +443,7 @@ pub fn triangulate_linear(polygons: &[Polygon], margin: f64) -> Triangulation {
     vertices.sort_by(|v1, v2| v1.pos[0].total_cmp(&v2.pos[0]));
     let poss = vertices.iter().map(|v| v.pos).collect::<Vec<_>>();
 
+    // 2- initialise la liste des fronts
     let mut lists_fronts: IntervalSkipLists<FrontInterval> = IntervalSkipLists::new();
     let mut lists_areas = IntervalSkipLists::new();
     let mut front_access = SkipListAccess::new();
@@ -433,6 +452,8 @@ pub fn triangulate_linear(polygons: &[Polygon], margin: f64) -> Triangulation {
     let mut edge_to_tri: HashMap<[usize; 2], usize> = HashMap::new();
 
     let mut triangulation = Triangulation::new(poss);
+
+    // 3- line sweep
 
     for (i, &v) in vertices.iter().enumerate() {
         let mut cursor_fronts = lists_fronts.cursor(&mut front_access, v.pos);

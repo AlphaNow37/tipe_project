@@ -1,4 +1,3 @@
-
 #[cfg(feature = "gpu")]
 mod structs;
 #[cfg(feature = "gpu")]
@@ -8,8 +7,12 @@ mod utils;
 #[cfg(feature = "gpu")]
 pub use vis_graphs::*;
 
+/// Ce dossier implémente l'algorithme naïf sur GPU
+
 #[cfg(not(feature = "gpu"))]
 mod inner {
+    /// Sert à ne pas à avoir à compiler wgpu à chaque fois même lorsque c'est inutile
+    
     use crate::geometry::shapes::Polygon;
     use crate::graphs::MapGraph;
 

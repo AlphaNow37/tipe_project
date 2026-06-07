@@ -6,6 +6,8 @@ use object::{Style, SvgObject};
 
 use crate::utils::numbers::NotNanF64;
 
+/// Ce dossier sert à exporter les structures de données en SVG
+
 pub mod curves;
 pub mod graph;
 pub mod grid;

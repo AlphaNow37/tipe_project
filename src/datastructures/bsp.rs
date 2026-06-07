@@ -4,6 +4,8 @@ use crate::{
     geometry::{shapes::Cube, VecN},
 };
 
+/// Ce fichier implémente les arbres BSP (Binary Space Partition) pour optimiser la recherche des R-proches voisins de RRT
+
 #[derive(Debug, Clone)]
 enum BspNode<const N: usize> {
     Leafs(Vec<VecN<N, f64>>),

@@ -1,9 +1,10 @@
+"""Pour avoir des statistiques sympatiques"""
+
 from textwrap import dedent
 import pathlib
 import re
 
 MACRO_USE_RE = re.compile("[a-zA-Z]!")
-
 
 def keyworld_pattern(kw):
     return rf"\W{kw}\W"

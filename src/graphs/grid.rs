@@ -1,6 +1,8 @@
 use crate::geometry::VecN;
 use crate::graphs::{Graph, IterableGraph};
 
+/// Une implémentation pour les graphes dont les sommets sont sur une grille, et où les sommets sont reliés à tous les voisins
+
 fn calculate_offsets<const N: usize>(sizes: [usize; N]) -> ([usize; N], usize) {
     let mut offsets = [0; N];
     let mut size = 1;
@@ -12,6 +14,7 @@ fn calculate_offsets<const N: usize>(sizes: [usize; N]) -> ([usize; N], usize) {
 }
 
 /// A N-dimensions grid graph
+/// Les sommets sont représentés par des entiers, la structure sert à faire la conversion
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Grid<const N: usize> {
     /// Nombre de ligne sur chaque dimension

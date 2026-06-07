@@ -9,7 +9,7 @@ use crate::svg::object::Style;
 use crate::svg::polyanya_interval_map::put_map;
 use crate::tests::{giggle_coords, out_dir};
 use crate::triangulations::delaunay::make_delaynay;
-use crate::triangulations::triangulation_lineaire::triangulate_linear;
+use crate::triangulations::triangulation_line_sweep::triangulate_line_sweep;
 
 pub fn test_polyanya_simple() {
     let mut rng = rng();

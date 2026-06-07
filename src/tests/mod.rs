@@ -5,6 +5,8 @@ use rand::rngs::ThreadRng;
 use crate::geometry::shapes::Polygon;
 use crate::tests::test_path_complex_2d::test_square_map_polyanya;
 
+/// Ce dossier sert à faire des tests de code et à créer des illustrations
+
 mod background;
 mod test_base_reeds_shepp;
 mod test_conv_path;

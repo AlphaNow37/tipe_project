@@ -94,7 +94,8 @@ pub fn gen_pol_map_square(width: usize, map_size: f64, nmerges: usize) -> Vec<Po
     let n = width * width;
     let grid_size = map_size / (width as f64);
     let sub_grid_size = grid_size / 2.;
-
+    
+    // 1- génère les positions des points
     let mut grid = (0..width)
         .map(|y| {
             (0..width)
@@ -127,7 +128,8 @@ pub fn gen_pol_map_square(width: usize, map_size: f64, nmerges: usize) -> Vec<Po
                 .collect()
         })
         .collect::<Vec<Vec<_>>>();
-
+    
+    // 2- merge classes
     let mut groups = UnionFind::new(n);
 
     for _ in 0..nmerges {
@@ -157,7 +159,8 @@ pub fn gen_pol_map_square(width: usize, map_size: f64, nmerges: usize) -> Vec<Po
         assert!(!grid[new_y][new_x].has_neigh[(ni + 2) % 4]);
         grid[new_y][new_x].has_neigh[(ni + 2) % 4] = true;
     }
-
+    
+    // 3- generate one polygon per class
     let mut polygons = Vec::new();
     for y in 0..width {
         for x in 0..width {
@@ -195,6 +198,7 @@ pub fn gen_pol_map_square(width: usize, map_size: f64, nmerges: usize) -> Vec<Po
     polygons
 }
 
+/// Genère une carte avec des détails globaux
 pub fn gen_pol_map_global(k: usize, map_size: f64) -> Vec<Polygon> {
     vec![Polygon::new(
         (0..k)

@@ -2,6 +2,11 @@ use rand::{rng, Rng};
 use std::cmp::Ordering;
 use std::fmt::{Debug, Formatter};
 
+/// Ce fichier implémente des skip-list, dont les éléments sont des intervalles
+/// Ces skip lists peuvent notamment être coupées et fusionnées.
+/// Le tout est mis dans une arena pour limiter les allocations et pour plaire au compilo rust
+/// L'objectif est principalement d'avoir une liste chaînée avec random access (via les curseurs)
+
 const SKIP_LIST_HEIGHT: usize = 1;
 const FAKE_NODE: usize = usize::MAX - 1;
 const P: f64 = 0.5;

@@ -8,6 +8,7 @@ use crate::svg::object::Style;
 use crate::svg::SvgGroup;
 use crate::workspace::reeds_shepp::{Gear, ReedsSheppSegment, Steering};
 
+// Ajoute une courbe de Reeds-Shepp sur le canvas SVG
 pub fn put_reeds_shepp(svg: &mut SvgGroup, style: Style, curve: ReedsSheppSegment, height: f64) {
     let mut curr_pos = curve.start;
 
@@ -52,6 +53,7 @@ pub fn put_reeds_shepp(svg: &mut SvgGroup, style: Style, curve: ReedsSheppSegmen
     }
 }
 
+// Ajoute une flèche sur le canvas SVG
 pub fn put_arrow(
     svg: &mut svg::SvgGroup,
     start: VecN<2, f64>,

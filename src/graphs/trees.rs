@@ -3,6 +3,7 @@ use std::{collections::HashMap, hash::Hash};
 use crate::graphs::{Graph, IterableGraph};
 
 /// A tree (or maybe forest) where each node know his parent
+/// Info is a reference to the parent + information about the edge, such that the weight
 #[derive(Clone, Debug)]
 pub struct ParentTree<Id, Info> {
     parent: HashMap<Id, Info>,
@@ -22,6 +23,8 @@ impl<Id: Hash + Eq + Copy, Info: Copy + Into<Id>> ParentTree<Id, Info> {
     pub fn nb_links(&self) -> usize {
         self.parent.len()
     }
+    
+    /// Remonte le chemin jusqu'à la racine
     pub fn path_to(&self, mut x: Id) -> Vec<Info> {
         let mut path = vec![];
         while let Some(parent) = self.get_parent(x) {
@@ -96,6 +99,7 @@ impl<Id: Hash + Eq + Copy, Info: Copy + Into<Id>> Tree<Id, Info> {
     pub fn nb_links(&self) -> usize {
         self.parent_children.len()
     }
+    /// Remonte le chemin jusqu'à la racine
     pub fn path_to(&self, mut x: Id) -> Vec<Info> {
         let mut path = vec![];
         while let Some(parent) = self.get_parent(x) {

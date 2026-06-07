@@ -1,15 +1,23 @@
+/// Shader qui tourne sur le GPU
 
+// Structures partagées avec le coté rust
+
+// information global sur la carte
 struct Uniforms {
     nb_segs: u32,
     nb_pts: u32,
     num_edges_estimated: u32,  // not for adjency matrix
     _pad: u32,
 }
+
+// Sommet d'un polygone
 struct PolyPos {
     pos: vec2<f32>,
-    idxg: u32,
-    idxd: u32,
+    idxg: u32,  // indice du sommet précedent
+    idxd: u32,  // indice du sommet suivant
 }
+
+// arête d'un polygone
 struct Seg {
     a: vec2<f32>,
     b: vec2<f32>,
@@ -34,6 +42,8 @@ fn intersects(A: vec2<f32>, B: vec2<f32>, C: vec2<f32>, D: vec2<f32>) -> bool {
     return (are_counter_clockwise(A, C, D) != are_counter_clockwise(B, C, D)) && (are_counter_clockwise(A, B, C) != are_counter_clockwise(A, B, D));
 }
 
+// regarde si q est dans le cône infini dont les cotés sont les arêtes adjacentes à p, et où le commet est p
+// alors ce point n'est jamais visible
 fn in_cone(p: PolyPos, q: vec2<f32>) -> bool {
     let vg = pts[p.idxg];
     let vd = pts[p.idxd];
@@ -48,6 +58,7 @@ fn set_mat(idx: u32, bit: u32) {
     atomicOr(&mat_adj[idx], (1u << bit));
 }
 
+/// Utilise l'algorithme naïf pour créer le graphe de visibilité sous forme de atrice d'adjacence
 @compute @workgroup_size(16, 16)
 fn naive_2d_mat(
     @builtin(global_invocation_id) global_id: vec3<u32>,
@@ -55,10 +66,10 @@ fn naive_2d_mat(
     if(!is_in_bounds(global_id)) {
         return;
     }
-    let i = global_id.x;
-    let j = global_id.y;
-    let i0 = i + uniforms.nb_pts * j;
-    let idx = i0 / 32;
+    let i = global_id.x;  // indice de p1
+    let j = global_id.y;  // indice de p2
+    let i0 = i + uniforms.nb_pts * j;  // indice dans la matrice
+    let idx = i0 / 32; // pour avoir une meilleur densité on pack les booléans par 32
     let bit = i0 % 32;
 
     if(i == j) {
@@ -73,6 +84,7 @@ fn naive_2d_mat(
 
     var visible = 1u;
 
+    // On teste pour chaque segment
     for (var k = 0u; k < uniforms.nb_segs; k = k + 1u) {
         let seg = segs[k];
         if (all(seg.a == p1.pos) || all(seg.b == p1.pos) || all(seg.a == p2.pos) || all(seg.b == p2.pos)) {
@@ -89,6 +101,7 @@ fn naive_2d_mat(
     }
 }
 
+/// Utilise l'algorithme naïf pour créer le graphe de visibilité sous forme de liste d'adjacence
 @compute @workgroup_size(16, 16)
 fn naive_2d_elist(
     @builtin(global_invocation_id) global_id: vec3<u32>,

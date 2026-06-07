@@ -5,6 +5,7 @@ use crate::path_planning::polyanya::Intervals;
 use crate::svg::object::Style;
 use crate::svg::SvgGroup;
 
+/// Ajoute une carte polyanya sur le svg
 pub fn put_map(
     svg: &mut SvgGroup,
     map: &HashMap<[usize; 2], Intervals>,

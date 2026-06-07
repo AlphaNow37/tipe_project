@@ -8,7 +8,7 @@ use crate::svg::object::Style;
 use crate::tests::{giggle_coords, out_dir};
 use crate::triangulations::delaunay::{check_is_delaynay, make_delaynay};
 use crate::triangulations::triangulation::{TriAdjacentEdge, Triangulation};
-use crate::triangulations::triangulation_lineaire::triangulate_linear;
+use crate::triangulations::triangulation_line_sweep::triangulate_line_sweep;
 
 pub fn test_triangulation_simple() {
 
@@ -50,7 +50,7 @@ pub fn test_triangulation_simple() {
         svg.push(p.clone(), 0., Style::fill(col));
     }
 
-    let t = triangulate_linear(&obstacles, 10.);
+    let t = triangulate_line_sweep(&obstacles, 10.);
 
     put_graph(
         &mut svg,
@@ -82,7 +82,7 @@ pub fn test_triangulation_hard() {
         svg.push(p.clone(), 0., Style::fill(format!("#{:0x}", rng.random_range(0..256 * 256 * 256))),);
     }
 
-    let mut t = triangulate_linear(&polys, 10.);
+    let mut t = triangulate_line_sweep(&polys, 10.);
 
     let c1 = make_delaynay(&mut t);
     debug_assert!(t.verify_invariants() == ());
